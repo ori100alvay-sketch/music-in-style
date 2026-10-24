@@ -1,8 +1,11 @@
 services:
   - type: web
-    name: music-in-stil
+    name: music-in-stil-api
     runtime: node
     plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production

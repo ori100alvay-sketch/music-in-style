@@ -1,55 +1,71 @@
-import express from 'express';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const BASE = 'https://magic-chords.dev/api/v1';
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use(express.json({ limit: '1mb' }));
-app.use(express.static(__dirname));
+const PORT = process.env.PORT || 10000;
 
-async function forward(url, options = {}) {
-  const res = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
-  const text = await res.text();
-  let body;
-  try { body = JSON.parse(text); } catch { body = { message: text.slice(0, 1000) }; }
-  return { status: res.status, body };
-}
+app.use(cors());
+app.use(express.json({ limit: "20mb" }));
+app.use(express.static(path.join(__dirname, "public")));
 
-app.post('/api/analyze-url', async (req, res) => {
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, service: "music-in-stil", message: "Music in Stil API is running" });
+});
+
+// Safe diagnostic endpoint: confirms the service is deployed without exposing secrets.
+app.get("/api/status", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "music-in-stil",
+    magicChordsConfigured: Boolean(process.env.MAGIC_CHORDS_API_KEY)
+  });
+});
+
+// A clear response instead of a generic "Failed to fetch" if the external API is not configured.
+app.post("/api/analyze-url", async (req, res) => {
+  const { url } = req.body || {};
+  if (!url || typeof url !== "string") {
+    return res.status(400).json({ error: "Please provide a song URL in the 'url' field." });
+  }
+
+  const apiKey = process.env.MAGIC_CHORDS_API_KEY;
+  const apiUrl = process.env.MAGIC_CHORDS_API_URL;
+
+  if (!apiKey || !apiUrl) {
+    return res.status(503).json({
+      error: "The server is running, but the Magic Chords API is not configured yet.",
+      nextStep: "Add MAGIC_CHORDS_API_KEY and MAGIC_CHORDS_API_URL in the Render environment settings."
+    });
+  }
+
   try {
-    const mediaUrl = req.body?.url;
-    if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) {
-      return res.status(400).json({ error: 'Please provide a public http(s) audio/media URL.' });
+    const upstream = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ url })
+    });
+    const raw = await upstream.text();
+    let data;
+    try { data = JSON.parse(raw); } catch { data = { raw }; }
+    if (!upstream.ok) {
+      return res.status(upstream.status >= 400 && upstream.status < 600 ? upstream.status : 502)
+        .json({ error: "The music analysis provider returned an error.", providerStatus: upstream.status, details: data });
     }
-    const result = await forward(`${BASE}/analyze/url`, { method: 'POST', body: JSON.stringify({ url: mediaUrl }) });
-    res.status(result.status).json(result.body);
+    return res.json(data);
   } catch (err) {
-    res.status(502).json({ error: 'Could not reach Magic Chords API', detail: String(err?.message || err) });
+    return res.status(502).json({ error: "Could not reach the music analysis provider.", details: err.message });
   }
 });
 
-app.get('/api/jobs/:jobId', async (req, res) => {
-  if (!/^[a-zA-Z0-9_-]{1,200}$/.test(req.params.jobId)) return res.status(400).json({ error: 'Invalid job id' });
-  try {
-    const result = await forward(`${BASE}/jobs/${encodeURIComponent(req.params.jobId)}`);
-    res.status(result.status).json(result.body);
-  } catch (err) {
-    res.status(502).json({ error: 'Could not check analysis status', detail: String(err?.message || err) });
-  }
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
-app.get('/api/jobs/:jobId/result', async (req, res) => {
-  if (!/^[a-zA-Z0-9_-]{1,200}$/.test(req.params.jobId)) return res.status(400).json({ error: 'Invalid job id' });
-  try {
-    const result = await forward(`${BASE}/jobs/${encodeURIComponent(req.params.jobId)}/result`);
-    res.status(result.status).json(result.body);
-  } catch (err) {
-    res.status(502).json({ error: 'Could not fetch analysis result', detail: String(err?.message || err) });
-  }
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Music in Stil server listening on port ${PORT}`);
 });
-
-app.get('/health', (_req, res) => res.json({ ok: true, service: 'Music in Stil backend' }));
-app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.listen(PORT, () => console.log(`Music in Stil listening on ${PORT}`));

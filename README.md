@@ -1,33 +1,20 @@
-# Music in Stil v0.3 — backend-ready starter
+# Music in Stil — corrected Node.js service
 
-This package includes the website and a small Node/Express backend proxy. The browser calls the same-origin `/api/...` routes; the server calls Magic Chords, avoiding browser CORS restrictions.
-
-## What is included
-- Existing Hebrew/English responsive website and Apple/iTunes search.
-- Three-page local notebook.
-- Analysis request through `POST /api/analyze-url`.
-- Status/result proxy routes through `/api/jobs/:jobId` and `/api/jobs/:jobId/result`.
-- `/health` health check.
-
-## Run locally
-Requires Node.js 20+.
-
-```bash
-npm install
-npm start
-```
-Then open `http://localhost:3000`.
+This repository is configured as a Node.js web service for Render.
 
 ## Deploy on Render
-1. Upload this folder to a GitHub repository (or create a repository and upload the files).
-2. Sign in to https://render.com and choose **New + → Blueprint**.
-3. Connect the GitHub repository containing `render.yaml`.
-4. Accept the service creation. Render builds with `npm install` and runs `npm start`.
-5. Open the Render URL and test `/health` — it should return `{"ok":true,...}`.
+1. Create a **Web Service** from this GitHub repository.
+2. Runtime: **Node**.
+3. Build Command: `npm install`
+4. Start Command: `npm start`
+5. Do not choose Elixir or Static Site.
+6. After deployment, open `/health`; it should return JSON showing the service is running.
 
-## Important
-- No API key is included or required by the public Magic Chords quick-start docs for basic anonymous fair-use access. Verify current provider limits/terms before commercial use.
-- The current implementation analyzes the Apple/iTunes `previewUrl` when one exists, not the full song. Preview links may be inaccessible to the provider or too short for reliable analysis.
-- This package has not been deployed or verified against a live analysis job from this environment. Do not treat the API integration as confirmed until tested on the deployed URL.
-- Add rate limiting and abuse protection before a public launch. Do not expose provider secrets in browser code.
-- The `transcribe` endpoint is not yet wired to the UI; lyrics transcription and lyric/chord alignment need a separate tested integration and rights-compliant source handling.
+## Optional music analysis API
+Set these environment variables in Render only after confirming the exact API endpoint and authentication format from your provider:
+- `MAGIC_CHORDS_API_KEY`
+- `MAGIC_CHORDS_API_URL`
+
+The `/api/analyze-url` endpoint expects JSON such as `{ "url": "https://..." }`.
+
+Important: the proxy is a basic integration template. It does not guarantee compatibility with a third-party provider's exact API schema; verify that schema before enabling real analysis.
