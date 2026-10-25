@@ -305,7 +305,7 @@ test('chord analysis reuses a recent job for the same URL and does not spam the 
   assert.match(server, /recentAnalysisJobs\.get\(cacheKey\)/);
   assert.match(server, /X-Analysis-Job-Reused/);
   assert.match(server, /recentAnalysisJobs\.set\(cacheKey/);
-  assert.match(server, /retryAfterSeconds: 60/);
+  assert.match(server, /const retryAfterSeconds = err\.retryAfterSeconds \|\| 3600/);
   assert.match(server, /providerStatus: err\.status \|\| "unknown"/);
 });
 
@@ -331,6 +331,6 @@ test('instrument separation stays explicitly disabled until a local engine is in
 test('chord analysis avoids stale jobs and shares provider cooldown with transcription', () => {
   assert.match(server, /function forgetRecentAnalysisJob\(jobId\)/);
   assert.match(server, /forgetRecentAnalysisJob\(jobId\);[\s\S]{0,120}status: "failed"/);
-  assert.match(server, /if \(magicChordsIsCoolingDown\(\)\)[\s\S]{0,260}ניסיון תמלול נוסף/);
+  assert.match(server, /if \(magicChordsIsCoolingDown\(\)\)[\s\S]{0,700}ניסיון תמלול נוסף/);
   assert.match(server, /noteMagicChordsRateLimit\(30\)/);
 });
