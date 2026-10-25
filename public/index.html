@@ -354,16 +354,23 @@ document.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('c
 function isHttpUrl(value){try{const u=new URL(value);return u.protocol==='http:'||u.protocol==='https:'}catch{return false}}
 function showError(message){resultBox.classList.add('visible');workspace.classList.remove('visible');resultTitle.textContent='לא הצלחנו להשלים את הבקשה';resultMessage.textContent=message;resultData.textContent=''}
 async function fetchLyricsForAudio(url){
-  const start=await fetch('/api/transcribe-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
-  const job=await start.json().catch(()=>({}));
-  if(!start.ok||!job.job_id)return null;
-  for(let attempt=0;attempt<25;attempt++){
-    await new Promise(resolve=>setTimeout(resolve,1500));
-    const response=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
-    const state=await response.json().catch(()=>({}));
-    if(!response.ok||state.status==='failed')return null;
-    if(state.status==='complete')return state.result||null;
-  }
+  try {
+    const start=await fetch('/api/transcribe-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const job=await start.json().catch(()=>({}));
+    if(!start.ok||!job.job_id)return null;
+    for(let attempt=0;attempt<18;attempt++){
+      await new Promise(resolve=>setTimeout(resolve,5000));
+      const response=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
+      const state=await response.json().catch(()=>({}));
+      if(response.status===429){
+        const wait=Math.min(20,Math.max(5,Number(response.headers.get('Retry-After'))||10));
+        await new Promise(resolve=>setTimeout(resolve,wait*1000));
+        continue;
+      }
+      if(!response.ok||state.status==='failed')return null;
+      if(state.status==='complete')return state.result||null;
+    }
+  } catch(error) { console.warn('Timed transcription unavailable',error); }
   return null;
 }
 async function analyzeUrl(url,label){
@@ -397,7 +404,11 @@ async function analyzeUrl(url,label){
       if(state.status==='complete'){
         currentAnalysis=state.result||{};
         resultTitle.textContent=label||'תוצאות השיר';
-        resultMessage.textContent='תוצאות האקורדים והמידע המוזיקלי:';
+        resultMessage.textContent='האקורדים התקבלו. מנסים לקבל גם תמלול עם חותמות זמן כדי לסנכרן אותם למילים…';
+        // Merge a separate transcription job with chord data. Alignment is shown only if both contain compatible timestamps.
+        const transcription=await fetchLyricsForAudio(url);
+        if(transcription)currentAnalysis={...currentAnalysis,transcription};
+        resultMessage.textContent='תוצאות הניתוח: אקורדים יוצמדו למילים רק אם קיימים נתוני תזמון תואמים.';
         resultData.hidden=true;resultData.textContent='';
         renderWorkspace(currentAnalysis);
         finished=true;break;
