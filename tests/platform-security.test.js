@@ -48,3 +48,13 @@ test('legal notice page is linked and covers user permissions and takedown repor
 test('no API credentials are embedded in public frontend source', () => {
   assert.doesNotMatch(html, /(?:sk-[A-Za-z0-9]{20,}|REPLICATE_API_TOKEN\s*=\s*["'][^"']+|BRIZM_API_KEY\s*=\s*["'][^"']+)/);
 });
+
+test('capabilities endpoint distinguishes built-in features from credential-gated AI services', () => {
+  assert.match(server, /app\.get\("\/api\/capabilities"/);
+  assert.match(server, /credentialsServerSideOnly: true/);
+  assert.match(server, /distributedRateLimit: false/);
+  assert.match(server, /lyricsTranscription:/);
+  assert.match(server, /stemSeparation:/);
+  assert.match(server, /needs: replicateConfigured \? \[\] : \["REPLICATE_API_TOKEN"\]/);
+  assert.match(server, /needs: brizmConfigured \? \[\] : \["BRIZM_API_KEY"\]/);
+});
