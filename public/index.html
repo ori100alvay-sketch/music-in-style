@@ -1051,10 +1051,21 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
  // Add an account entry without changing the existing navigation layout.
  const nav=document.querySelector('header nav')||document.querySelector('header');
  if(nav){const b=document.createElement('button');b.className='auth-launch';b.type='button';b.textContent='החשבון שלי';b.addEventListener('click',()=>{setMode('login');open()});nav.appendChild(b);}
- // Supabase email recovery redirects back with an access token in the URL fragment.
+ // Supabase may return a recovery access token in the fragment, or a one-time
+ // token_hash in the query string for signup/email confirmation.
  const hash=new URLSearchParams(location.hash.replace(/^#/,''));
+ const query=new URLSearchParams(location.search);
  if(hash.get('type')==='recovery'&&hash.get('access_token')){
   resetToken=hash.get('access_token');setMode('reset');open();say('קישור האיפוס אומת. בחרו סיסמה חדשה.');
+ } else if(query.get('token_hash')&&query.get('type')){
+  (async()=>{
+   try{
+    const data=await request('verify-email',{token_hash:query.get('token_hash'),type:query.get('type')});
+    if(data.session)sessionStorage.setItem('musicInStyleSession',JSON.stringify(data.session));
+    history.replaceState(null,'',location.pathname);
+    setMode('login');open();say(data.message||'המייל אומת בהצלחה.');
+   }catch(e){setMode('login');open();say(e.message,true)}
+  })();
  }
  fetch('/api/auth/config').then(r=>r.json()).then(c=>{
   if(!c.configured){const b=document.querySelector('.auth-launch');if(b)b.title='נדרשת הגדרת ספק אימות בשרת';}
