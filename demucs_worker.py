@@ -74,7 +74,7 @@ async def separate(file: UploadFile = File(...)):
             raise HTTPException(status_code=413, detail=f"Audio is longer than the {MAX_DURATION_SECONDS // 60}-minute limit.")
 
         command = [
-            "python", "-m", "demucs", "--device", DEVICE, "--repo", str(job_dir / "models"),
+            "python", "-m", "demucs", "--device", DEVICE,
             "-n", MODEL, "-o", str(output_path), str(input_path)
         ]
         try:
