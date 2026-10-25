@@ -10,6 +10,14 @@ This repository is configured as a Node.js web service for Render.
 5. Do not choose Elixir or Static Site.
 6. After deployment, open `/health`; it should return JSON showing the service is running.
 
+## Instrument separation (Demucs via Replicate)
+To enable the new **Analyze playback / separate instruments** option:
+1. Create a Replicate account and generate an API token at https://replicate.com/account/api-tokens.
+2. In Render, open the web service → **Environment** and add `REPLICATE_API_TOKEN` with that token as its value.
+3. Save changes and redeploy.
+4. Test with a public, direct HTTPS audio-file URL. Spotify/YouTube page URLs and Apple's short preview URLs may not be accepted as direct audio sources.
+The token must remain in Render Environment and must never be added to frontend code or committed to GitHub. Replicate usage may incur charges.
+
 ## Optional music analysis API
 Set these environment variables in Render only after confirming the exact API endpoint and authentication format from your provider:
 - `MAGIC_CHORDS_API_KEY`
