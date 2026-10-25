@@ -91,15 +91,25 @@ test('security hardening limits authentication attempts and restricts provider a
   assert.match(server, /script-src 'self' 'unsafe-inline';/);
 });
 
-test('local Demucs remains safely disabled until a real worker is deployed and verified', () => {
-  assert.match(server, /app\.get\("\/api\/separation-status"/);
-  assert.match(server, /available: false,[\s\S]{0,100}mode: "disabled"/);
-  assert.match(server, /No local Demucs runtime is installed in this Render Node\.js service/);
-  assert.match(server, /app\.post\("\/api\/separate", async \(_req, res\) => \{[\s\S]*?status\(501\)/);
-  assert.match(server, /freeMode: true/);
-  assert.match(server, /Paid inference providers are intentionally not called/);
-  assert.match(html, /הפרדת כלים עדיין לא פעילה/);
-  assert.match(html, /לא ניתן לאמת את מצב מנוע ההפרדה/);
+test('local Demucs is wired to a health-checked CPU-only worker', () => {
+  const dockerfile = fs.readFileSync('Dockerfile', 'utf8');
+  const render = fs.readFileSync('render.yaml', 'utf8');
+  const worker = fs.readFileSync('demucs_worker.py', 'utf8');
+  assert.ok(server.includes('/api/separation-status'));
+  assert.ok(server.includes('DEMUCS_WORKER_URL'));
+  assert.ok(server.includes('checkDemucsWorker'));
+  assert.ok(server.includes('/api/separate'));
+  assert.ok(server.includes('new FormData()'));
+  assert.ok(server.includes('Local Demucs only'));
+  assert.ok(dockerfile.includes('torch==2.5.1'));
+  assert.ok(dockerfile.includes('demucs==4.0.1'));
+  assert.ok(dockerfile.includes('download.pytorch.org/whl/cpu'));
+  assert.ok(render.includes('runtime: docker'));
+  assert.ok(worker.includes('DEVICE = "cpu"'));
+  assert.ok(worker.includes('MAX_UPLOAD_BYTES'));
+  assert.ok(worker.includes('MAX_DURATION_SECONDS'));
+  assert.ok(html.includes('הפרד כלים במנוע המקומי'));
+  assert.ok(html.includes('לא נשלח שמע לספק בתשלום'));
 });
 
 test('free public music services are wired as server-side endpoints and exposed in capabilities', () => {
