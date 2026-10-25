@@ -46,7 +46,7 @@ const CHORDS = [
   {suffix:"aug", aliases:["aug","+","+"], intervals:[0,4,8], quality:"augmented"},
   {suffix:"dim", aliases:["dim","°"], intervals:[0,3,6], quality:"diminished"},
   {suffix:"m", aliases:["m","min","-"], intervals:[0,3,7], quality:"minor"},
-  {suffix:"", aliases:["maj"], intervals:[0,4,7], quality:"major"}
+  {suffix:"", aliases:["","maj"], intervals:[0,4,7], quality:"major"}
 ];
 function normalizeNote(note) {
   if (typeof note !== "string") return null;
