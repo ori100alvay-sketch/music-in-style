@@ -566,11 +566,15 @@ function selectAction(action,track){
    panel.innerHTML='<h3>המחברת האישית</h3><p class="disabled-note">'+(exists?'השיר כבר שמור במחברת.':'השיר נשמר במחברת במכשיר הזה.')+'</p><div class="toolbar"><button class="tool-button" id="viewNotebook">הצג את המחברת ('+saved.length+')</button></div><div id="notebookList"></div>';
    document.getElementById('viewNotebook').onclick=()=>{const list=document.getElementById('notebookList');list.innerHTML='';saved.forEach(s=>{const p=document.createElement('p');p.className='disabled-note';p.textContent=s.title+' — '+s.artist;list.appendChild(p)})};
  }else if(action==='analyze'){
-   panel.innerHTML='<h3>ניתוח אקורדים ומילים</h3>'+
-   (track.trackUrl?'<p class="disabled-note">ננתח דרך עמוד השיר הציבורי של Apple Music, ולא את כתובת קובץ התצוגה המקדימה. זמינות התוצאה תלויה בשירות הניתוח.</p><button class="tool-button" id="analyzePreview">♫ מצא אקורדים לשיר</button>':'<p class="disabled-note">לא נמצא עמוד ציבורי נתמך לשיר הזה. נסה לבחור שיר אחר או להדביק קישור HTTPS ציבורי מ-YouTube, SoundCloud, Spotify, Apple Music, Bandcamp או Archive.org.</p>')+
-   '<details style="margin-top:14px"><summary style="cursor:pointer;color:#c9baff">יש לי קישור לשיר בפלטפורמה נתמכת</summary><label for="fullAudioUrl">קישור ציבורי לשיר (לא קישור לקובץ תצוגה מקדימה)</label><input id="fullAudioUrl" type="url" placeholder="https://music.apple.com/… או https://youtu.be/…" style="width:100%;margin:10px 0;padding:13px;border-radius:10px;background:#111;color:#fff;border:1px solid #444"><button class="tool-button" id="analyzeFullAudio">נתח את הקישור</button></details><p class="disabled-note">האתר יציג רק נתונים שהמנוע החזיר בפועל; לא ננחש מילים או מיקומי אקורדים.</p>';
-   const previewButton=document.getElementById('analyzePreview');if(previewButton)previewButton.onclick=()=>analyzeUrl(track.trackUrl,(track.title||'השיר')+' — ניתוח אקורדים');
-   document.getElementById('analyzeFullAudio').onclick=()=>{const field=document.getElementById('fullAudioUrl');const url=field.value.trim();if(!/^https:\/\//i.test(url)){field.focus();return}analyzeUrl(url,(track.title||'השיר')+' — ניתוח קובץ מלא')};
+   const ytSearch='https://www.youtube.com/results?search_query='+encodeURIComponent((track.title||'')+' '+(track.artist||''));
+   panel.innerHTML='<h3>מציאת אקורדים ומילים</h3>'+
+   '<p class="disabled-note">עמודי Apple Music ו-Spotify לא תמיד חושפים את האודיו למנוע הניתוח. כדי למנוע את שגיאת „The media at this URL is unavailable”, בחר קישור לשיר ציבורי שנגיש לניתוח. חיפוש השיר עצמו לא מבטיח שהמקור יוכל להיפתח.</p>'+
+   '<div class="toolbar"><button class="tool-button" id="findYoutubeSource">מצא את השיר ב-YouTube ↗</button></div>'+
+   '<label for="fullAudioUrl">הדבק כאן קישור ישיר לסרטון/מקור ציבורי</label><input id="fullAudioUrl" type="url" placeholder="https://youtu.be/… או https://soundcloud.com/…" style="width:100%;margin:10px 0;padding:13px;border-radius:10px;background:#111;color:#fff;border:1px solid #444">'+
+   '<button class="tool-button" id="analyzeFullAudio">נסה למצוא אקורדים מהקישור</button>'+
+   '<p class="disabled-note">אם המקור חסום, פרטי או לא מספק אודיו, יש לנסות העלאה של מקור ציבורי אחר. אין צורך להדביק קישור לתצוגה מקדימה של Apple Music.</p>';
+   document.getElementById('findYoutubeSource').onclick=()=>window.open(ytSearch,'_blank','noopener,noreferrer');
+   document.getElementById('analyzeFullAudio').onclick=()=>{const field=document.getElementById('fullAudioUrl');const url=field.value.trim();if(!/^https:\/\//i.test(url)){field.focus();field.reportValidity();return}analyzeUrl(url,(track.title||'השיר')+' — ניתוח אקורדים')};
  }else if(action==='notes'){
    if(track.previewUrl)analyzeUrl(track.previewUrl,track.title+' — ניתוח תווים ומילים (קטע תצוגה מקדימה)');
    else panel.innerHTML='<h3>ניתוח תווים</h3><p class="disabled-note">אין קובץ שמע ישיר זמין. הדבק קישור ישיר לקובץ שמע נתמך.</p>';
