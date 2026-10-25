@@ -106,3 +106,13 @@ test('timed lyric and chord alignment handles provider variants and bounded chor
   assert.match(html, /Keep lyric lines readable even when the transcription has no punctuation/);
   assert.match(html, /if\(words\.length<2\|\|!events\.length\)return null/);
 });
+test('stem mixer supports nested provider outputs, mute, solo and independent channel gain', () => {
+  assert.match(html, /const flattenStemOutput=/);
+  assert.match(html, /const labels=\{drums:/);
+  assert.match(html, /id="stemSoloClear"/);
+  assert.match(html, /class="stem-mute"/);
+  assert.match(html, /class="stem-solo"/);
+  assert.match(html, /const muted=new Set\(\),soloed=new Set\(\)/);
+  assert.match(html, /audio\.volume=\(muted\.has\(audio\.id\)/);
+  assert.match(html, /class="stem-channel"/);
+});
