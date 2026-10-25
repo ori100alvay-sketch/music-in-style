@@ -346,10 +346,10 @@ test('local Demucs is wired through a health-checked CPU-only worker, not a paid
   const dockerfile = fs.readFileSync('Dockerfile', 'utf8');
   const render = fs.readFileSync('render.yaml', 'utf8');
   const worker = fs.readFileSync('demucs_worker.py', 'utf8');
-  assert.match(server, /api\\/separation-status/);
+  assert.ok(server.includes("/api/separation-status"));
   assert.match(server, /DEMUCS_WORKER_URL/);
   assert.match(server, /await checkDemucsWorker\\(\\)/);
-  assert.match(server, /api\\/separate/);
+  assert.ok(server.includes("/api/separate"));
   assert.match(server, /new FormData\\(\\)/);
   assert.match(server, /Local Demucs only/);
   assert.match(dockerfile, /torch==2\\.5\\.1/);
