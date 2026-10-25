@@ -186,3 +186,12 @@ test('music theory engine exposes progression analysis and maqam caveats without
   assert.match(theorySource, /תיאוריה וחישוב מוזיקלי/);
   assert.match(server, /app\.get\("\/api\/music-theory"/);
 });
+
+test('music theory engine supports slash chords and extended jazz/pop harmony', () => {
+  const theory = require('../music-theory');
+  assert.equal(theory.parseChord('C/E').bass, 'E');
+  assert.equal(theory.transposeChord('C/E', 2), 'D/F#');
+  assert.deepEqual(theory.parseChord('G7b9').notes, ['G','B','D','F','C#']);
+  assert.equal(theory.parseChord('Fmaj7#11').quality, 'major-seventh-sharp-eleven');
+  assert.equal(theory.parseChord('Aadd9').quality, 'add-ninth');
+});
