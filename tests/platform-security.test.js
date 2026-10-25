@@ -335,10 +335,10 @@ test('chord analysis reuses a recent job for the same URL and does not spam the 
 });
 
 test('CI workflow runs the test suite and syntax checks on main updates', () => {
-  const workflow = fs.readFileSync('.github/workflows/tests.yml', 'utf8');
+  const workflow = fs.readFileSync('.github/workflows/regression-tests.yml', 'utf8');
   assert.match(workflow, /branches: \[main\]/);
   assert.match(workflow, /node-version: 20/);
-  assert.match(workflow, /npm test/);
+  assert.match(workflow, /node --test/);
   assert.match(workflow, /node --check server\.js/);
 });
 
