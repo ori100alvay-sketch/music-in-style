@@ -7,6 +7,7 @@ const server = fs.readFileSync('server.js', 'utf8');
 const manifest = JSON.parse(fs.readFileSync('public/manifest.webmanifest', 'utf8'));
 const worker = fs.readFileSync('public/sw.js', 'utf8');
 const legal = fs.readFileSync('public/copyright.html', 'utf8');
+const theorySource = fs.readFileSync('music-theory.js', 'utf8');
 
 test('app has responsive viewport, Hebrew RTL, reduced motion support and mobile breakpoints', () => {
   assert.match(html, /<html lang="he" dir="rtl">/);
@@ -163,4 +164,25 @@ test('chord display only labels chord changes across lyric lines', () => {
   assert.match(html, /const compact=\[\];let previousChord=''/);
   assert.match(html, /cell\.chord&&cell\.chord!==previousChord\?cell\.chord:''/);
   assert.match(html, /if\(cell\.chord\)previousChord=cell\.chord/);
+});
+
+test('music theory engine calculates scales, diatonic triads, chord tones and transposition', () => {
+  const theory = require('../music-theory');
+  assert.deepEqual(theory.scaleNotes('C','major'), ['C','D','E','F','G','A','B']);
+  assert.deepEqual(theory.parseChord('Dm7').notes, ['D','F','A','C']);
+  assert.equal(theory.transposeChord('Bbmaj7', 2), 'Cmaj7');
+  assert.deepEqual(theory.diatonicTriads('C','major').map(chord => chord.roman), ['I','ii','iii','IV','V','vi','vii°']);
+  assert.equal(theory.getTheory({root:'C',scale:'major'}).kind, 'scale');
+});
+test('music theory engine exposes progression analysis and maqam caveats without pretending to analyze audio', () => {
+  const theory = require('../music-theory');
+  const progression = theory.getTheory({mode:'progression',root:'C',scale:'major',chords:'C Am F G'});
+  assert.equal(progression.analysis.length, 4);
+  assert.deepEqual(progression.analysis.map(chord => chord.roman), ['I','vi','IV','V']);
+  const hijaz = theory.getTheory({mode:'maqam',root:'D',maqam:'hijaz'});
+  assert.equal(hijaz.kind, 'maqam');
+  assert.match(hijaz.note, /12/);
+  assert.match(theory.getTheory({mode:'chord',chord:'nonsense'}).error, /מבנה האקורד/);
+  assert.match(theorySource, /תיאוריה וחישוב מוזיקלי/);
+  assert.match(server, /app\.get\("\/api\/music-theory"/);
 });
