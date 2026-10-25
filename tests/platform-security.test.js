@@ -298,3 +298,21 @@ test('free-safe stem separation explains why automatic AI separation is unavaila
   assert.match(html, /נדרש מנוע Demucs מקומי או שירות חינמי אמיתי/);
   assert.doesNotMatch(html, /פתיחת עמוד החיוב של Replicate/);
 });
+
+test('chord analysis reuses a recent job for the same URL and does not spam the provider', () => {
+  assert.match(server, /const recentAnalysisJobs = new Map\(\)/);
+  assert.match(server, /const ANALYSIS_DEDUPE_MS = 3 \* 60_000/);
+  assert.match(server, /recentAnalysisJobs\.get\(cacheKey\)/);
+  assert.match(server, /X-Analysis-Job-Reused/);
+  assert.match(server, /recentAnalysisJobs\.set\(cacheKey/);
+  assert.match(server, /retryAfterSeconds: 60/);
+  assert.match(server, /providerStatus: err\.status \|\| "unknown"/);
+});
+
+test('CI workflow runs the test suite and syntax checks on main updates', () => {
+  const workflow = fs.readFileSync('.github/workflows/tests.yml', 'utf8');
+  assert.match(workflow, /branches: \[main\]/);
+  assert.match(workflow, /node-version: 20/);
+  assert.match(workflow, /npm test/);
+  assert.match(workflow, /node --check server\.js/);
+});
