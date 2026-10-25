@@ -57,8 +57,8 @@ class SeparationServiceTests(unittest.TestCase):
                 stderr = ''
             return Result()
 
-        with patch.object(shutil, 'which', side_effect=lambda name: '/usr/bin/' + name), patch.object(module.subprocess, 'run', side_effect=fake_run):
-            response = client.post('/separate', files={'file': ('song.wav', b'fake-input', 'audio/wav')})
+        with patch.object(module, 'API_TOKEN', 'test-secret'), patch.object(shutil, 'which', side_effect=lambda name: '/usr/bin/' + name), patch.object(module.subprocess, 'run', side_effect=fake_run):
+            response = client.post('/separate', headers={'Authorization': 'Bearer test-secret'}, files={'file': ('song.wav', b'fake-input', 'audio/wav')})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers.get('content-type'), 'application/zip')
         import io
