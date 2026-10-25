@@ -1,20 +1,21 @@
-# Music in Stil — corrected Node.js service
+# Music in Style — Node.js app with a guarded local Demucs worker
 
-This repository is configured as a Node.js web service for Render.
+The Render Blueprint (`render.yaml`) currently describes a Docker web service. The container installs a CPU-only open-source Demucs worker alongside the Node.js API. The browser UI calls the local worker only after `/api/separation-status` confirms that the worker reports readiness.
 
-## Deploy on Render
-1. Create a **Web Service** from this GitHub repository.
-2. Runtime: **Node**.
-3. Build Command: `npm install`
-4. Start Command: `npm start`
-5. Do not choose Elixir or Static Site.
-6. After deployment, open `/health`; it should return JSON showing the service is running.
+## Instrument separation: deliberately health-gated
 
-## Instrument separation — free-safe mode
+The integration is committed, but **separation must remain unavailable until a real smoke test has run against an actual audio file and produced all four expected stems**. Automated CI mocks Demucs inference to test upload validation, error handling and ZIP packaging; it does not prove that the neural model can run successfully on the deployed host.
 
-Automatic AI stem separation is intentionally disabled by default to prevent unexpected third-party inference charges. The current Node.js/Render service does not include a local Demucs model runtime, and Replicate inference is a paid service. The `/api/separate` endpoint now returns a clear `501` explanation without submitting audio to Replicate.
+No Replicate or other paid inference API is called by this worker. Do not set `DEMUCS_SMOKE_TEST_OK=true` just to enable the UI: only set it after a real separation test succeeds and the four output files have been verified.
 
-To enable genuinely no-charge separation, a local/open-source model runtime must be deployed somewhere with enough CPU/RAM/GPU capacity, or the browser app must run a compatible model locally. Do not add a paid API token or route audio to a paid inference provider if zero cost is a strict requirement. A free hosting tier may still have compute limits and cannot be assumed to run Demucs reliably.
+### Hosting limitation
+
+Render's free web service plan has 512 MB RAM and 0.1 CPU, which is not a realistic target for reliable Demucs CPU inference. A successful Docker build or Python import is not enough. The app intentionally keeps the separation button disabled if the worker is unreachable or has not passed its real smoke test. A dependable self-hosted Demucs service likely needs a host with substantially more memory/CPU; do not upgrade or enable paid services without explicit budget approval.
+
+## Basic deployment checks
+- `/health`: confirms the Node.js app is running.
+- `/api/separation-status`: reports whether the local worker has passed its readiness gate.
+- `/api/separate`: accepts only supported audio uploads, and returns a ZIP only when the local worker is verified ready.
 
 ## Optional music analysis API
 Set these environment variables in Render only after confirming the exact API endpoint and authentication format from your provider:
