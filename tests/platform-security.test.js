@@ -70,3 +70,29 @@ test('music notebook supports validated backup export and cross-device import', 
   assert.match(html, /data\.songs\.length>500/);
   assert.match(html, /ייבוא הגיבוי יחליף את המחברת/);
 });
+
+test('accessibility panel offers keyboard-friendly visual adjustments and reset controls', () => {
+  assert.match(html, /id="accessToggle"/);
+  assert.match(html, /aria-controls="accessPanel"/);
+  assert.match(html, /id="a11yContrast"/);
+  assert.match(html, /id="a11yMotion"/);
+  assert.match(html, /id="a11yScale"/);
+  assert.match(html, /e\.key==='Escape'/);
+});
+
+test('chord QA lab checks syntax, duplicate chords, transposition and round-trip consistency', () => {
+  assert.match(html, /id='chordQaLab'/);
+  assert.match(html, /const chordPattern=/);
+  assert.match(html, /אקורדים שחוזרים ברצף/);
+  assert.match(html, /בדיקת חזרה לסולם המקורי/);
+  assert.match(html, /מבנה האקורדים תקין לפי בדיקת התחביר הבסיסית/);
+});
+
+test('stem separation playback validates HTTPS URLs and exposes group transport controls', () => {
+  assert.match(html, /\^https:\\/\\//i);
+  assert.match(html, /id="stemPlayAll"/);
+  assert.match(html, /id="stemPauseAll"/);
+  assert.match(html, /id="stemResetAll"/);
+  assert.match(html, /Promise\.allSettled\(stemAudios\.map\(audio=>audio\.play\(\)\)\)/);
+  assert.match(html, /audio\.volume=Number\(input\.value\)\/100/);
+});
