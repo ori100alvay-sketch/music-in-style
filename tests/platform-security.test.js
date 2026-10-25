@@ -72,6 +72,13 @@ test('free lyrics and music metadata providers are wired through safe server end
   assert.match(server, /slice\(0, 180\)/);
 });
 
+test('account UI keeps signup, login, reset labels in sync and has a single signup toggle', () => {
+  assert.match(html, /signup\.addEventListener\('click',\(\)=>setMode\(mode==='signup'\?'login':'signup'\)\)/);
+  assert.match(html, /signup\.textContent=next==='signup'\?'חזרה לכניסה':'יצירת חשבון'/);
+  assert.match(html, /submit\.textContent=next==='signup'\?'יצירת חשבון':next==='forgot'\?'שליחת קישור איפוס':'כניסה'/);
+  assert.doesNotMatch(html, /signup\.addEventListener\('click',\(\)=>\{if\(mode==='signup'\)\{doLogin\(true\)/);
+});
+
 test('security hardening limits authentication attempts and restricts provider analysis URLs', () => {
   assert.match(server, /app\.use\("\/api\/auth", \(req, res, next\) =>/);
   assert.match(server, /RateLimit-Auth-Limit/);
