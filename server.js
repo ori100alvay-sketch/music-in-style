@@ -470,8 +470,14 @@ app.get("/api/jobs/:jobId", async (req, res) => {
     if (["failed", "error", "cancelled", "canceled"].includes(state)) return res.status(422).json({ status: "failed", error: status.error || status.message || "ניתוח השיר נכשל. נסו קישור אחר." });
     return res.json({ status: state || "processing", message: "השיר עדיין בתהליך ניתוח." });
   } catch (err) {
-    console.error("Analysis status check failed:", err.message);
-    return res.status(err.status === 404 ? 404 : 502).json({ error: err.status === 404 ? "לא נמצא ניתוח עבור השיר הזה." : "לא הצלחנו לבדוק את מצב הניתוח כרגע." });
+    console.error("Analysis status check failed:", err.message, "providerStatus:", err.status || "unknown");
+    if (err.status === 404) return res.status(404).json({ error: "לא נמצא ניתוח עבור השיר הזה. ייתכן שהמשימה פגה תוקף; נסו להפעיל ניתוח חדש." });
+    if (err.status === 429) {
+      res.set("Retry-After", "10");
+      return res.status(429).json({ error: "שירות האקורדים מגביל זמנית את בדיקות המצב. ממתינים מעט לפני ניסיון נוסף." });
+    }
+    if (err.status === 503) return res.status(503).json({ error: "שירות האקורדים אינו זמין זמנית. נסו שוב בעוד רגע." });
+    return res.status(502).json({ error: "שירות האקורדים לא הצליח להחזיר את מצב הניתוח. נסו קישור ציבורי אחר או נסו שוב מאוחר יותר." });
   }
 });
 app.use((err, _req, res, _next) => { if (err instanceof SyntaxError && "body" in err) return res.status(400).json({ error: "Request body must contain valid JSON." }); console.error("Unhandled server error:", err.message); res.status(500).json({ error: "Internal server error" }); });
