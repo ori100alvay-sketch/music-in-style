@@ -132,3 +132,9 @@ test('stem mixer synchronizes playback, seeking, pause and playback rate to a ma
   assert.match(html, /audio\.playbackRate=masterAudio\.playbackRate/);
   assert.match(html, /const stopSync=\(\)=>/);
 });
+
+test('BPM analysis omits Camelot numeric metadata and chord parser accepts altered extensions', () => {
+  assert.doesNotMatch(html, /Camelot:/);
+  assert.match(html, /\[\#b\]\\d\+/);
+  assert.match(html, /function buildTimedAlignment\(data\)/);
+});
