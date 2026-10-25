@@ -123,3 +123,12 @@ test('search-result chord and lyric analysis can start directly from an availabl
   assert.match(html, /analyzeUrl\(track\.previewUrl/);
   assert.match(html, /id="analyzeFullAudio"/);
 });
+
+test('stem mixer synchronizes playback, seeking, pause and playback rate to a master track', () => {
+  assert.match(html, /const masterAudio=stemAudios\[0\]/);
+  assert.match(html, /const syncTracks=\(\)=>/);
+  assert.match(html, /Math\.abs\(drift\)>0\.22/);
+  assert.match(html, /masterAudio\?\.addEventListener\('seeking'/);
+  assert.match(html, /audio\.playbackRate=masterAudio\.playbackRate/);
+  assert.match(html, /const stopSync=\(\)=>/);
+});
