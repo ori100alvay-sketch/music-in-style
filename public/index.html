@@ -424,6 +424,11 @@ function extractLyrics(data){
  for(const v of [data?.lyrics,data?.transcript,data?.result?.lyrics,data?.result?.transcript,data?.analysis?.lyrics]){
    if(typeof v==='string'&&v.trim().length>20)return v.trim();
  }
+ const segments=data?.transcription?.segments||data?.segments;
+ if(Array.isArray(segments)){
+   const text=segments.map(segment=>typeof segment==='string'?segment:String(segment?.text||segment?.transcript||'')).filter(Boolean).join(' ').trim();
+   if(text.length>20)return text;
+ }
  return '';
 }
 function transposeChord(chord,semitones){
@@ -449,11 +454,11 @@ function findAlignedLyrics(data){
    const words=row.words||row.tokens||row.items;
    if(Array.isArray(words)){
     const cells=words.map(w=>typeof w==='string'?{text:w,chord:''}:{text:String(w.text||w.word||w.lyric||''),chord:String(w.chord||w.chord_name||w.harmony||'')}).filter(w=>w.text);
-    if(cells.length)return cells;
+    if(cells.length&&cells.some(w=>w.chord))return cells;
    }
    const text=String(row.text||row.lyrics||row.line||'').trim();
    const chord=String(row.chord||row.chord_name||'');
-   if(text)return [{text,chord}];
+   if(text&&chord)return [{text,chord}];
    return null;
   }).filter(Boolean);
   if(rows.length)return rows;
