@@ -10,13 +10,11 @@ This repository is configured as a Node.js web service for Render.
 5. Do not choose Elixir or Static Site.
 6. After deployment, open `/health`; it should return JSON showing the service is running.
 
-## Instrument separation (Demucs via Replicate)
-To enable the new **Analyze playback / separate instruments** option:
-1. Create a Replicate account and generate an API token at https://replicate.com/account/api-tokens.
-2. In Render, open the web service → **Environment** and add `REPLICATE_API_TOKEN` with that token as its value.
-3. Save changes and redeploy.
-4. Test with a public, direct HTTPS audio-file URL. Spotify/YouTube page URLs and Apple's short preview URLs may not be accepted as direct audio sources.
-The token must remain in Render Environment and must never be added to frontend code or committed to GitHub. Replicate usage may incur charges.
+## Instrument separation — free-safe mode
+
+Automatic AI stem separation is intentionally disabled by default to prevent unexpected third-party inference charges. The current Node.js/Render service does not include a local Demucs model runtime, and Replicate inference is a paid service. The `/api/separate` endpoint now returns a clear `501` explanation without submitting audio to Replicate.
+
+To enable genuinely no-charge separation, a local/open-source model runtime must be deployed somewhere with enough CPU/RAM/GPU capacity, or the browser app must run a compatible model locally. Do not add a paid API token or route audio to a paid inference provider if zero cost is a strict requirement. A free hosting tier may still have compute limits and cannot be assumed to run Demucs reliably.
 
 ## Optional music analysis API
 Set these environment variables in Render only after confirming the exact API endpoint and authentication format from your provider:
