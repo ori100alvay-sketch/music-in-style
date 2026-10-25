@@ -222,6 +222,35 @@ body.a11y-links a{text-decoration:underline!important;text-decoration-thickness:
 body.a11y-no-motion *,body.a11y-no-motion *:before,body.a11y-no-motion *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 .chord-qa{border:1px solid #38334f;border-radius:15px;background:#0d0d16;padding:15px;margin:14px 0}.chord-qa h3{margin:0 0 7px;font-size:16px}.chord-qa textarea{width:100%;min-height:82px;border:1px solid #48415f;border-radius:10px;background:#08080e;color:#fff;padding:11px;font:inherit;resize:vertical}.chord-qa .qa-controls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.qa-result{font-size:13px;line-height:1.85;color:#d9d5eb;overflow-wrap:anywhere}.qa-good{color:#9de8c4}.qa-warn{color:#ffd28b}.stem-sync-tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.stem-sync-tools button{border:1px solid #51476f;border-radius:9px;background:#211b35;color:#fff;padding:9px 12px;min-height:40px}
 @media(max-width:480px){.access-fab{left:10px;bottom:75px;padding:10px 12px}.access-panel{left:10px;bottom:125px;width:calc(100vw - 20px)}}
+
+/* Premium graphite + soft teal finish for every panel below search */
+:root{--studio-teal:#8bbfbd;--studio-line:#344446;--studio-panel:#111719;--studio-panel-hi:#192122}
+.result,.workspace-panel,.chord-section,.playback-bar,.metric,.notebook-sidebar,.notebook-main,.notebook-song,.practice-card,.progression-output,.access-panel{
+ border-color:var(--studio-line)!important;
+ background:linear-gradient(145deg,#151b1c 0%,#0d1112 100%)!important;
+ box-shadow:0 12px 34px #0003,0 1px 0 #ffffff08 inset;
+}
+.action-card,.feature,.notebook-page-btn,.notebook-launch,.notebook-toolbar button,.tool-button,.toolbar button,.song-option .song-actions button{
+ border-color:#354547;
+ background:linear-gradient(145deg,#192122,#101516);
+}
+.action-card{border-radius:16px;box-shadow:0 8px 24px #0002;transition:transform .22s,border-color .22s,background .22s,box-shadow .22s}
+.action-card:before{background:linear-gradient(180deg,#8bbfbd,#526f70)}
+.action-card:hover,.action-card.active{border-color:#719b9b;background:linear-gradient(145deg,#202b2c,#121819);box-shadow:0 10px 28px #0004;transform:translateY(-2px)}
+.action-card strong,.workspace-panel h3,.chord-section h4{color:#e5eeee}
+.action-card small,.disabled-note{color:#a4b1b2}
+.metric{border-radius:12px;padding:13px}
+.metric span{color:#9eacad}
+.metric strong{color:#d9e9e8!important}
+.chord-token{background:linear-gradient(145deg,#263536,#172021)!important;border:1px solid #526f70!important;color:#e2f0ef!important;box-shadow:0 3px 12px #0003!important}
+.toolbar .tool-button,.tool-button,.notebook-launch,.notebook-toolbar button,.notebook-page-btn{border-color:#3d5556;background:linear-gradient(135deg,#1c292a,#111819);color:#dce8e8}
+.toolbar .tool-button:hover,.tool-button:hover,.notebook-launch:hover,.notebook-toolbar button:hover,.notebook-page-btn:hover,.notebook-page-btn.active{border-color:#83b4b3;background:linear-gradient(135deg,#253738,#172021);color:#fff}
+input[type=range],.stem-row input[type=range],.practice-range{accent-color:#8bbfbd}
+.stem-row output{color:#b8d6d5}
+.song-option .song-meta small,.notebook-song-info small{color:#a0acad}
+.chord-lyric-word .chord-token{margin-bottom:5px}
+.result h2{color:#e8eeee}
+@media(max-width:640px){.workspace-panel,.chord-section,.practice-card{padding:14px}.metric{padding:9px}.action-card{min-height:88px}}
 </style></head><body><div class="shell">
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">חיפוש שירים</a><a href="#practice">חדר אימון</a><button class="notebook-launch" type="button" onclick="openNotebook()">המחברת שלי</button><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button><a href="/copyright.html">זכויות יוצרים ותנאי שימוש</a></nav></header>
 <main id="top"><section class="hero">
