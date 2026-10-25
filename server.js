@@ -35,12 +35,12 @@ app.get("/api/brizm/key-bpm", async (req, res) => {
   const artist = String(req.query.artist || "").trim().slice(0, 180);
   if (!song || !artist) return res.status(400).json({ error: "נדרשים שם שיר ושם אמן." });
   try {
-    const url = new URL(BRIZM_API + "/v1/key-bpm");
+    const url = new URL(BRIZM_API + "/v1/audio-features");
     url.searchParams.set("song", song);
     url.searchParams.set("artist", artist);
     const data = await providerFetch(url.toString(), { headers });
     res.set("Cache-Control", "no-store");
-    res.json({ provider: "Brizm", song, artist, tempo: data.tempo ?? null, key: data.key ?? null, mode: data.mode ?? null, camelot: data.camelot ?? null, confidence: data.confidence ?? null, meta: data._meta ?? null });
+    res.json({ provider: "Brizm", song: data.title || song, artist: data.artist || artist, tempo: data.tempo ?? null, key: data.key ?? null, mode: data.mode ?? null, camelot: data.camelot ?? null, energy: data.energy ?? null, meta: data._meta ?? null });
   } catch (err) {
     console.error("Brizm key/BPM error:", err.status, err.message);
     const status = err.status === 404 ? 404 : err.status === 402 ? 402 : err.status === 401 ? 503 : 502;
