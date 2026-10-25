@@ -376,10 +376,23 @@ async function analyzeUrl(url,label){
     if(!response.ok||!job.job_id){showError(job.error||'לא הצלחנו להתחיל להוציא אקורדים מהשיר.');return}
     let finished=false;
     for(let attempt=0;attempt<40;attempt++){
-      await new Promise(resolve=>setTimeout(resolve,1800));
-      const poll=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
-      const state=await poll.json();
-      if(!poll.ok){showError(state.error||'לא הצלחנו לקבל את תוצאות השיר. נסה שוב.');return}
+      // Magic Chords limits status/result reads to about 30 per minute.
+      // Poll every 3 seconds so one analysis stays comfortably under that limit.
+      await new Promise(resolve=>setTimeout(resolve,3000));
+      let poll,state;
+      try {
+        poll=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
+        state=await poll.json().catch(()=>({}));
+      } catch {
+        showError('החיבור לשירות הניתוח נותק בזמן בדיקת המצב. בדקו את החיבור ונסו שוב.');
+        return;
+      }
+      if(poll.status===429){
+        resultMessage.textContent=state.error||'השירות ביקש להאט את בדיקות המצב. ממתינים מעט…';
+        await new Promise(resolve=>setTimeout(resolve,8000));
+        continue;
+      }
+      if(!poll.ok){showError(state.error||'לא הצלחנו לקבל את תוצאות השיר. נסו קישור אחר או נסו שוב מאוחר יותר.');return}
       if(state.status==='complete'){
         currentAnalysis=state.result||{};
         resultTitle.textContent=label||'תוצאות השיר';
