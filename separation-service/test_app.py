@@ -84,7 +84,7 @@ class SeparationServiceTests(unittest.TestCase):
 
         with patch.object(module, "API_TOKEN", "test-secret"), patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name), patch.object(module.subprocess, "run", return_value=FailedResult()):
             response = client.post("/separate", headers={"Authorization": "Bearer test-secret"}, files={"file": ("song.wav", b"fake-input", "audio/wav")})
-        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.status_code, 502)
         self.assertEqual(response.json()["detail"], "Demucs could not separate this audio file.")
         self.assertNotIn("private output path", response.text)
         self.assertNotIn("internal error details", response.text)
