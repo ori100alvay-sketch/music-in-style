@@ -118,3 +118,35 @@ test('the alignment parser does not create chord assignments when timestamps are
   const data = { transcription: { words: [{ text: 'מילה' }] }, chords: [{ chord: 'Am' }] };
   assert.equal(sandbox.findAlignedLyrics(data), null);
 });
+
+
+test('every inline browser script parses as valid JavaScript', () => {
+  const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)];
+  assert.ok(scripts.length > 0, 'expected at least one inline script');
+  for (const [index, match] of scripts.entries()) {
+    assert.doesNotThrow(() => new vm.Script(match[1]), 'inline script #' + (index + 1) + ' should parse');
+  }
+});
+
+test('practice studio exposes all expected controls and accessible status regions', () => {
+  for (const id of [
+    'practice', 'metronomeBpm', 'metronomeRange', 'metronomeToggle',
+    'tapTempo', 'beatsPerBar', 'progressionKey', 'progressionMood',
+    'progressionOutput', 'generateProgression', 'copyProgression'
+  ]) {
+    assert.match(html, new RegExp('id="' + id + '"'), 'missing practice studio control: ' + id);
+  }
+  assert.match(html, /id="metronomeState"[^>]*aria-live="polite"/);
+  assert.match(html, /id="progressionOutput"[^>]*aria-live="polite"/);
+});
+
+test('practice studio does not require an API key or external audio library', () => {
+  const studioStart = html.indexOf('/* Practice Studio: stable metronome scheduling');
+  assert.notEqual(studioStart, -1);
+  const studioEnd = html.indexOf('})();', studioStart);
+  assert.notEqual(studioEnd, -1);
+  const code = html.slice(studioStart, studioEnd);
+  assert.match(code, /AudioContext\|window\.webkitAudioContext/);
+  assert.match(code, /navigator\.clipboard\.writeText/);
+  assert.doesNotMatch(code, /BRIZM_API_KEY|REPLICATE_API_TOKEN/);
+});
