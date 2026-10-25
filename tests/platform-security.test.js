@@ -144,3 +144,11 @@ test('Demucs separation uses version-pinned Replicate predictions endpoint', () 
   assert.match(server, /version: "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953"/);
   assert.doesNotMatch(server, /api\.replicate\.com\/v1\/models\/cjwbw\/demucs\/predictions/);
 });
+
+test('timed chord alignment improves event deduplication, lyric phrase breaks and repeated chord labels', () => {
+  assert.match(html, /Collapse repeated provider events at the same instant/);
+  assert.match(html, /Math\.abs\(previous\.start-event\.start\)<0\.035/);
+  assert.match(html, /line\.length>=12/);
+  assert.match(html, /Hide repeated chord labels on adjacent words/);
+  assert.match(html, /row\.start-prev\.start>1\.15/);
+});
