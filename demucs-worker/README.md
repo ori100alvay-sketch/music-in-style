@@ -1,0 +1,27 @@
+# Music in Style — local Demucs worker
+
+This optional worker runs the open-source Demucs model locally. It does not call Replicate or any paid inference API.
+
+## Deploy separately
+Create a **Docker Web Service** in Render from this repository and set the Dockerfile path to `demucs-worker/Dockerfile`. Do not switch the existing Node service to this worker's Dockerfile.
+
+Demucs downloads model weights on first use and needs substantial RAM/CPU; the free Render instance may not have enough memory or disk and can time out. Use a plan with adequate resources only if you choose to. The worker is not considered active until a real audio-file test produces four non-empty stems.
+
+## API
+- `GET /health` — process health only; does not claim the model is loaded.
+- `GET /capabilities` — reports whether the Demucs executable is installed.
+- `POST /separate` — multipart form upload field `audio`; returns a ZIP containing vocals, drums, bass and other stems.
+
+Maximum upload is 25 MB and maximum audio duration is 8 minutes. The worker uses temporary storage and deletes it after the request. Put the worker behind a private service or restrict access before using it publicly. Do not expose an unauthenticated compute endpoint to the internet.
+
+## Local smoke test
+```bash
+docker build -f demucs-worker/Dockerfile -t mis-demucs .
+docker run --rm -p 8001:8001 mis-demucs
+curl -f http://localhost:8001/health
+curl -f http://localhost:8001/capabilities
+curl -f -F 'audio=@sample.mp3' http://localhost:8001/separate -o stems.zip
+unzip -l stems.zip
+```
+
+This worker is only a deployment scaffold until deployed and tested with a real audio file. The current public app does not mark separation as active automatically.
