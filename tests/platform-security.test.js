@@ -116,3 +116,10 @@ test('stem mixer supports nested provider outputs, mute, solo and independent ch
   assert.match(html, /audio\.volume=\(muted\.has\(audio\.id\)/);
   assert.match(html, /class="stem-channel"/);
 });
+
+test('search-result chord and lyric analysis can start directly from an available audio preview', () => {
+  assert.match(html, /id="analyzePreview"/);
+  assert.match(html, /track\.previewUrl/);
+  assert.match(html, /analyzeUrl\(track\.previewUrl/);
+  assert.match(html, /id="analyzeFullAudio"/);
+});
