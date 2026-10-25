@@ -607,9 +607,22 @@ function selectAction(action,track){
        const status=await response.json().catch(()=>({}));
        if(!response.ok)throw new Error('status unavailable');
        if(status.available===true){
-         stemStatus.innerHTML='<div class="analysis-notice"><strong>מנוע הפרדת כלים זמין.</strong><br>המנוע דווח כזמין על ידי השרת. יש לבדוק ניתוח של קובץ לדוגמה לפני הצגת תוצאות למשתמש.</div>';
+         stemStatus.innerHTML='<div class="analysis-notice"><strong>מנוע Demucs מקומי מגיב.</strong><br>עיבוד על CPU; לא נשלח שמע לספק בתשלום.</div><label for="demucsAudioFile">בחר קובץ שמע להפרדה (עד 25MB, עד 5 דקות)</label><input id="demucsAudioFile" type="file" accept=".wav,.mp3,.flac,.ogg,.m4a,.aac,audio/*" style="display:block;width:100%;margin:10px 0"><button class="tool-button" id="runLocalDemucs">הפרד כלים במנוע המקומי</button><div id="demucsJobStatus" class="disabled-note" aria-live="polite"></div>';
+         const runButton=document.getElementById('runLocalDemucs');
+         runButton.onclick=async()=>{
+           const input=document.getElementById('demucsAudioFile');const out=document.getElementById('demucsJobStatus');const file=input.files&&input.files[0];
+           if(!file){out.textContent='יש לבחור קובץ שמע קודם.';return}
+           if(file.size>25*1024*1024){out.textContent='הקובץ גדול מ-25MB. בחר קובץ קטן יותר.';return}
+           runButton.disabled=true;out.textContent='מפרידים כלים על השרת המקומי. זה עשוי לקחת כמה דקות…';
+           try{
+             const resp=await fetch('/api/separate',{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream','X-Audio-Filename':file.name},body:file});
+             if(!resp.ok){const data=await resp.json().catch(()=>({}));throw new Error(data.error||'ההפרדה נכשלה.')}
+             const blob=await resp.blob();const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='music-in-style-stems.zip';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);out.textContent='ההפרדה הסתיימה. קובץ ZIP עם הערוצים הורד למכשיר.';
+           }catch(err){out.textContent=err.message||'ההפרדה נכשלה. נסה קובץ קצר יותר.'}
+           finally{runButton.disabled=false}
+         };
        }else{
-         stemStatus.innerHTML='<div class="analysis-notice"><strong>הפרדת כלים עדיין לא פעילה.</strong><br>'+escapeHtml(status.reason||'לא נמצא מנוע הפרדה מקומי פעיל.')+'</div><p class="disabled-note">לא נשלח שמע לשירות בתשלום. הפתרון הנבחר הוא Demucs בקוד פתוח, אך הוא דורש סביבת Python ומשאבי זיכרון/מעבד שאינם מותקנים בשירות Node.js הנוכחי.</p>';
+         stemStatus.innerHTML='<div class="analysis-notice"><strong>הפרדת כלים עדיין לא פעילה.</strong><br>'+escapeHtml(status.reason||'לא נמצא מנוע הפרדה מקומי פעיל.')+'</div><p class="disabled-note">לא נשלח שמע לשירות בתשלום. האתר בודק מנוע Demucs מקומי; הוא יוצג כזמין רק כשהשרת יאשר שהמנוע פועל.</p>';
        }
      }).catch(()=>{
        stemStatus.innerHTML='<div class="analysis-notice"><strong>לא ניתן לאמת את מצב מנוע ההפרדה.</strong><br>ההפרדה נשארת כבויה עד שהשרת יאשר שמנוע מקומי זמין.</div>';
