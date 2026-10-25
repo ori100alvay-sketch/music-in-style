@@ -58,5 +58,23 @@ class SeparationServiceTests(unittest.TestCase):
             response = client.post("/separate", files={"file": ("song.wav", b"audio", "audio/wav")})
         self.assertEqual(response.status_code, 503)
 
+    def test_upload_size_limit_is_enforced(self):
+        with patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name), patch.object(module, "MAX_UPLOAD_BYTES", 4):
+            response = client.post("/separate", files={"file": ("song.wav", b"12345", "audio/wav")})
+        self.assertEqual(response.status_code, 413)
+
+    def test_demucs_failure_does_not_leak_subprocess_logs(self):
+        class FailedResult:
+            returncode = 1
+            stdout = "private output path"
+            stderr = "internal error details"
+
+        with patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name), patch.object(module.subprocess, "run", return_value=FailedResult()):
+            response = client.post("/separate", files={"file": ("song.wav", b"fake-input", "audio/wav")})
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.json()["detail"], "Demucs could not separate this audio file.")
+        self.assertNotIn("private output path", response.text)
+        self.assertNotIn("internal error details", response.text)
+
 if __name__ == "__main__":
     unittest.main()
