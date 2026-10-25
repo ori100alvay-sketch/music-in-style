@@ -22,8 +22,18 @@ app.use((req, res, next) => {
 // Lightweight per-process rate limiting for API abuse. For multi-instance production,
 // use the hosting provider/WAF or a shared store so limits apply across instances.
 const rateBuckets = new Map();
+let rateLimitRequestsSinceCleanup = 0;
 app.use("/api", (req, res, next) => {
   const now = Date.now();
+  // Prune expired client buckets periodically, not only after the map grows large.
+  // This prevents idle IP addresses from accumulating indefinitely on a long-lived process.
+  rateLimitRequestsSinceCleanup += 1;
+  if (rateLimitRequestsSinceCleanup >= 100 || rateBuckets.size > 5000) {
+    for (const [ip, value] of rateBuckets) {
+      if (now - value.startedAt >= 60_000) rateBuckets.delete(ip);
+    }
+    rateLimitRequestsSinceCleanup = 0;
+  }
   const key = String(req.ip || req.socket.remoteAddress || "unknown");
   const windowMs = 60_000;
   const limit = req.path.startsWith("/jobs/") || req.path.startsWith("/separate/") ? 90 : 30;
@@ -31,9 +41,6 @@ app.use("/api", (req, res, next) => {
   if (!bucket || now - bucket.startedAt >= windowMs) bucket = { startedAt: now, count: 0 };
   bucket.count += 1;
   rateBuckets.set(key, bucket);
-  if (rateBuckets.size > 5000) {
-    for (const [ip, value] of rateBuckets) if (now - value.startedAt >= windowMs) rateBuckets.delete(ip);
-  }
   res.setHeader("RateLimit-Limit", String(limit));
   res.setHeader("RateLimit-Remaining", String(Math.max(0, limit - bucket.count)));
   if (bucket.count > limit) {
