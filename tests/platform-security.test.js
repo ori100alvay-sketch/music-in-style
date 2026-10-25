@@ -306,7 +306,7 @@ test('chord analysis reuses a recent job for the same URL and does not spam the 
   assert.match(server, /X-Analysis-Job-Reused/);
   assert.match(server, /recentAnalysisJobs\.set\(cacheKey/);
   assert.match(server, /const retryAfterSeconds = err\.retryAfterSeconds \|\| 3600/);
-  assert.match(server, /providerStatus: err\.status \|\| "unknown"/);
+  assert.match(server, /console\.error\("Analysis submission failed:", err\.message, "providerStatus:", err\.status \|\| "unknown"\)/);
 });
 
 test('CI workflow runs the test suite and syntax checks on main updates', () => {
