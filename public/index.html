@@ -579,28 +579,38 @@ function renderResultAction(action,data){
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 async function startStemSeparation(audioUrl){
  const target=document.getElementById('stemResults');if(!target)return;
- if(!audioUrl){target.innerHTML='<p class="disabled-note">אין כתובת שמע ישירה זמינה. בחר שיר עם תצוגה מקדימה או העלה קישור ישיר לקובץ שמע.</p>';return}
- target.innerHTML='<p class="disabled-note">מתחילים הפרדת כלים…</p>';
+ if(!audioUrl){target.innerHTML='<p class="analysis-notice"><strong>חסר מקור שמע.</strong><br>בחר תוצאה עם תצוגת שמע, או הדבק קישור HTTPS ישיר לקובץ MP3/WAV/M4A ציבורי. קישור לעמוד Spotify/YouTube אינו קובץ שמע.</p>';return}
+ target.innerHTML='<p class="disabled-note">בודקים שהשרת ומנוע ההפרדה מוכנים…</p>';
+ const button=document.getElementById('startSeparation');if(button)button.disabled=true;
  try{
+  const health=await fetch('/api/replicate-status',{cache:'no-store'});const readiness=await health.json().catch(()=>({}));
+  if(!readiness.configured){target.innerHTML='<div class="analysis-notice"><strong>מנוע הפרדת הערוצים עדיין לא הופעל.</strong><br>הקוד מוכן, אבל השרת צריך מפתח Replicate כדי להפעיל את Demucs. הוסף ב-Render → Environment משתנה בשם <code>REPLICATE_API_TOKEN</code> עם המפתח מחשבון Replicate, ואז בצע Deploy מחדש. אל תשלח את המפתח בצ׳אט.</div>';return}
+  if(readiness.authenticated===false){target.innerHTML='<div class="analysis-notice"><strong>מפתח Replicate נדחה.</strong><br>צור מפתח תקין בחשבון Replicate ועדכן את <code>REPLICATE_API_TOKEN</code> ב-Render.</div>';return}
+  target.innerHTML='<p class="disabled-note">שולחים את השמע למנוע הפרדה… קובץ ארוך עשוי להימשך יותר מדקה.</p>';
   const start=await fetch('/api/separate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:audioUrl})});
-  const data=await start.json();
-  if(!start.ok||!data.id){target.innerHTML='<p class="disabled-note">'+escapeHtml(data.error||'לא ניתן להתחיל הפרדת כלים.')+(data.providerStatus?' (קוד שירות: '+escapeHtml(data.providerStatus)+')':'')+(data.providerMessage?'<br>פרטי שגיאה: '+escapeHtml(data.providerMessage):'')+'</p>';return}
-  target.innerHTML='<p class="disabled-note">מפרידים ערוצים…</p>';
-  for(let i=0;i<60;i++){
+  const data=await start.json().catch(()=>({}));
+  if(!start.ok||!data.id){target.innerHTML='<div class="analysis-notice"><strong>'+escapeHtml(data.error||'לא ניתן להתחיל הפרדת כלים.')+'</strong>'+(data.providerStatus?' <br>קוד שירות: '+escapeHtml(data.providerStatus):'')+(data.providerMessage?'<br>פרטי שירות: '+escapeHtml(data.providerMessage):'')+'</div>';return}
+  target.innerHTML='<p class="disabled-note" id="stemProgress" aria-live="polite">המשימה נשלחה. ממתינים לערוצים המופרדים…</p>';
+  for(let i=0;i<120;i++){
    await new Promise(r=>setTimeout(r,2500));
-   const resp=await fetch('/api/separate/'+encodeURIComponent(data.id));const state=await resp.json();
-   if(!resp.ok){target.innerHTML='<p class="disabled-note">'+escapeHtml(state.error||'בדיקת ההפרדה נכשלה.')+'</p>';return}
+   const resp=await fetch('/api/separate/'+encodeURIComponent(data.id),{cache:'no-store'});const state=await resp.json().catch(()=>({}));
+   if(!resp.ok){target.innerHTML='<div class="analysis-notice">'+escapeHtml(state.error||'בדיקת ההפרדה נכשלה.')+'</div>';return}
+   const progress=document.getElementById('stemProgress');
+   if(progress)progress.textContent='מפרידים את השיר… '+Math.min(99,Math.round((i+1)/120*100))+'% זמן המתנה';
    if(state.status==='succeeded'){
-    const output=state.output||{};const entries=Array.isArray(output)?output.map((u,i)=>['ערוץ '+(i+1),u]):Object.entries(output).filter(([k,v])=>typeof v==='string'&&/^https?:/.test(v));
-    if(!entries.length){target.innerHTML='<p class="disabled-note">המודל סיים, אך לא זוהו קישורי ערוצים בפלט.</p><pre>'+escapeHtml(JSON.stringify(output,null,2))+'</pre>';return}
-    target.innerHTML='<p class="disabled-note">הערוצים המופרדים מוכנים. ניתן לכוון עוצמה ולנגן כל ערוץ.</p>'+entries.map(([name,url],idx)=>'<div class="stem-row"><span>'+escapeHtml(name)+'</span><input class="stem-volume" data-audio="stem'+idx+'" type="range" min="0" max="100" value="100"><output>100%</output></div><audio id="stem'+idx+'" controls preload="none" style="width:100%;margin:5px 0" src="'+escapeHtml(url)+'"></audio>').join('');
+    const output=state.output||{};
+    const entries=Array.isArray(output)?output.map((u,i)=>[({0:'תופים',1:'בס',2:'שירה',3:'כלים נוספים'})[i]||('ערוץ '+(i+1)),u]):Object.entries(output).filter(([k,v])=>typeof v==='string'&&/^https?:/.test(v));
+    if(!entries.length){target.innerHTML='<div class="analysis-notice">המנוע סיים, אך הפלט לא הכיל קישורי שמע מזוהים. ייתכן שסכמת הפלט של המודל השתנתה.</div>';return}
+    target.innerHTML='<p class="disabled-note">הערוצים המופרדים מוכנים. אפשר לנגן כל ערוץ ולכוון את העוצמה שלו.</p>'+entries.map(([name,url],idx)=>'<div class="stem-row"><span>'+escapeHtml(name.replace(/[_-]/g,' '))+'</span><input aria-label="עוצמת '+escapeHtml(name)+'" class="stem-volume" data-audio="stem'+idx+'" type="range" min="0" max="100" value="100"><output>100%</output></div><audio id="stem'+idx+'" controls preload="none" style="width:100%;margin:5px 0" src="'+escapeHtml(url)+'"></audio>').join('');
     target.querySelectorAll('.stem-row input').forEach(input=>input.addEventListener('input',()=>{const audio=document.getElementById(input.dataset.audio);if(audio)audio.volume=Number(input.value)/100;input.nextElementSibling.textContent=input.value+'%'}));
+    target.querySelectorAll('audio').forEach(audio=>audio.addEventListener('error',()=>{const note=document.createElement('p');note.className='disabled-note';note.textContent='קישור הערוץ פג או שהספק לא מאפשר לנגן אותו. נסה להפעיל הפרדה מחדש.';audio.insertAdjacentElement('afterend',note)}));
     return;
    }
-   if(['failed','canceled'].includes(state.status)){target.innerHTML='<p class="disabled-note">הפרדת הכלים נכשלה: '+escapeHtml(state.error||'שירות ההפרדה החזיר שגיאה')+'</p>';return}
+   if(['failed','canceled'].includes(state.status)){target.innerHTML='<div class="analysis-notice"><strong>הפרדת הכלים נכשלה.</strong><br>'+escapeHtml(state.error||'שירות ההפרדה החזיר שגיאה. נסה קובץ שמע אחר.')+'</div>';return}
   }
-  target.innerHTML='<p class="disabled-note">ההפרדה עדיין רצה. נסה לבדוק שוב בעוד רגע.</p>';
- }catch(e){target.innerHTML='<p class="disabled-note">לא ניתן להתחבר למנוע הפרדת הכלים.</p>'}
+  target.innerHTML='<div class="analysis-notice">המשימה עדיין רצה אצל ספק ההפרדה. אפשר להמתין עוד קצת או לנסות שוב מאוחר יותר.</div>';
+ }catch(e){target.innerHTML='<div class="analysis-notice">לא ניתן להגיע למנוע ההפרדה כרגע. בדוק את חיבור האינטרנט ונסה שוב.</div>'}
+ finally{if(button)button.disabled=false}
 }
 document.getElementById('analyzeForm').addEventListener('submit',async e=>{
   e.preventDefault();const value=input.value.trim();if(!value){showError('הקלד שם שיר, שם אמן או הדבק קישור.');return}
