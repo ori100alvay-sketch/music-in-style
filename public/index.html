@@ -365,7 +365,7 @@ function flattenData(value,out={},prefix=''){
 }
 function findValue(flat,terms){const entry=Object.entries(flat).find(([k,v])=>terms.some(t=>k.toLowerCase().includes(t))&&(typeof v==='number'||(typeof v==='string'&&v.length<100)));return entry?entry[1]:null}
 function getChordItems(data){
- const items=[],seen=new Set(),chordPattern=/^[A-G](?:#|b)?(?:m|min|maj|dim|aug|sus|add|M|°|ø)?(?:[0-9]{0,2})?(?:\/[A-G](?:#|b)?)?$/;
+ const items=[],seen=new Set(),chordPattern=/^[A-G](?:#|b)?(?:(?:m|min|maj|dim|aug|sus|add|M|°|ø)?(?:[0-9]{0,2})?|(?:[#b][0-9]+))?(?:\/[A-G](?:#|b)?)?$/;
  const add=value=>{if(typeof value!=='string')return;const chord=value.trim();if(chordPattern.test(chord)&&!seen.has(chord)){seen.add(chord);items.push(chord)}};
  const visited=new Set();
  function walk(value,key='',depth=0){
@@ -520,7 +520,7 @@ function selectAction(action,track){
        const resp=await fetch('/api/brizm/key-bpm?'+qs.toString());
        const data=await resp.json();
        if(!resp.ok)throw new Error(data.error||'לא ניתן לנתח את השיר');
-       out.innerHTML='<div class="metric-row"><div class="metric"><span>BPM · קצב</span><strong>'+escapeHtml(data.tempo??'—')+'</strong></div><div class="metric"><span>סולם</span><strong>'+escapeHtml((data.key||'—')+(data.mode?' · '+data.mode:''))+'</strong></div></div>'+(data.camelot?'<p class="disabled-note">Camelot: '+escapeHtml(data.camelot)+'</p>':'');
+       out.innerHTML='<div class="metric-row"><div class="metric"><span>BPM · קצב</span><strong>'+escapeHtml(data.tempo??'—')+'</strong></div><div class="metric"><span>סולם</span><strong>'+escapeHtml((data.key||'—')+(data.mode?' · '+data.mode:''))+'</strong></div></div>';
      }catch(err){
        const flat=currentAnalysis?flattenData(currentAnalysis):{};
        const fallbackTempo=findValue(flat,['bpm','tempo']);
@@ -604,7 +604,7 @@ function collectNestedArrays(data,predicate){
 function buildTimedAlignment(data){
  const wordTimeKeys=['start','start_time','startTime','start_sec','start_seconds','start_ms','timestamp','timestamp_ms','time','time_ms','onset','begin'];
  const chordTimeKeys=[...wordTimeKeys,'offset','end','end_time','endTime','end_sec','end_seconds','end_ms','timestamp_end'];
- const chordPattern=/^[A-G](?:#|b)?(?:maj|min|m|M|dim|aug|sus(?:2|4)?|add\d+|\d+|°|ø)*(?:\/[A-G](?:#|b)?)?$/;
+ const chordPattern=/^[A-G](?:#|b)?(?:(?:maj|min|m|M|dim|aug|sus(?:2|4)?|add\d+|\d+|°|ø)|(?:[#b]\d+))*(?:\/[A-G](?:#|b)?)?$/;
  const wordArrays=collectNestedArrays(data,(arr,path)=>/(word|token|transcript|lyric|segment)/i.test(path)&&arr.filter(item=>item&&typeof item==='object'&&typeof(item.word||item.text||item.token)==='string'&&timedValue(item,wordTimeKeys)!==null).length>=2);
  const chordArrays=collectNestedArrays(data,(arr,path)=>/(chord|harmony|event|timeline|segment|frame|beat)/i.test(path)&&arr.filter(item=>item&&typeof item==='object'&&typeof(item.chord||item.chord_name||item.symbol||item.label||item.name)==='string'&&timedValue(item,chordTimeKeys)!==null&&chordPattern.test(String(item.chord||item.chord_name||item.symbol||item.label||item.name).trim())).length>=1);
  if(!wordArrays.length||!chordArrays.length)return null;
