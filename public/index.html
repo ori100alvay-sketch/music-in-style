@@ -22,19 +22,85 @@
 input:focus-visible{outline:none}
 .result{animation:fadeUp .3s ease both}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
-</style></head><body><div class="shell">
+.search-results{display:grid;gap:9px;margin-top:14px}.song-option{width:100%;display:flex;align-items:center;gap:12px;text-align:right;border:1px solid #333;border-radius:13px;padding:11px;background:#141414;color:#eee;transition:border-color .2s,background .2s}.song-option:hover{border-color:#999;background:#1d1d1d}.song-option img{width:44px;height:44px;border-radius:7px;object-fit:cover;flex:none}.song-option .song-meta{display:flex;flex-direction:column;gap:5px;min-width:0}.song-option strong{font-size:13px;font-weight:550}.song-option small{font-size:12px;color:#999}.song-option .song-arrow{margin-right:auto;color:#aaa;font-size:18px}.result.visible{display:block}.result:empty{display:none}\n</style></head><body><div class="shell">
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">ניתוח שיר</a><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button></nav></header>
 <main id="top"><section class="hero">
 <svg class="waves" viewBox="0 0 1440 620" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="silverWave"><stop stop-color="#555" stop-opacity="0"/><stop offset=".25" stop-color="#aaa" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity=".8"/><stop offset=".78" stop-color="#888" stop-opacity=".5"/><stop offset="1" stop-color="#555" stop-opacity="0"/></linearGradient><linearGradient id="floor"><stop stop-color="#555" stop-opacity="0"/><stop offset=".5" stop-color="#eee" stop-opacity=".8"/><stop offset="1" stop-color="#555" stop-opacity="0"/></linearGradient><filter id="blur"><feGaussianBlur stdDeviation="4"/></filter></defs><path d="M-50 190C90 250 140 430 340 475S630 500 790 455 1130 405 1490 185" stroke="url(#silverWave)" stroke-width="1.6"/><path d="M-50 220C120 310 160 455 370 500S670 530 850 470 1170 420 1490 225" stroke="url(#silverWave)"/><path d="M-50 255C120 355 220 490 425 525S720 535 910 490 1230 455 1490 270" stroke="url(#silverWave)"/><path d="M-50 430C170 535 360 570 590 560S1050 570 1490 390" stroke="url(#silverWave)" stroke-width="1.3"/><path d="M-50 455C180 560 390 595 630 580S1100 585 1490 415" stroke="url(#silverWave)"/><path d="M-50 485C200 590 430 610 690 595S1150 605 1490 445" stroke="url(#silverWave)"/><path d="M170 580Q720 605 1270 570" stroke="url(#floor)" stroke-width="8" filter="url(#blur)" opacity=".5"/><path d="M170 580Q720 605 1270 570" stroke="url(#floor)" stroke-width="1.5"/></svg>
 <svg class="logo" viewBox="0 0 240 240" role="img" aria-label="סמל Music in Style"><defs><linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".28" stop-color="#bcbcbc"/><stop offset=".55" stop-color="#555"/><stop offset=".78" stop-color="#e5e5e5"/><stop offset="1" stop-color="#777"/></linearGradient><filter id="metalGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M43 177V42L120 112 197 42V176" fill="none" stroke="#aaa" stroke-opacity=".18" stroke-width="23" stroke-linejoin="round" stroke-linecap="round" filter="url(#metalGlow)"/><path d="M43 177V42L120 112 197 42V176" fill="none" stroke="url(#metal)" stroke-width="17" stroke-linejoin="round" stroke-linecap="round"/><path d="M43 177V42L120 112 197 42V176" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="1.4" stroke-linejoin="round"/><circle cx="43" cy="183" r="22" fill="url(#metal)" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/><path d="M197 176c0 16-13 29-29 29" fill="none" stroke="url(#metal)" stroke-width="17" stroke-linecap="round"/></svg>
 <div class="wordmark">MUSIC <span class="in">IN</span> STYLE</div><div class="tagline">SEARCH&nbsp; / &nbsp;ANALYZE&nbsp; / &nbsp;PLAY</div>
 <div class="copy"><h1>כל המוזיקה שלך.<br><span>בדיוק בסטייל שלך.</span></h1><p>מרחב מוזיקלי אלגנטי לגלות שירים, לחקור הרמוניה ולעבוד עם הצליל — בממשק נקי, מדויק ומקצועי.</p></div>
-<section class="search-panel" id="analyze"><form class="search-form" id="analyzeForm"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16.2 16.2 5 5"/></svg><input id="songUrl" type="url" placeholder="הדבק קישור לשיר לניתוח..." required aria-label="קישור לשיר"><button class="submit" id="submit" type="submit" aria-label="נתח שיר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg></button></form><div class="status"><span class="dot"></span><span id="health">בודק חיבור לשרת…</span></div><div class="result" id="result" aria-live="polite"><h2 id="resultTitle">תוצאת הניתוח</h2><p id="resultMessage"></p><pre id="resultData"></pre></div></section><div class="glow" aria-hidden="true"></div>
+<section class="search-panel" id="analyze"><form class="search-form" id="analyzeForm"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16.2 16.2 5 5"/></svg><input id="songUrl" type="text" placeholder="שם השיר, שם האמן או קישור לשיר..." required aria-label="שם השיר, שם האמן או קישור לשיר" autocomplete="off"><button class="submit" id="submit" type="submit" aria-label="נתח שיר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg></button></form><div id="searchResults" class="result" aria-live="polite"></div><div class="status"><span class="dot"></span><span id="health">בודק חיבור לשרת…</span></div><div class="result" id="result" aria-live="polite"><h2 id="resultTitle">תוצאת הניתוח</h2><p id="resultMessage"></p><pre id="resultData"></pre></div></section><div class="glow" aria-hidden="true"></div>
 </section>
 <section class="features" id="features"><div class="kicker">BUILT AROUND MUSIC</div><h2>כל פרט. במקום הנכון.</h2><div class="grid"><article class="feature"><div class="num">01 / DISCOVER</div><h3>לגלות מוזיקה</h3><p>נקודת פתיחה מסודרת לחיפוש ולעבודה עם שירים שאוהבים.</p></article><article class="feature"><div class="num">02 / ANALYZE</div><h3>לחקור את הצליל</h3><p>ממשק ניתוח שמרכז מידע מוזיקלי, בכפוף להגדרת שירות הניתוח.</p></article><article class="feature"><div class="num">03 / CREATE</div><h3>לעבוד בצורה נקייה</h3><p>עיצוב כהה ומדויק, טיפוגרפיה ברורה וכלים שמעמידים את המוזיקה במרכז.</p></article></div></section><footer>MUSIC IN STYLE &nbsp;·&nbsp; MADE FOR MUSIC</footer></main></div>
 <script>
-async function checkHealth(){const el=document.getElementById('health');try{const r=await fetch('/health');const d=await r.json();el.textContent=d.ok?'השרת מחובר':'השרת לא זמין'}catch{el.textContent='לא ניתן להתחבר לשרת'}}
+const healthEl=document.getElementById('health');
+const searchBox=document.getElementById('searchResults');
+const resultBox=document.getElementById('result');
+const resultTitle=document.getElementById('resultTitle');
+const resultMessage=document.getElementById('resultMessage');
+const resultData=document.getElementById('resultData');
+const submitBtn=document.getElementById('submit');
+const input=document.getElementById('songUrl');
+async function checkHealth(){try{const r=await fetch('/health');const d=await r.json();healthEl.textContent=d.ok?'השרת מחובר':'השרת לא זמין'}catch{healthEl.textContent='לא ניתן להתחבר לשרת'}}
 checkHealth();
 document.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{const target=document.querySelector(link.getAttribute('href'));if(target)target.setAttribute('tabindex','-1')}));
-document.getElementById('analyzeForm').addEventListener('submit',async e=>{e.preventDefault();const btn=document.getElementById('submit'),card=document.getElementById('result'),msg=document.getElementById('resultMessage'),data=document.getElementById('resultData'),title=document.getElementById('resultTitle');btn.disabled=true;card.classList.add('visible');title.textContent='מנתח את השיר';msg.textContent='מנסה להתחבר לשירות הניתוח…';data.textContent='';try{const r=await fetch('/api/analyze-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:document.getElementById('songUrl').value.trim()})});const d=await r.json();title.textContent=r.ok?'התקבלה תוצאה':'הניתוח עדיין לא זמין';msg.textContent=d.error||(r.ok?'תוצאת הניתוח זמינה למטה.':'לא ניתן להשלים את הניתוח כרגע.');data.textContent=JSON.stringify(d,null,2)}catch(err){title.textContent='לא ניתן להתחבר';msg.textContent='בדוק שהאתר נפרס בהצלחה ושהשרת פעיל.';data.textContent=err.message}finally{btn.disabled=false}});
+function isHttpUrl(value){try{const u=new URL(value);return u.protocol==='http:'||u.protocol==='https:'}catch{return false}}
+function showError(message){resultBox.classList.add('visible');resultTitle.textContent='לא הצלחנו להשלים את הבקשה';resultMessage.textContent=message;resultData.textContent=''}
+async function analyzeUrl(url,label){
+  searchBox.classList.remove('visible');searchBox.innerHTML='';resultBox.classList.add('visible');resultTitle.textContent='מכינים את הניתוח';resultMessage.textContent='שולחים את השיר למנוע הניתוח…';resultData.textContent='';submitBtn.disabled=true;
+  try{
+    const response=await fetch('/api/analyze-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const job=await response.json();
+    if(!response.ok||!job.job_id){showError(job.error||'לא ניתן להתחיל את הניתוח.');return}
+    resultTitle.textContent=label||'מנתחים את השיר';resultMessage.textContent='הניתוח התחיל. זה עשוי לקחת מעט זמן…';
+    for(let attempt=0;attempt<40;attempt++){
+      await new Promise(resolve=>setTimeout(resolve,1800));
+      const poll=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
+      const state=await poll.json();
+      if(state.status==='complete'){
+        resultTitle.textContent='הניתוח הושלם';
+        resultMessage.textContent='התקבלו תוצאות הניתוח המוזיקלי:';
+        resultData.textContent=JSON.stringify(state.result,null,2);
+        return;
+      }
+      if(!poll.ok){showError(state.error||'שירות הניתוח לא הצליח להשלים את הבקשה.');return}
+      resultMessage.textContent='מנתחים את השיר… נא להמתין ('+(attempt+1)+'/'+40+')';
+    }
+    resultTitle.textContent='הניתוח עדיין מתבצע';
+    resultMessage.textContent='השיר עדיין בעיבוד. נסה שוב בעוד רגע.';
+  }catch(error){showError('לא ניתן להתחבר לשירות הניתוח. בדוק שהאתר נפרס ונסה שוב.')}
+  finally{submitBtn.disabled=false}
+}
+async function searchSongs(query){
+  searchBox.classList.add('visible');searchBox.innerHTML='<p>מחפש שירים ואמנים…</p>';resultBox.classList.remove('visible');submitBtn.disabled=true;
+  try{
+    const response=await fetch('/api/search-song?q='+encodeURIComponent(query));
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'החיפוש נכשל');
+    if(!data.results||!data.results.length){searchBox.innerHTML='<p>לא מצאנו תוצאות. נסה שם אחר או הדבק קישור ישיר לשיר.</p>';return}
+    searchBox.innerHTML='<h2>בחר את השיר המתאים</h2><div class="search-results"></div>';
+    const list=searchBox.querySelector('.search-results');
+    data.results.forEach(track=>{
+      const button=document.createElement('button');button.type='button';button.className='song-option';
+      if(track.artwork){const img=document.createElement('img');img.src=track.artwork;img.alt='';img.loading='lazy';button.appendChild(img)}
+      const meta=document.createElement('span');meta.className='song-meta';
+      const title=document.createElement('strong');title.textContent=track.title||'שיר ללא שם';
+      const artist=document.createElement('small');artist.textContent=(track.artist||'אמן לא ידוע')+(track.album?' · '+track.album:'');
+      meta.append(title,artist);button.appendChild(meta);
+      const arrow=document.createElement('span');arrow.className='song-arrow';arrow.textContent=track.previewUrl?'›':'↗';button.appendChild(arrow);
+      button.addEventListener('click',()=>{
+        if(track.previewUrl){input.value=track.title+' — '+track.artist;analyzeUrl(track.previewUrl,track.title+' — '+track.artist)}
+        else if(track.trackUrl){window.open(track.trackUrl,'_blank','noopener,noreferrer')}
+      });
+      list.appendChild(button);
+    });
+  }catch(error){searchBox.innerHTML='<p>'+escapeHtml(error.message)+'</p>'}
+  finally{submitBtn.disabled=false}
+}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+document.getElementById('analyzeForm').addEventListener('submit',async e=>{
+  e.preventDefault();const value=input.value.trim();if(!value){showError('הקלד שם שיר, שם אמן או הדבק קישור.');return}
+  if(isHttpUrl(value)){await analyzeUrl(value,'ניתוח שיר לפי קישור')}
+  else{await searchSongs(value)}
+});
 </script></body></html>
