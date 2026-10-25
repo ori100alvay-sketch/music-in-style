@@ -326,3 +326,11 @@ test('instrument separation stays explicitly disabled until a local engine is in
   assert.match(html, /הפרדת כלים עדיין לא פעילה/);
   assert.match(html, /ההפרדה נשארת כבויה עד שהשרת יאשר שמנוע מקומי זמין/);
 });
+
+
+test('chord analysis avoids stale jobs and shares provider cooldown with transcription', () => {
+  assert.match(server, /function forgetRecentAnalysisJob\(jobId\)/);
+  assert.match(server, /forgetRecentAnalysisJob\(jobId\);[\s\S]{0,120}status: "failed"/);
+  assert.match(server, /if \(magicChordsIsCoolingDown\(\)\)[\s\S]{0,260}ניסיון תמלול נוסף/);
+  assert.match(server, /noteMagicChordsRateLimit\(30\)/);
+});
