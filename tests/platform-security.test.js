@@ -221,3 +221,9 @@ test('account UI includes registration, login, reset and email-confirmation hand
   assert.match(html, /token_hash/);
   assert.match(html, /musicInStyleSession/);
 });
+
+test('account form labels match the selected action and recovery links lead to a new password', () => {
+  assert.match(html, /next==='signup'\?'יצירת חשבון':next==='forgot'\?'שליחת קישור איפוס'/);
+  assert.match(html, /query\.get\('type'\)==='recovery'&&data\.session\?\.access_token/);
+  assert.match(html, /resetToken=data\.session\.access_token/);
+});
