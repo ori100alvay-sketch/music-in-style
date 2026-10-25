@@ -152,6 +152,25 @@ body{background:radial-gradient(ellipse at 50% -12%,#292929 0,transparent 43%),r
 .notebook-fixed-access:hover{border-color:#fff!important;transform:translateY(-2px)}
 .notebook-fixed-access .fixed-note-icon{font-size:19px;line-height:1}
 @media(max-width:640px){.notebook-fixed-access{right:12px!important;bottom:12px!important;padding:12px 15px!important;font-size:12px!important}}
+
+/* Practice Studio v1 — useful local tools, no external API required */
+.practice-studio{max-width:1050px;margin:0 auto;padding:10px 26px 84px;scroll-margin-top:20px}
+.practice-head{text-align:center;margin-bottom:24px}.practice-head .kicker{color:#a78bfa}
+.practice-head h2{font-size:clamp(25px,4vw,36px);font-weight:450;margin:12px 0}.practice-head p{color:#aaaabd;font-size:14px;line-height:1.8}
+.practice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.practice-card{border:1px solid #302e43;border-radius:18px;background:linear-gradient(145deg,#171622,#0c0c12);padding:20px;min-width:0}
+.practice-card h3{font-size:17px;font-weight:550;margin:0 0 7px}.practice-card p{font-size:12px;line-height:1.7;color:#a5a5b7;margin:0 0 15px}
+.practice-display{font-size:clamp(42px,7vw,64px);font-weight:400;letter-spacing:-.04em;direction:ltr;text-align:center;padding:12px 0;color:#f6f3ff;font-variant-numeric:tabular-nums}
+.practice-subdisplay{text-align:center;font-size:12px;color:#aaaabd;margin-bottom:12px}
+.practice-controls{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
+.practice-btn{border:1px solid #48415f;background:#211d32;color:#f5f2ff;border-radius:10px;padding:10px 14px;cursor:pointer;font-size:13px;transition:.15s}
+.practice-btn:hover{border-color:#a78bfa;background:#2a2440}.practice-btn.primary{background:linear-gradient(135deg,#a78bfa,#6e65bd);color:#0b0912;border:0;font-weight:650}
+.practice-btn:focus-visible,.practice-select:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}
+.practice-range{width:100%;accent-color:#a78bfa;margin:12px 0}.practice-select{width:100%;padding:11px;border:1px solid #403b58;border-radius:10px;background:#12111b;color:#eee;margin:4px 0 12px}
+.practice-beat{display:flex;justify-content:center;gap:9px;margin:4px 0 15px}.practice-beat i{width:10px;height:10px;border-radius:50%;background:#3c394a;display:block}.practice-beat i.active{background:#a78bfa;box-shadow:0 0 14px #a78bfa99}
+.progression-output{min-height:60px;border:1px solid #302e43;border-radius:12px;background:#0a0a10;padding:14px;direction:ltr;text-align:center;font-size:clamp(18px,3vw,24px);line-height:1.8;word-spacing:8px;margin:12px 0}
+.practice-note{font-size:11px!important;color:#85859a!important;margin-top:12px!important}
+@media(max-width:640px){.practice-studio{padding:8px 18px 60px}.practice-grid{grid-template-columns:1fr}.practice-card{padding:17px}}
 </style></head><body><div class="shell">
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">חיפוש שירים</a><button class="notebook-launch" type="button" onclick="openNotebook()">המחברת שלי</button><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button></nav></header>
 <main id="top"><section class="hero">
@@ -162,7 +181,30 @@ body{background:radial-gradient(ellipse at 50% -12%,#292929 0,transparent 43%),r
 <div class="home-notebook-entry"><button type="button" class="home-notebook-card" onclick="openNotebook()"><span class="home-notebook-icon">♫</span><span class="home-notebook-copy"><strong>המחברת המוזיקלית שלי</strong><small>הדפים, ההערות ופלייליסט האקורדים שלך — במקום אחד</small></span><span class="home-notebook-arrow">←</span></button></div>
 <section class="search-panel" id="analyze"><form class="search-form" id="analyzeForm"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16.2 16.2 5 5"/></svg><input id="songUrl" type="text" placeholder="שם השיר, שם האמן או קישור לשיר..." required aria-label="שם השיר, שם האמן או קישור לשיר" autocomplete="off"><button class="submit" id="submit" type="submit" aria-label="חפש שיר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg></button></form><div id="searchResults" class="result" aria-live="polite"></div><div id="urlActions" class="result" aria-live="polite"></div><div class="status"><span class="dot"></span><span id="health">בודק חיבור לשרת…</span></div><div class="result" id="result" aria-live="polite"><h2 id="resultTitle">תוצאת הניתוח</h2><p id="resultMessage"></p><pre id="resultData" hidden></pre><div id="workspace" class="workspace" aria-live="polite"></div></div></section><div class="glow" aria-hidden="true"></div>
 </section>
-<section class="features" id="features"><div class="kicker">BUILT AROUND MUSIC</div><h2>כל פרט. במקום הנכון.</h2><div class="grid"><article class="feature"><div class="num">01 / DISCOVER</div><h3>לגלות מוזיקה</h3><p>נקודת פתיחה מסודרת לחיפוש ולעבודה עם שירים שאוהבים.</p></article><article class="feature"><div class="num">02 / ANALYZE</div><h3>לחקור את הצליל</h3><p>ממשק ניתוח שמרכז מידע מוזיקלי, בכפוף להגדרת שירות הניתוח.</p></article><article class="feature"><div class="num">03 / CREATE</div><h3>לעבוד בצורה נקייה</h3><p>עיצוב כהה ומדויק, טיפוגרפיה ברורה וכלים שמעמידים את המוזיקה במרכז.</p></article></div></section><footer>MUSIC IN STYLE &nbsp;·&nbsp; MADE FOR MUSIC</footer></main>
+<section class="features" id="features"><div class="kicker">BUILT AROUND MUSIC</div><h2>כל פרט. במקום הנכון.</h2><div class="grid"><article class="feature"><div class="num">01 / DISCOVER</div><h3>לגלות מוזיקה</h3><p>נקודת פתיחה מסודרת לחיפוש ולעבודה עם שירים שאוהבים.</p></article><article class="feature"><div class="num">02 / ANALYZE</div><h3>לחקור את הצליל</h3><p>ממשק ניתוח שמרכז מידע מוזיקלי, בכפוף להגדרת שירות הניתוח.</p></article><article class="feature"><div class="num">03 / CREATE</div><h3>לעבוד בצורה נקייה</h3><p>עיצוב כהה ומדויק, טיפוגרפיה ברורה וכלים שמעמידים את המוזיקה במרכז.</p></article></div></section>
+<section class="practice-studio" id="practice">
+ <div class="practice-head"><div class="kicker">YOUR PERSONAL PRACTICE ROOM</div><h2>חדר האימון שלך</h2><p>כלים שימושיים לנגינה ולחזרות — עובדים ישירות בדפדפן, בלי חשבון ובלי מפתח API.</p></div>
+ <div class="practice-grid">
+  <article class="practice-card">
+   <h3>מטרונום חכם</h3><p>קבע קצב, בחר פעמה והתחל להתאמן. הצליל נוצר מקומית בדפדפן.</p>
+   <div class="practice-display" id="metronomeBpm">90</div><div class="practice-subdisplay" id="metronomeState" aria-live="polite">מוכן לאימון · 4/4</div>
+   <div class="practice-beat" id="metronomeBeats" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+   <input class="practice-range" id="metronomeRange" type="range" min="40" max="220" value="90" aria-label="קצב מטרונום">
+   <div class="practice-controls"><button class="practice-btn" id="bpmMinus" type="button">−5 BPM</button><button class="practice-btn primary" id="metronomeToggle" type="button">▶ התחל</button><button class="practice-btn" id="bpmPlus" type="button">+5 BPM</button></div>
+   <div class="practice-controls" style="margin-top:10px"><button class="practice-btn" id="tapTempo" type="button">הקש לקביעת קצב</button><label class="practice-subdisplay">פעימות בתיבה <select class="practice-select" id="beatsPerBar" aria-label="פעימות בתיבה"><option value="2">2/4</option><option value="3">3/4</option><option value="4" selected>4/4</option><option value="6">6/8 (6 פעימות)</option></select></label></div>
+   <p class="practice-note">הצליל יתחיל רק אחרי לחיצה, בהתאם להרשאות האודיו של הדפדפן. הקש 4 פעמים לפחות לקבלת קצב יציב.</p>
+  </article>
+  <article class="practice-card">
+   <h3>מחולל מהלכי אקורדים</h3><p>צור רעיון להרמוניה לפי סולם ואווירה, ואז העתק אותו למחברת או לחזרה.</p>
+   <label for="progressionKey">סולם</label><select class="practice-select" id="progressionKey"><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>A</option><option>B</option><option>Am</option><option>Bm</option><option>C#m</option><option>Dm</option><option>Em</option><option>F#m</option><option>G#m</option></select>
+   <label for="progressionMood">אופי</label><select class="practice-select" id="progressionMood"><option value="pop">פופ / קליט</option><option value="emotional">מרגש / בלדה</option><option value="miz">מזרחי / דרמטי</option><option value="jazz">צבעוני / ג׳אזי</option></select>
+   <div class="progression-output" id="progressionOutput" aria-live="polite">Am · F · C · G</div>
+   <div class="practice-controls"><button class="practice-btn primary" id="generateProgression" type="button">♫ צור מהלך חדש</button><button class="practice-btn" id="copyProgression" type="button">העתק מהלך</button></div>
+   <p class="practice-note" id="progressionStatus" aria-live="polite">המהלכים הם הצעות יצירתיות, לא ניתוח של שיר קיים.</p>
+  </article>
+ </div>
+</section>
+<footer>MUSIC IN STYLE &nbsp;·&nbsp; MADE FOR MUSIC</footer></main>
 <div id="notebookOverlay" class="notebook-overlay" role="dialog" aria-modal="true" aria-labelledby="notebookTitle">
  <div class="notebook-app">
   <div class="notebook-top"><div><h2 id="notebookTitle">המחברת המוזיקלית שלי</h2><p>דפים אישיים, רשימות שירים ואקורדים — במקום אחד</p></div><button class="notebook-btn secondary" type="button" onclick="closeNotebook()">✕ סגירה</button></div>
@@ -569,4 +611,55 @@ document.getElementById('analyzeForm').addEventListener('submit',async e=>{
     resultMessage.textContent='קישור התקבל. בחר אם לנגן, לשמור למחברת, לנתח אקורדים, תווים או פלייבק.';
   }else{await searchSongs(value)}
 });
+
+/* Practice Studio: stable metronome scheduling, tap tempo and chord progression generator */
+(()=>{
+ const $=id=>document.getElementById(id);
+ const bpmRange=$('metronomeRange'),bpmReadout=$('metronomeBpm'),toggle=$('metronomeToggle'),state=$('metronomeState'),beatsBox=$('metronomeBeats'),barSelect=$('beatsPerBar');
+ if(!bpmRange||!toggle)return;
+ let audioCtx=null,running=false,timer=null,nextBeat=0,beat=0,lookahead=25,scheduleAhead=.12,taps=[];
+ function bpm(){return Number(bpmRange.value)||90}
+ function drawBpm(){bpmReadout.textContent=bpm();if(!running)state.textContent='מוכן לאימון · '+barSelect.value+'/4'.replace('6/4','6/8')}
+ function clickSound(at,accent){
+  if(!audioCtx)return;
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+  osc.type='sine';osc.frequency.value=accent?1320:880;
+  gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(accent?.22:.12,at+.003);gain.gain.exponentialRampToValueAtTime(.0001,at+.045);
+  osc.connect(gain);gain.connect(audioCtx.destination);osc.start(at);osc.stop(at+.05);
+ }
+ function visualPulse(index){const dots=beatsBox.querySelectorAll('i');dots.forEach((d,i)=>d.classList.toggle('active',i===index));}
+ function scheduler(){
+  if(!running||!audioCtx)return;
+  while(nextBeat<audioCtx.currentTime+scheduleAhead){
+   const perBar=Number(barSelect.value)||4;const thisBeat=beat%perBar;
+   clickSound(nextBeat,thisBeat===0);
+   const delay=Math.max(0,(nextBeat-audioCtx.currentTime)*1000);
+   setTimeout(()=>{if(running){visualPulse(thisBeat);state.textContent='פעמה '+(thisBeat+1)+' מתוך '+perBar+' · '+bpm()+' BPM'}},delay);
+   nextBeat+=60/bpm();beat++;
+  }
+ }
+ function stop(){running=false;if(timer)clearInterval(timer);timer=null;toggle.textContent='▶ התחל';state.textContent='מוכן לאימון · '+barSelect.value+' פעימות בתיבה';beatsBox.querySelectorAll('i').forEach(d=>d.classList.remove('active'))}
+ toggle.addEventListener('click',async()=>{
+  if(running){stop();return}
+  try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error();audioCtx=audioCtx||new Ctx();await audioCtx.resume();running=true;beat=0;nextBeat=audioCtx.currentTime+.06;toggle.textContent='Ⅱ עצור';scheduler();timer=setInterval(scheduler,lookahead)}
+  catch{state.textContent='האודיו אינו נתמך בדפדפן הזה'}
+ });
+ bpmRange.addEventListener('input',drawBpm);
+ $('bpmMinus').addEventListener('click',()=>{bpmRange.value=Math.max(40,bpm()-5);drawBpm()});
+ $('bpmPlus').addEventListener('click',()=>{bpmRange.value=Math.min(220,bpm()+5);drawBpm()});
+ barSelect.addEventListener('change',()=>{beatsBox.innerHTML=Array.from({length:Number(barSelect.value)},()=>'<i></i>').join('');if(!running)drawBpm()});
+ $('tapTempo').addEventListener('click',()=>{
+  const now=performance.now();taps=taps.filter(t=>now-t<4000);taps.push(now);if(taps.length>8)taps.shift();
+  if(taps.length>=4){const intervals=taps.slice(1).map((t,i)=>t-taps[i]).filter(n=>n>250&&n<1500);if(intervals.length){const avg=intervals.reduce((a,b)=>a+b,0)/intervals.length;bpmRange.value=Math.max(40,Math.min(220,Math.round(60000/avg)));drawBpm();state.textContent='קצב מההקשות שלך · '+bpm()+' BPM'}}
+  else state.textContent='המשך להקיש עוד '+(4-taps.length)+' פעמים';
+ });
+ const chordMap={C:['C','Dm','Em','F','G','Am','Bdim'],D:['D','Em','F#m','G','A','Bm','C#dim'],E:['E','F#m','G#m','A','B','C#m','D#dim'],F:['F','Gm','Am','Bb','C','Dm','Edim'],G:['G','Am','Bm','C','D','Em','F#dim'],A:['A','Bm','C#m','D','E','F#m','G#dim'],B:['B','C#m','D#m','E','F#','G#m','A#dim'],Am:['Am','Bdim','C','Dm','Em','F','G'],Bm:['Bm','C#dim','D','Em','F#m','G','A'], 'C#m':['C#m','D#dim','E','F#m','G#m','A','B'],Dm:['Dm','Edim','F','Gm','Am','Bb','C'],Em:['Em','F#dim','G','Am','Bm','C','D'],F#m:['F#m','G#dim','A','Bm','C#m','D','E'],G#m:['G#m','A#dim','B','C#m','D#m','E','F#']};
+ const patterns={pop:[[1,4,5,6],[1,5,6,4],[6,4,1,5]],emotional:[[6,4,1,5],[2,6,4,5],[1,3,6,4]],miz:[[6,5,4,5],[1,7,6,5],[6,4,5,5]],jazz:[[2,5,1,6],[1,6,2,5],[3,6,2,5]]};
+ function generate(){const key=$('progressionKey').value,mood=$('progressionMood').value,scale=chordMap[key]||chordMap.Am,pattern=patterns[mood][Math.floor(Math.random()*patterns[mood].length)];const chords=pattern.map(n=>scale[n-1]||scale[0]);$('progressionOutput').textContent=chords.join('  ·  ');$('progressionStatus').textContent='מהלך חדש בסולם '+key+' · כל אקורד פעימה/תיבה לפי בחירתך';}
+ $('generateProgression').addEventListener('click',generate);
+ $('progressionKey').addEventListener('change',generate);$('progressionMood').addEventListener('change',generate);
+ $('copyProgression').addEventListener('click',async()=>{const value=$('progressionKey').value+': '+$('progressionOutput').textContent;try{await navigator.clipboard.writeText(value);$('progressionStatus').textContent='המהלך הועתק ללוח.'}catch{$('progressionStatus').textContent='העתקה אוטומטית לא נתמכה. אפשר לסמן ולהעתיק: '+value}});
+ window.addEventListener('pagehide',stop);
+ generate();drawBpm();
+})();
 </script><button type="button" class="notebook-fixed-access" onclick="openNotebook()" aria-label="פתיחת המחברת האישית"><span class="fixed-note-icon">♫</span><span>המחברת האישית</span></button></body></html>
