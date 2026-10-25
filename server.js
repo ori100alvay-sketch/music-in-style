@@ -56,6 +56,27 @@ async function providerFetch(url, options = {}) {
   return data;
 }
 app.get("/health", (_req, res) => { res.set("Cache-Control", "no-store"); res.json({ ok: true, service: "music-in-style", message: "Music in Style server is running" }); });
+// Honest capability discovery for the UI and support diagnostics. "configured" means
+// a server-side credential exists; it does not claim that a provider is healthy or paid.
+app.get("/api/capabilities", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  const brizmConfigured = Boolean(String(process.env.BRIZM_API_KEY || "").trim());
+  const replicateConfigured = Boolean(String(process.env.REPLICATE_API_TOKEN || "").trim());
+  res.json({
+    service: "music-in-style",
+    generatedAt: new Date().toISOString(),
+    capabilities: {
+      songSearch: { available: true, provider: "Apple iTunes Search", note: "Search metadata and short previews; not full-song access." },
+      chordAnalysis: { available: true, provider: "Magic Chords", mode: "async-url", note: "Requires a public URL accepted by the provider; lyrics are not guaranteed." },
+      lyricsTranscription: { available: true, provider: "Magic Chords", mode: "async-url", note: "Separate transcription job; accuracy depends on audio and provider output." },
+      keyAndTempo: { available: brizmConfigured, configured: brizmConfigured, provider: "Brizm", needs: brizmConfigured ? [] : ["BRIZM_API_KEY"] },
+      stemSeparation: { available: replicateConfigured, configured: replicateConfigured, provider: "Replicate Demucs", needs: replicateConfigured ? [] : ["REPLICATE_API_TOKEN"] },
+      personalNotebook: { available: true, storage: "browser-local", note: "Data is stored in this browser/device unless exported by the user." }
+    },
+    security: { credentialsServerSideOnly: true, apiRateLimit: "per-process", requestBodyLimitBytes: 1048576, distributedRateLimit: false }
+  });
+});
+
 const BRIZM_API = "https://api.brizm.dev";
 function brizmHeaders(extra = {}) {
   const key = process.env.BRIZM_API_KEY;
