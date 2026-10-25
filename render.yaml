@@ -1,11 +1,12 @@
 services:
   - type: web
     name: music-in-stil-api
-    runtime: node
+    runtime: docker
     plan: free
-    buildCommand: npm install
-    startCommand: npm start
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DEMUCS_WORKER_URL
+        value: http://127.0.0.1:8001
