@@ -580,16 +580,38 @@ function collectTextCandidates(value,out=[],path=''){
 }
 function extractLyrics(data){
  const direct=[data?.lyrics,data?.transcript,data?.transcription,data?.text,data?.result?.lyrics,data?.result?.transcript,data?.result?.text,data?.result?.transcription,data?.result?.analysis?.lyrics,data?.analysis?.lyrics,data?.data?.lyrics,data?.data?.transcript,data?.output?.lyrics,data?.output?.transcript];
+ const cleanText=value=>String(value||'').replace(/\r\n?/g,'\n').replace(/[ \t]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{3,}/g,'\n\n').trim();
  for(const value of direct){
-  if(typeof value==='string'&&value.trim().length>20)return value.trim();
-  if(value&&typeof value==='object')for(const key of ['text','transcript','transcription','lyrics','full_text'])if(typeof value[key]==='string'&&value[key].trim().length>20)return value[key].trim();
+  if(typeof value==='string'&&value.trim().length>20)return cleanText(value);
+  if(value&&typeof value==='object')for(const key of ['text','transcript','transcription','lyrics','full_text'])if(typeof value[key]==='string'&&value[key].trim().length>20)return cleanText(value[key]);
  }
- const candidates=collectTextCandidates(data).sort((a,b)=>b.text.length-a.text.length);
- const likely=candidates.find(item=>/lyrics|transcript|transcription/i.test(item.path));
+ const segmentPaths=[
+  data?.transcription?.segments,data?.transcription?.words,data?.segments,data?.words,
+  data?.result?.segments,data?.result?.transcription?.segments,data?.result?.transcription?.words,
+  data?.data?.segments,data?.output?.segments,data?.output?.words
+ ];
+ const reconstruct=segments=>{
+  if(!Array.isArray(segments)||!segments.length)return '';
+  const parts=segments.map(segment=>typeof segment==='string'?{text:segment}:segment&&typeof segment==='object'?{text:String(segment.text||segment.word||segment.token||segment.transcript||''),start:timedValue(segment,['start','start_time','startTime','start_sec','start_seconds','start_ms','timestamp','time']),end:timedValue(segment,['end','end_time','endTime','end_sec','end_seconds','end_ms'])}:null).filter(x=>x&&x.text.trim());
+  if(!parts.length)return '';
+  // Preserve provider word-level timing by inserting spaces for separated words and line breaks for long pauses.
+  let out='',previous=null;
+  for(const part of parts){
+   const gap=previous&&part.start!==null&&previous.end!==null?part.start-previous.end:previous&&part.start!==null&&previous.start!==null?part.start-previous.start:null;
+   if(out&&gap!==null&&gap>1.15&&!/[.!?…]\s*$/.test(out))out+='\n';
+   else if(out&&!/[\s\n]$/.test(out)&&! /^[,.;:!?…،؛؟]/.test(part.text))out+=' ';
+   out+=part.text.trim();previous=part;
+  }
+  return cleanText(out);
+ };
+ for(const segments of segmentPaths){const rebuilt=reconstruct(segments);if(rebuilt.length>20)return rebuilt;}
+ const candidates=collectTextCandidates(data).map(item=>({...item,text:cleanText(item.text)})).filter(item=>item.text.length>20);
+ const likely=candidates.filter(item=>/lyrics|transcript|transcription/i.test(item.path)).sort((a,b)=>{
+  const score=x=>x.text.length+( /lyrics/i.test(x.path)?1000:0)+(/transcript|transcription/i.test(x.path)?500:0);
+  return score(b)-score(a);
+ })[0];
  if(likely)return likely.text;
- const segments=data?.transcription?.segments||data?.transcription?.words||data?.segments||data?.words||data?.result?.segments||data?.result?.transcription?.segments||data?.result?.transcription?.words||data?.data?.segments||data?.output?.segments;
- if(Array.isArray(segments)){const text=segments.map(segment=>typeof segment==='string'?segment:String(segment?.text||segment?.word||segment?.transcript||'')).filter(Boolean).join(' ').trim();if(text.length>20)return text}
- return '';
+ return candidates.sort((a,b)=>b.text.length-a.text.length)[0]?.text||'';
 }
 function timedValue(item,keys){for(const key of keys){const value=item?.[key];if(value!==null&&value!==''&&Number.isFinite(Number(value)))return Number(value)}return null}
 function collectNestedArrays(data,predicate){
@@ -658,14 +680,15 @@ function buildTimedAlignment(data){
  }
  if(line.length)lines.push(line);
  // Hide repeated chord labels on adjacent words; retain the chord change at its first word.
- const compact=lines.map(line=>{
-  let previousChord='';
-  return line.map(cell=>{
+ const compact=[];let previousChord='';
+ for(const line of lines){
+  const filtered=line.map(cell=>{
    const chord=cell.chord&&cell.chord!==previousChord?cell.chord:'';
    if(cell.chord)previousChord=cell.chord;
    return {...cell,chord};
   });
- }).filter(line=>line.length);
+  if(filtered.length)compact.push(filtered);
+ }
  return compact.length?compact:null;
 }
 function transposeChord(chord,semitones){
