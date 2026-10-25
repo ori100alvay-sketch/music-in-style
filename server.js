@@ -98,6 +98,29 @@ app.post("/api/analyze-url", async (req, res) => {
 });
 
 
+// Start a separate lyrics transcription job. Chord analysis alone does not guarantee lyrics.
+app.post("/api/transcribe-url", async (req, res) => {
+  const input = String((req.body || {}).url || "").trim();
+  let songUrl;
+  try { songUrl = new URL(input); if (!["http:", "https:"].includes(songUrl.protocol)) throw new Error("Unsupported URL protocol"); }
+  catch { return res.status(400).json({ error: "יש להדביק קישור תקין למדיה ציבורית." }); }
+  try {
+    const job = await providerFetch(MAGIC_CHORDS + "/transcribe/url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: songUrl.toString() })
+    });
+    if (!job.job_id) return res.status(502).json({ error: "שירות תמלול המילים לא החזיר מזהה משימה." });
+    res.status(202).json({ job_id: job.job_id, status: job.status || "processing" });
+  } catch (err) {
+    console.error("Transcription submission failed:", err.status, err.message);
+    res.status(err.status === 429 ? 429 : 502).json({
+      error: err.status === 429 ? "שירות התמלול הגיע למגבלת הבקשות. נסו שוב מאוחר יותר." : "לא הצלחנו להתחיל תמלול מילים לשיר הזה.",
+      providerStatus: err.status || null
+    });
+  }
+});
+
 // Optional Replicate-backed Demucs separation. Configure REPLICATE_API_TOKEN in Render Environment.
 app.post("/api/separate", async (req, res) => {
   const token = process.env.REPLICATE_API_TOKEN;
