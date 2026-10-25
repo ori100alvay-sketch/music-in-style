@@ -194,6 +194,23 @@ body{background:radial-gradient(ellipse at 50% -12%,#292929 0,transparent 43%),r
 .transpose-control button{font-weight:800;box-shadow:0 3px 10px #0005}
 @media(max-width:480px){.chord-section{padding:12px}.chord-lyric-line{row-gap:13px}.chord-lyric-word{padding:0 3px}.chord-lyric-word .chord-above{font-size:15px;padding:3px 8px;min-height:29px}.chord-lyric-word .word-below{font-size:16px}}
 
+
+/* Studio-grade stem mixer */
+.stem-master,.stem-channel{border:1px solid #373047;border-radius:15px;background:linear-gradient(145deg,#171420,#0b0a10);padding:14px;margin:12px 0}
+.stem-master>strong{font-size:18px;color:#e7dcff}
+.stem-channel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stem-channel-head>strong{font-size:15px;color:#f4efff}
+.stem-channel-actions{display:flex;gap:7px}
+.stem-channel-actions button,.stem-sync-tools button{border:1px solid #574773;border-radius:9px;padding:8px 11px;background:#211a2d;color:#eee;cursor:pointer}
+.stem-channel-actions button.active{background:#7050a5;border-color:#c6a7ff;box-shadow:0 0 0 1px #c6a7ff44}
+.stem-row{display:flex;align-items:center;gap:12px;margin:10px 0}
+.stem-row span{min-width:45px;color:#c6bdd8;font-size:12px}
+.stem-row input[type=range]{accent-color:#b69aff}
+.stem-row output{min-width:42px;text-align:left;color:#d9ccff;font-variant-numeric:tabular-nums}
+.stem-channel audio{width:100%;accent-color:#a88bff}
+.stem-sync-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media(max-width:480px){.stem-channel,.stem-master{padding:11px}.stem-channel-head{align-items:flex-start;flex-direction:column}.stem-row{gap:7px}.stem-channel-actions button,.stem-sync-tools button{padding:9px;font-size:12px}}
+
 </style><style>
 /* Accessibility tools and chord QA lab */
 .access-fab{position:fixed;left:16px;bottom:82px;z-index:900;border:1px solid #615783;border-radius:999px;background:#19152a;color:#fff;padding:12px 15px;box-shadow:0 8px 30px #0008;cursor:pointer;font-size:13px}
@@ -698,15 +715,28 @@ async function startStemSeparation(audioUrl){
    if(progress)progress.textContent='מפרידים את השיר… '+Math.min(99,Math.round((i+1)/120*100))+'% זמן המתנה';
    if(state.status==='succeeded'){
     const output=state.output||{};
-    const entries=Array.isArray(output)?output.map((u,i)=>[({0:'תופים',1:'בס',2:'שירה',3:'כלים נוספים'})[i]||('ערוץ '+(i+1)),u]):Object.entries(output).filter(([k,v])=>typeof v==='string'&&/^https:\/\//i.test(v));
-    if(!entries.length){target.innerHTML='<div class="analysis-notice">המנוע סיים, אך הפלט לא הכיל קישורי שמע מזוהים. ייתכן שסכמת הפלט של המודל השתנתה.</div>';return}
-    target.innerHTML='<p class="disabled-note">הערוצים המופרדים מוכנים. אפשר לנגן כל ערוץ, לכוון עוצמה, או לנסות להתחיל את כולם יחד.</p><div class="stem-sync-tools"><button type="button" id="stemPlayAll">▶ נגן את כל הערוצים</button><button type="button" id="stemPauseAll">Ⅱ עצור</button><button type="button" id="stemResetAll">↺ החזר להתחלה</button></div>'+entries.map(([name,url],idx)=>'<div class="stem-row"><span>'+escapeHtml(name.replace(/[_-]/g,' '))+'</span><input aria-label="עוצמת '+escapeHtml(name)+'" class="stem-volume" data-audio="stem'+idx+'" type="range" min="0" max="100" value="100"><output>100%</output></div><audio id="stem'+idx+'" controls preload="none" style="width:100%;margin:5px 0" src="'+escapeHtml(url)+'"></audio>').join('');
+    const labels={drums:'תופים',drum:'תופים',bass:'בס',vocals:'שירה',vocal:'שירה',other:'כלים נוספים',others:'כלים נוספים',guitar:'גיטרה',piano:'פסנתר',instrumental:'כלים'};
+    const flattenStemOutput=(value,prefix='')=>{
+      const found=[];
+      if(typeof value==='string'&&/^https:\/\//i.test(value))return [[prefix||'ערוץ',value]];
+      if(Array.isArray(value)){value.forEach((item,index)=>{if(typeof item==='string'&&/^https:\/\//i.test(item))found.push([prefix?prefix+' '+(index+1):'ערוץ '+(index+1),item]);else if(item&&typeof item==='object')found.push(...flattenStemOutput(item,prefix))});return found}
+      if(value&&typeof value==='object'){for(const [key,child] of Object.entries(value)){const name=labels[key.toLowerCase()]||key.replace(/[_-]/g,' ');if(typeof child==='string'&&/^https:\/\//i.test(child))found.push([name,child]);else if(child&&typeof child==='object')found.push(...flattenStemOutput(child,name))}}
+      return found;
+    };
+    const entries=flattenStemOutput(output).filter((entry,index,all)=>entry[1]&&!all.slice(0,index).some(prev=>prev[1]===entry[1])).slice(0,12);
+    if(!entries.length){target.innerHTML='<div class="analysis-notice">המנוע סיים, אך לא נמצאו קישורי HTTPS לערוצי שמע בפלט. ייתכן שסכמת הפלט השתנתה.</div>';return}
+    target.innerHTML='<div class="stem-master"><strong>מיקס ערוצים</strong><p class="disabled-note">הפעל את כל הערוצים יחד. כפתורי השתקה ו־Solo משפיעים על המיקס, ומחוון העוצמה שולט בכל ערוץ בנפרד.</p><div class="stem-sync-tools"><button type="button" id="stemPlayAll">▶ נגן מיקס</button><button type="button" id="stemPauseAll">Ⅱ עצור</button><button type="button" id="stemResetAll">↺ להתחלה</button><button type="button" id="stemSoloClear">ביטול Solo</button></div></div>'+entries.map(([name,url],idx)=>'<div class="stem-channel" data-channel="'+idx+'"><div class="stem-channel-head"><strong>'+escapeHtml(name)+'</strong><div class="stem-channel-actions"><button type="button" class="stem-mute" aria-pressed="false" data-audio="stem'+idx+'">השתק</button><button type="button" class="stem-solo" aria-pressed="false" data-audio="stem'+idx+'">Solo</button></div></div><div class="stem-row"><span>עוצמה</span><input aria-label="עוצמת '+escapeHtml(name)+'" class="stem-volume" data-audio="stem'+idx+'" type="range" min="0" max="100" value="100"><output>100%</output></div><audio id="stem'+idx+'" controls preload="metadata" style="width:100%;margin:5px 0" src="'+escapeHtml(url)+'"></audio></div>').join('');
     const stemAudios=[...target.querySelectorAll('audio')];
-    target.querySelector('#stemPlayAll').addEventListener('click',async()=>{const results=await Promise.allSettled(stemAudios.map(audio=>audio.play()));if(results.some(r=>r.status==='rejected')){const note=document.createElement('p');note.className='analysis-notice';note.textContent='חלק מהערוצים לא התחילו לנגן. לחץ על נגן בכל ערוץ בנפרד אם הדפדפן חסם ניגון משותף.';target.querySelector('.stem-sync-tools').insertAdjacentElement('afterend',note)}});
+    const muted=new Set(),soloed=new Set();
+    const applyMix=()=>stemAudios.forEach((audio,index)=>{const slider=target.querySelector('.stem-volume[data-audio="'+audio.id+'"]');const gain=slider?Number(slider.value)/100:1;audio.volume=(muted.has(audio.id)||(soloed.size>0&&!soloed.has(audio.id)))?0:gain});
+    target.querySelector('#stemPlayAll').addEventListener('click',async()=>{const results=await Promise.allSettled(stemAudios.map(audio=>{try{if(audio.readyState>0&&audio.currentTime>0&&audio.ended)audio.currentTime=0}catch{}return audio.play()}));if(results.some(r=>r.status==='rejected')){const note=document.createElement('p');note.className='analysis-notice';note.textContent='חלק מהערוצים לא התחילו. אם זה קורה, לחץ על נגן בכל ערוץ בנפרד; הדפדפן או ספק הקבצים עשויים לחסום ניגון משותף.';target.querySelector('.stem-sync-tools').insertAdjacentElement('afterend',note)}});
     target.querySelector('#stemPauseAll').addEventListener('click',()=>stemAudios.forEach(audio=>audio.pause()));
     target.querySelector('#stemResetAll').addEventListener('click',()=>stemAudios.forEach(audio=>{audio.pause();try{audio.currentTime=0}catch{}}));
-    target.querySelectorAll('.stem-row input').forEach(input=>input.addEventListener('input',()=>{const audio=document.getElementById(input.dataset.audio);if(audio)audio.volume=Number(input.value)/100;input.nextElementSibling.textContent=input.value+'%'}));
-    target.querySelectorAll('audio').forEach(audio=>audio.addEventListener('error',()=>{const note=document.createElement('p');note.className='disabled-note';note.textContent='קישור הערוץ פג או שהספק לא מאפשר לנגן אותו. נסה להפעיל הפרדה מחדש.';audio.insertAdjacentElement('afterend',note)}));
+    target.querySelector('#stemSoloClear').addEventListener('click',()=>{soloed.clear();target.querySelectorAll('.stem-solo').forEach(btn=>{btn.setAttribute('aria-pressed','false');btn.classList.remove('active')});applyMix()});
+    target.querySelectorAll('.stem-mute').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.audio;if(muted.has(id))muted.delete(id);else muted.add(id);btn.setAttribute('aria-pressed',String(muted.has(id)));btn.classList.toggle('active',muted.has(id));applyMix()}));
+    target.querySelectorAll('.stem-solo').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.audio;if(soloed.has(id))soloed.delete(id);else soloed.add(id);btn.setAttribute('aria-pressed',String(soloed.has(id)));btn.classList.toggle('active',soloed.has(id));applyMix()}));
+    target.querySelectorAll('.stem-volume').forEach(input=>input.addEventListener('input',()=>{input.nextElementSibling.textContent=input.value+'%';applyMix()}));
+    stemAudios.forEach(audio=>audio.addEventListener('error',()=>{const note=document.createElement('p');note.className='disabled-note';note.textContent='קישור הערוץ פג או שספק הקבצים חסם ניגון. הפעל הפרדה מחדש כדי לקבל קישורים חדשים.';audio.insertAdjacentElement('afterend',note)}));
     return;
    }
    if(['failed','canceled'].includes(state.status)){target.innerHTML='<div class="analysis-notice"><strong>הפרדת הכלים נכשלה.</strong><br>'+escapeHtml(state.error||'שירות ההפרדה החזיר שגיאה. נסה קובץ שמע אחר.')+'</div>';return}
