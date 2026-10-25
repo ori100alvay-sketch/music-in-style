@@ -22,13 +22,26 @@ class SeparationServiceTests(unittest.TestCase):
         self.assertFalse(body["modelWeightsDownloaded"])
         self.assertFalse(body["readyForSeparation"])
 
+    def test_separation_requires_configured_token(self):
+        with patch.object(module, "API_TOKEN", ""):
+            response = client.post("/separate", files={"file": ("song.wav", b"abc", "audio/wav")})
+        self.assertEqual(response.status_code, 503)
+
+    def test_separation_rejects_missing_or_wrong_token(self):
+        with patch.object(module, "API_TOKEN", "test-secret"):
+            missing = client.post("/separate", files={"file": ("song.wav", b"abc", "audio/wav")})
+            wrong = client.post("/separate", headers={"Authorization": "Bearer wrong"}, files={"file": ("song.wav", b"abc", "audio/wav")})
+        self.assertEqual(missing.status_code, 401)
+        self.assertEqual(wrong.status_code, 401)
+
     def test_rejects_unsupported_extension(self):
-        response = client.post("/separate", files={"file": ("song.exe", b"abc", "application/octet-stream")})
+        with patch.object(module, "API_TOKEN", "test-secret"), patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name):
+            response = client.post("/separate", headers={"Authorization": "Bearer test-secret"}, files={"file": ("song.exe", b"abc", "application/octet-stream")})
         self.assertEqual(response.status_code, 415)
 
     def test_empty_upload_is_rejected(self):
-        with patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name):
-            response = client.post("/separate", files={"file": ("song.wav", b"", "audio/wav")})
+        with patch.object(module, "API_TOKEN", "test-secret"), patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name):
+            response = client.post("/separate", headers={"Authorization": "Bearer test-secret"}, files={"file": ("song.wav", b"", "audio/wav")})
         self.assertEqual(response.status_code, 400)
 
     def test_successful_mocked_run_returns_four_stems_zip(self):
@@ -54,13 +67,13 @@ class SeparationServiceTests(unittest.TestCase):
             self.assertEqual(set(archive.namelist()), {'vocals.wav', 'drums.wav', 'bass.wav', 'other.wav'})
 
     def test_missing_runtime_returns_service_unavailable(self):
-        with patch.object(shutil, "which", return_value=None):
-            response = client.post("/separate", files={"file": ("song.wav", b"audio", "audio/wav")})
+        with patch.object(module, "API_TOKEN", "test-secret"), patch.object(shutil, "which", return_value=None):
+            response = client.post("/separate", headers={"Authorization": "Bearer test-secret"}, files={"file": ("song.wav", b"audio", "audio/wav")})
         self.assertEqual(response.status_code, 503)
 
     def test_upload_size_limit_is_enforced(self):
-        with patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name), patch.object(module, "MAX_UPLOAD_BYTES", 4):
-            response = client.post("/separate", files={"file": ("song.wav", b"12345", "audio/wav")})
+        with patch.object(module, "API_TOKEN", "test-secret"), patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name), patch.object(module, "MAX_UPLOAD_BYTES", 4):
+            response = client.post("/separate", headers={"Authorization": "Bearer test-secret"}, files={"file": ("song.wav", b"12345", "audio/wav")})
         self.assertEqual(response.status_code, 413)
 
     def test_demucs_failure_does_not_leak_subprocess_logs(self):
