@@ -34,6 +34,8 @@ test('server sets baseline browser security headers and request limits', () => {
   }
   assert.match(server, /app\.use\("\/api",\s*\(req, res, next\)/);
   assert.match(server, /Retry-After/);
+  assert.match(server, /rateLimitRequestsSinceCleanup >= 100/);
+  assert.match(server, /now - value\.startedAt >= 60_000/);
   assert.match(server, /express\.json\(\{ limit: "1mb", strict: true \}\)/);
   assert.match(server, /process\.env\.ALLOWED_ORIGIN/);
 });
