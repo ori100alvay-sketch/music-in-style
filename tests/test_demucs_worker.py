@@ -74,7 +74,7 @@ class DemucsWorkerTests(unittest.TestCase):
     def test_success_returns_zip_with_four_stems_when_inference_is_mocked(self):
         def fake_run(command, **kwargs):
             if command[0] == "ffprobe":
-                return Mock(returncode=0, stdout="1.0\\n", stderr="")
+                return Mock(returncode=0, stdout="1.0", stderr="")
             output_root = Path(command[command.index("-o") + 1])
             result_dir = output_root / "htdemucs" / "input"
             result_dir.mkdir(parents=True)
@@ -92,7 +92,7 @@ class DemucsWorkerTests(unittest.TestCase):
     def test_demucs_failure_is_reported_without_internal_paths(self):
         def fake_run(command, **kwargs):
             if command[0] == "ffprobe":
-                return Mock(returncode=0, stdout="1.0\\n", stderr="")
+                return Mock(returncode=0, stdout="1.0", stderr="")
             return Mock(returncode=1, stdout="", stderr="/private/server/path/model error")
 
         with patch.object(demucs_worker.subprocess, "run", side_effect=fake_run):
