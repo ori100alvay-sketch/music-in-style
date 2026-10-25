@@ -17,6 +17,7 @@ const sandbox = {};
 vm.createContext(sandbox);
 vm.runInContext(
   extractFunction('escapeHtml', 'startStemSeparation') +
+  extractFunction('collectTextCandidates', 'transposeChord') +
   extractFunction('transposeChord', 'renderTransposedChordSheet') +
   extractFunction('renderTransposedChordSheet', 'findAlignedLyrics') +
   extractFunction('findAlignedLyrics', 'renderChordSheet'),
@@ -75,4 +76,24 @@ test('untrusted lyrics and chord strings are HTML escaped', () => {
 test('the UI explicitly refuses to invent word alignment when provider data is missing', () => {
   assert.match(html, /אין שיוך אמין של אקורד לכל מילה/);
   assert.match(html, /לא נציג רשימת אקורדים אקראית/);
+});
+
+test('nested transcription text is found even when provider calls it transcription.text', () => {
+  assert.equal(sandbox.extractLyrics({ transcription: { text: 'מילים אמיתיות של השיר שחזרו משירות התמלול' } }), 'מילים אמיתיות של השיר שחזרו משירות התמלול');
+});
+
+test('timestamped transcription words are aligned to timestamped chord events', () => {
+  const data = {
+    transcription: { words: [
+      { word: 'שלום', start: 0.2 },
+      { word: 'עולם', start: 2.5 }
+    ] },
+    chords: [
+      { chord: 'Am', start: 0 },
+      { chord: 'G', start: 2 }
+    ]
+  };
+  const rows = sandbox.findAlignedLyrics(data);
+  assert.ok(rows);
+  assert.deepEqual(Array.from(rows[0], word => [word.text, word.chord]), [['שלום', 'Am'], ['עולם', 'G']]);
 });
