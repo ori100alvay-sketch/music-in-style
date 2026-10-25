@@ -146,6 +146,12 @@ body{background:radial-gradient(ellipse at 50% -12%,#292929 0,transparent 43%),r
 .home-notebook-icon{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid #656565;border-radius:12px;background:linear-gradient(145deg,#444,#181818);font-size:23px;color:#eee}
 .home-notebook-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}.home-notebook-copy strong{font-size:14px;font-weight:600}.home-notebook-copy small{font-size:12px;color:#aaa;line-height:1.6}.home-notebook-arrow{font-size:20px;color:#aaa;direction:ltr}
 @media(max-width:640px){.home-notebook-entry{margin-top:16px}.home-notebook-card{padding:13px;gap:11px}.home-notebook-icon{width:40px;height:40px}.home-notebook-copy strong{font-size:13px}.home-notebook-copy small{font-size:11px}}
+
+/* Always-visible notebook shortcut, including narrow mobile screens */
+.notebook-fixed-access{position:fixed!important;right:18px!important;bottom:18px!important;z-index:999!important;display:flex!important;align-items:center!important;gap:10px!important;padding:13px 18px!important;border:1px solid #aaa!important;border-radius:999px!important;background:linear-gradient(135deg,#3b3b3b,#101010)!important;color:#fff!important;font-size:13px!important;font-weight:600!important;box-shadow:0 8px 30px #000b,0 0 0 1px #ffffff12 inset!important;cursor:pointer!important;visibility:visible!important;opacity:1!important}
+.notebook-fixed-access:hover{border-color:#fff!important;transform:translateY(-2px)}
+.notebook-fixed-access .fixed-note-icon{font-size:19px;line-height:1}
+@media(max-width:640px){.notebook-fixed-access{right:12px!important;bottom:12px!important;padding:12px 15px!important;font-size:12px!important}}
 </style></head><body><div class="shell">
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">חיפוש שירים</a><button class="notebook-launch" type="button" onclick="openNotebook()">המחברת שלי</button><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button></nav></header>
 <main id="top"><section class="hero">
@@ -490,4 +496,4 @@ document.getElementById('analyzeForm').addEventListener('submit',async e=>{
     resultMessage.textContent='קישור התקבל. בחר אם לנגן, לשמור למחברת, לנתח אקורדים, תווים או פלייבק.';
   }else{await searchSongs(value)}
 });
-</script></body></html>
+</script><button type="button" class="notebook-fixed-access" onclick="openNotebook()" aria-label="פתיחת המחברת האישית"><span class="fixed-note-icon">♫</span><span>המחברת האישית</span></button></body></html>
