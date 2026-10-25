@@ -80,6 +80,27 @@ footer{border-top-color:#ffffff15}
 .analysis-notice{border:1px solid #3a3452;background:#171425;border-radius:12px;padding:13px;color:#bdb8d2;font-size:12px;line-height:1.8}
 @media(max-width:640px){header{padding:0 14px}nav{gap:10px}.hero{padding-left:15px;padding-right:15px}.search-panel{margin-top:24px}.workspace-panel{padding:13px}.action-grid{grid-template-columns:1fr}.metric-row{gap:6px}.metric span{font-size:10px}.chord-line{grid-template-columns:repeat(auto-fit,minmax(54px,1fr))}}
 @media(prefers-reduced-motion:reduce){.action-card:hover,.feature:hover{transform:none}}
+
+/* Hebrew-first chord sheet and transpose controls */
+html{direction:rtl}body{direction:rtl;text-align:right}
+#resultTitle,#resultMessage{text-align:right}
+.chord-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:14px 0}
+.transpose-control{display:flex;align-items:center;gap:8px;border:1px solid #39354e;background:#151420;border-radius:12px;padding:7px}
+.transpose-control button{width:40px;height:40px;border-radius:9px;border:1px solid #48415f;background:#242039;color:#fff;font-size:23px;cursor:pointer}
+.transpose-control button:hover{border-color:#a78bfa}
+.transpose-control strong{min-width:90px;text-align:center;font-size:13px}
+.song-heading{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.song-heading img{width:60px;height:60px;object-fit:cover;border-radius:12px}
+.song-heading h3{margin:0 0 5px;font-size:19px}
+.song-heading p{margin:0;color:#aaaabd;font-size:13px}
+.chord-section{border:1px solid #302e43;border-radius:14px;background:#0a0b11;padding:14px;margin:12px 0}
+.chord-section h4{font-size:13px;color:#bdb4e8;margin:0 0 12px}
+.chord-lyric-line{direction:rtl;display:flex;flex-wrap:wrap;align-items:flex-end;column-gap:0;row-gap:12px;line-height:2;margin:7px 0 14px}
+.chord-lyric-word{display:inline-flex;flex-direction:column;align-items:center;min-width:fit-content;padding:0 3px}
+.chord-lyric-word .chord-above{font-size:13px;line-height:1.5;min-height:21px;color:#c7b8ff;font-weight:750;direction:ltr}
+.chord-lyric-word .word-below{font-size:16px;line-height:1.9;color:#f2f0fa;white-space:pre-wrap}
+.transposed-badge{font-size:11px;color:#aaa0d7;border:1px solid #48405f;border-radius:99px;padding:6px 10px}
+@media(max-width:480px){.song-heading img{width:48px;height:48px}.chord-section{padding:10px}.chord-lyric-word .word-below{font-size:15px}.transpose-control{width:100%;justify-content:space-between}}
 </style></head><body><div class="shell">
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">חיפוש שירים</a><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button></nav></header>
 <main id="top"><section class="hero">
@@ -219,16 +240,59 @@ function selectAction(action,track){
  }
 }
 function renderWorkspace(data){
- const flat=flattenData(data);const bpm=findValue(flat,['bpm','tempo']);const key=findValue(flat,['key','tonality','musical_key']);const chords=getChordItems(data);
+ const flat=flattenData(data);
+ const bpm=findValue(flat,['bpm','tempo']);
+ const key=findValue(flat,['key','tonality','musical_key']);
+ const aligned=findAlignedLyrics(data);
+ const lyrics=extractLyrics(data);
  workspace.classList.add('visible');
- workspace.innerHTML='<div class="metric-row"><div class="metric"><span>BPM · קצב</span><strong>'+escapeHtml(bpm??'—')+'</strong></div><div class="metric"><span>סולם</span><strong style="font-size:18px">'+escapeHtml(key??'—')+'</strong></div><div class="metric"><span>אקורדים שזוהו</span><strong>'+chords.length+'</strong></div></div>'+
- '<div class="action-grid">'+
- '<button class="action-card" data-result-action="listen"><strong>▶ לשמוע את השיר</strong><small>נגן את מקור השמע אם הוא זמין</small></button>'+
- '<button class="action-card" data-result-action="notebook"><strong>＋ למחברת האישית</strong><small>שמור את הניתוח במכשיר הזה</small></button>'+
- '<button class="action-card" data-result-action="lyrics"><strong>♬ אקורדים ומילים</strong><small>הצגת האקורדים לצד המילים כשהן זמינות</small></button>'+
- '<button class="action-card" data-result-action="notes"><strong>♫ תווים וייצוא</strong><small>PDF, MIDI או MusicXML כשהייצוא זמין</small></button>'+
- '<button class="action-card" data-result-action="mix"><strong>◉ פלייבק בהרכבה אישית</strong><small>שליטה נפרדת בכלי הנגינה</small></button></div><div id="analysisPanel" class="workspace-panel"><h3>האקורדים שזוהו</h3><div>'+chords.map(ch=>'<span class="chord-token">'+escapeHtml(ch)+'</span>').join('')+'</div><p class="disabled-note">הנתונים מוצגים לפי מה שמנוע הניתוח החזיר. אם BPM או מילים חסרים בתוצאה, יוצג מקף במקום לנחש.</p></div>';
+ workspace.innerHTML='<div class="song-heading">'+(currentTrack&&currentTrack.artwork?'<img src="'+escapeHtml(currentTrack.artwork)+'" alt="">':'')+'<div><h3>'+escapeHtml(currentTrack?.title||resultTitle.textContent||'השיר שנבחר')+'</h3><p>'+escapeHtml(currentTrack?.artist||'אמן לא זוהה')+'</p></div></div>'+
+ '<div class="metric-row"><div class="metric"><span>קצב · BPM</span><strong>'+escapeHtml(bpm??'—')+'</strong></div><div class="metric"><span>סולם מקורי</span><strong style="font-size:18px">'+escapeHtml(key??'—')+'</strong></div><div class="metric"><span>הזזה מהסולם המקורי</span><strong id="transposeCount">0</strong></div></div>'+
+ '<div class="chord-toolbar"><span class="transposed-badge">הזזת סולם בחצאי טון</span><div class="transpose-control"><button type="button" id="transposeDown" aria-label="הורד חצי טון">−</button><strong id="transposeLabel">סולם מקורי</strong><button type="button" id="transposeUp" aria-label="העלה חצי טון">+</button></div></div>'+
+ '<div id="chordSheetContent"></div>'+
+ '<div class="action-grid"><button class="action-card" data-result-action="listen"><strong>▶ האזנה</strong><small>השמעת קטע השמע אם זמין</small></button><button class="action-card" data-result-action="notebook"><strong>＋ שמירה למחברת</strong><small>שמירת הניתוח במכשיר</small></button><button class="action-card" data-result-action="mix"><strong>◉ הפרדת כלים</strong><small>מעבר לכלי הפלייבק</small></button></div>';
+ let semitones=0;
+ const label=document.getElementById('transposeLabel');
+ const count=document.getElementById('transposeCount');
+ const renderSheet=()=>{
+   label.textContent=semitones===0?'סולם מקורי':(semitones>0?'+':'')+semitones+' חצאי טון';
+   count.textContent=semitones===0?'0':(semitones>0?'+':'')+semitones;
+   const target=document.getElementById('chordSheetContent');
+   if(aligned){
+     target.innerHTML=renderTransposedChordSheet(aligned,semitones);
+   }else{
+     target.innerHTML='<div class="analysis-notice">'+(lyrics?'<strong>מילים זוהו, אבל אין שיוך אמין של אקורד לכל מילה.</strong><br>מציגים את המילים בלי להצמיד אקורדים באופן מנחש.':'<strong>מנוע האקורדים לא החזיר מילים מסונכרנות.</strong><br>כדי להציג את המילים המקוריות עם האקורדים בדיוק מעליהן, צריך שמנוע הניתוח יחזיר גם מילים מורשות וגם מיקומי אקורדים. לא נציג רשימת אקורדים אקראית כאילו היא מסונכרנת.')+'</div>'+
+     (lyrics?'<div class="chord-section"><h4>מילות השיר שהוחזרו על ידי שירות הניתוח</h4><div class="lyrics-sheet">'+escapeHtml(lyrics)+'</div></div>':'');
+   }
+ };
+ document.getElementById('transposeDown').onclick=()=>{semitones=Math.max(-12,semitones-1);renderSheet()};
+ document.getElementById('transposeUp').onclick=()=>{semitones=Math.min(12,semitones+1);renderSheet()};
+ renderSheet();
  workspace.querySelectorAll('[data-result-action]').forEach(btn=>btn.addEventListener('click',()=>renderResultAction(btn.dataset.resultAction,data)));
+}
+function extractLyrics(data){
+ const flat=flattenData(data);
+ for(const [k,v] of Object.entries(flat)){
+   if(/(^|[._])(lyrics|transcript|full_lyrics|lyric_text)([._]|$)/i.test(k)&&typeof v==='string'&&v.trim().length>20)return v.trim();
+ }
+ for(const v of [data?.lyrics,data?.transcript,data?.result?.lyrics,data?.result?.transcript,data?.analysis?.lyrics]){
+   if(typeof v==='string'&&v.trim().length>20)return v.trim();
+ }
+ return '';
+}
+function transposeChord(chord,semitones){
+ if(!semitones||!chord)return chord;
+ const sharp=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+ const flatMap={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B','Fb':'E','E#':'F','B#':'C'};
+ return String(chord).replace(/(^|[^A-Ga-g])([A-G](?:#|b)?)(?=(?:m|maj|min|dim|aug|sus|add|M|°|ø|[0-9]|\/|$))/g,(all,prefix,root)=>{
+   const normalized=flatMap[root]||root;
+   const idx=sharp.indexOf(normalized);
+   if(idx<0)return all;
+   return prefix+sharp[(idx+semitones%12+12)%12];
+ });
+}
+function renderTransposedChordSheet(rows,semitones){
+ return '<div class="chord-section"><h4>מילים ואקורדים</h4>'+rows.map(row=>'<div class="chord-lyric-line">'+row.map(cell=>'<span class="chord-lyric-word"><span class="chord-above">'+escapeHtml(transposeChord(cell.chord||'',semitones)||' ')+'</span><span class="word-below">'+escapeHtml(cell.text)+'</span></span>').join('')+'</div>').join('')+'</div>';
 }
 function findAlignedLyrics(data){
  const candidates=[data?.alignedLyrics,data?.chordLyrics,data?.lyricsWithChords,data?.segments,data?.lines,data?.transcription?.segments,data?.result?.segments];
