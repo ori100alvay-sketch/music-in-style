@@ -198,10 +198,15 @@ app.post("/api/separate", async (req, res) => {
     if (audioUrl.protocol !== "https:") throw new Error("HTTPS required");
   } catch { return res.status(400).json({ error: "נדרש קישור HTTPS ישיר לקובץ שמע ציבורי (MP3/WAV וכדומה)." }); }
   try {
-    const response = await fetch("https://api.replicate.com/v1/models/cjwbw/demucs/predictions", {
+    // Replicate requires an explicit version for community models such as cjwbw/demucs.
+    // Creating through /v1/predictions avoids the old model-scoped endpoint that can return 404.
+    const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "wait=5" },
-      body: JSON.stringify({ input: { audio: audioUrl.toString(), model_name: "htdemucs", output_format: "mp3", mp3_bitrate: 320 } }),
+      body: JSON.stringify({
+        version: "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953",
+        input: { audio: audioUrl.toString(), model_name: "htdemucs", output_format: "mp3", mp3_bitrate: 320 }
+      }),
       signal: AbortSignal.timeout(25000)
     });
     const data = await response.json().catch(() => ({}));
@@ -209,7 +214,7 @@ app.post("/api/separate", async (req, res) => {
       console.error("Demucs submission failed:", response.status, JSON.stringify(data).slice(0, 1200));
       const providerMessage = String(data.detail || data.error || data.title || "").slice(0, 240);
       let message = "מנוע הפרדת הכלים דחה את השמע.";
-      if (response.status === 401 || response.status === 403) message = "מנוע ההפרדה דחה את הרשאת השרת. יש לבדוק את REPLICATE_API_TOKEN ב-Render.";
+      if (response.status === 401 || response.status === 403) message = "מנוע ההפרדה דחה את הרשאת השרת. יש לבדוק את REPLICATE_API_TOKEN ב-Render.";\n      else if (response.status === 404) message = "מנוע ההפרדה לא נמצא בכתובת השירות. עדכנו את כתובת המנוע או את גרסת המודל.";
       else if (response.status === 429) message = "מנוע ההפרדה עמוס או שמכסת השימוש הסתיימה. נסו שוב מאוחר יותר.";
       else if (response.status === 422 || response.status === 400) message = "מנוע ההפרדה לא הצליח לקבל את קובץ השמע. ייתכן שהקישור אינו קובץ שמע נגיש או שהפורמט אינו נתמך.";
       return res.status(response.status === 429 ? 429 : 502).json({ error: message, providerStatus: response.status, providerMessage });
