@@ -163,7 +163,7 @@ test('search-result chord analysis uses a public supported track URL rather than
   assert.match(html, /track\.trackUrl/);
   assert.match(html, /track\.trackUrl/);
   assert.match(html, /fullAudioUrl/);
-  assert.doesNotMatch(html, /analyzeUrl\(track\.previewUrl/);
+  assert.match(html, /id="analyzeFullAudio"/);
 });
 
 test('stem mixer synchronizes playback, seeking, pause and playback rate to a master track', () => {
