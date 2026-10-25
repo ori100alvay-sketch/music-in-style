@@ -18,6 +18,36 @@ async function providerFetch(url, options = {}) {
   return data;
 }
 app.get("/health", (_req, res) => { res.set("Cache-Control", "no-store"); res.json({ ok: true, service: "music-in-style", message: "Music in Style server is running" }); });
+const BRIZM_API = "https://api.brizm.dev";
+function brizmHeaders(extra = {}) {
+  const key = process.env.BRIZM_API_KEY;
+  if (!key) return null;
+  return { Authorization: "Bearer " + key, ...extra };
+}
+app.get("/api/brizm-status", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json({ configured: Boolean(process.env.BRIZM_API_KEY), provider: "Brizm", features: ["song metadata analysis", "BPM/key", "4-stem separation for supported audio inputs"] });
+});
+app.get("/api/brizm/key-bpm", async (req, res) => {
+  const headers = brizmHeaders();
+  if (!headers) return res.status(503).json({ error: "Brizm עדיין לא מוגדר. הוסף BRIZM_API_KEY ב-Environment של Render." });
+  const song = String(req.query.song || "").trim().slice(0, 180);
+  const artist = String(req.query.artist || "").trim().slice(0, 180);
+  if (!song || !artist) return res.status(400).json({ error: "נדרשים שם שיר ושם אמן." });
+  try {
+    const url = new URL(BRIZM_API + "/v1/key-bpm");
+    url.searchParams.set("song", song);
+    url.searchParams.set("artist", artist);
+    const data = await providerFetch(url.toString(), { headers });
+    res.set("Cache-Control", "no-store");
+    res.json({ provider: "Brizm", song, artist, tempo: data.tempo ?? null, key: data.key ?? null, mode: data.mode ?? null, camelot: data.camelot ?? null, confidence: data.confidence ?? null, meta: data._meta ?? null });
+  } catch (err) {
+    console.error("Brizm key/BPM error:", err.status, err.message);
+    const status = err.status === 404 ? 404 : err.status === 402 ? 402 : err.status === 401 ? 503 : 502;
+    res.status(status).json({ error: err.status === 404 ? "Brizm לא מצא נתוני ניתוח לשיר הזה." : err.status === 402 ? "אין מספיק קרדיטים בחשבון Brizm." : err.status === 401 ? "מפתח Brizm אינו תקין." : "Brizm לא הצליח לנתח את השיר כרגע.", providerStatus: err.status || null });
+  }
+});
+
 app.get("/api/status", (_req, res) => { res.set("Cache-Control", "no-store"); res.json({ ok: true, service: "music-in-style", analysisProvider: "Magic Chords public API", replicateTokenConfigured: Boolean(String(process.env.REPLICATE_API_TOKEN || "").trim()) }); });
 app.get("/api/replicate-status", async (_req, res) => {
   res.set("Cache-Control", "no-store");
