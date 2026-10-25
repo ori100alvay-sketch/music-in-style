@@ -227,3 +227,24 @@ test('account form labels match the selected action and recovery links lead to a
   assert.match(html, /query\.get\('type'\)==='recovery'&&data\.session\?\.access_token/);
   assert.match(html, /resetToken=data\.session\.access_token/);
 });
+
+test('rehearsal setlist supports safe local persistence, bounded entries, ordering and text export', () => {
+  assert.match(html, /id="gigTools"/);
+  assert.match(html, /id="gigSongForm"/);
+  assert.match(html, /localStorage\.getItem\('misGigSetlist'\)/);
+  assert.match(html, /localStorage\.setItem\('misGigSetlist'/);
+  assert.match(html, /songs\.length>=100/);
+  assert.match(html, /function move\(i,d\)/);
+  assert.match(html, /music-in-style-setlist\.txt/);
+  assert.match(html, /textContent=song\.title/);
+});
+test('focused practice timer supports presets, pause/resume and reset with consistent seconds', () => {
+  assert.match(html, /id="focusTimer"/);
+  assert.match(html, /data-minutes="5"/);
+  assert.match(html, /data-minutes="15"/);
+  assert.match(html, /data-minutes="25"/);
+  assert.match(html, /data-minutes="45"/);
+  assert.match(html, /elapsedBefore\+\=\(Date\.now\(\)-startedAt\)\/1000/);
+  assert.match(html, /id="focusPause"/);
+  assert.match(html, /id="focusReset"/);
+});
