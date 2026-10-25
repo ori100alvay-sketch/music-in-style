@@ -197,6 +197,9 @@ app.get("/api/capabilities", (_req, res) => {
       songSearch: { available: true, provider: "Apple iTunes Search", note: "Search metadata and short previews; not full-song access." },
       freeLyricsSearch: { available: true, provider: "LRCLIB", keyRequired: false, endpoint: "/api/lyrics-search" },
       freeMusicMetadata: { available: true, provider: "MusicBrainz", keyRequired: false, endpoint: "/api/music-metadata", note: "Free for non-commercial use; rate limited to about one request per second." },
+      freeTrackSearch: { available: true, provider: "Deezer", keyRequired: false, endpoint: "/api/deezer-search", note: "Public track metadata and preview URLs when supplied by the provider." },
+      freeRadioDirectory: { available: true, provider: "Radio Browser", keyRequired: false, endpoint: "/api/radio-search" },
+      freeCoverArt: { available: true, provider: "Cover Art Archive", keyRequired: false, endpoint: "/api/cover-art/:releaseId" },
       musicTheory: { available: true, provider: "Built-in Music in Style Theory Engine", features: ["scales and modes", "chord construction", "diatonic triads", "progression analysis", "transposition", "maqam approximations"], note: "Rule-based theory calculations; not a replacement for audio recognition or expert maqam performance analysis." },
       chordAnalysis: { available: true, provider: "Magic Chords", mode: "async-url", note: "Requires a public URL accepted by the provider; lyrics are not guaranteed." },
       lyricsTranscription: { available: true, provider: "Magic Chords", mode: "async-url", note: "Separate transcription job; accuracy depends on audio and provider output." },
@@ -298,6 +301,63 @@ app.get("/api/music-metadata", async (req, res) => {
     })) });
   } catch (e) {
     res.status(e.status === 503 ? 503 : 502).json({ error: "שירות פרטי המוזיקה לא זמין כרגע. נסו שוב מאוחר יותר." });
+  }
+});
+
+// Free public catalogue search (metadata + preview URLs where available).
+app.get("/api/deezer-search", async (req, res) => {
+  const q = String(req.query.q || "").trim().slice(0, 180);
+  if (!q) return res.status(400).json({ error: "יש להזין שם שיר או אמן." });
+  try {
+    const url = new URL("https://api.deezer.com/search/track");
+    url.searchParams.set("q", q); url.searchParams.set("limit", "10");
+    const data = await providerFetch(url.toString());
+    res.set("Cache-Control", "public, max-age=300");
+    res.json({ provider: "Deezer", free: true, results: (data.data || []).slice(0, 10).map(x => ({
+      id: x.id, title: x.title || "", artist: x.artist?.name || "",
+      album: x.album?.title || "", artwork: x.album?.cover_medium || "",
+      previewUrl: x.preview || "", duration: x.duration || null,
+      link: x.link || ""
+    })) });
+  } catch (e) {
+    res.status(502).json({ error: "חיפוש Deezer אינו זמין כרגע." });
+  }
+});
+
+// Free community-maintained internet radio directory.
+app.get("/api/radio-search", async (req, res) => {
+  const q = String(req.query.q || "").trim().slice(0, 100);
+  const country = String(req.query.country || "").trim().slice(0, 2).toUpperCase();
+  try {
+    const url = new URL("https://de1.api.radio-browser.info/json/stations/search");
+    if (q) url.searchParams.set("name", q);
+    if (country && /^[A-Z]{2}$/.test(country)) url.searchParams.set("countrycode", country);
+    url.searchParams.set("hidebroken", "true"); url.searchParams.set("limit", "15");
+    const data = await providerFetch(url.toString());
+    res.set("Cache-Control", "public, max-age=300");
+    res.json({ provider: "Radio Browser", free: true, results: (Array.isArray(data) ? data : []).slice(0, 15).map(x => ({
+      name: x.name || "", country: x.country || "", language: x.language || "",
+      tags: x.tags || "", codec: x.codec || "", bitrate: x.bitrate || 0,
+      streamUrl: x.url_resolved || x.url || "", homepage: x.homepage || ""
+    })).filter(x => /^https?:\/\//i.test(x.streamUrl)) });
+  } catch (e) {
+    res.status(502).json({ error: "ספריית תחנות הרדיו לא זמינה כרגע." });
+  }
+});
+
+// Cover Art Archive: artwork lookup by MusicBrainz release ID.
+app.get("/api/cover-art/:releaseId", async (req, res) => {
+  const id = String(req.params.releaseId || "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: "מזהה הוצאה לא תקין." });
+  try {
+    const data = await providerFetch("https://coverartarchive.org/release/" + encodeURIComponent(id));
+    res.set("Cache-Control", "public, max-age=86400");
+    res.json({ provider: "Cover Art Archive", free: true, images: (data.images || []).slice(0, 8).map(x => ({
+      front: Boolean(x.front), back: Boolean(x.back),
+      image: x.image || "", thumbnails: x.thumbnails || {}
+    })) });
+  } catch (e) {
+    res.status(e.status === 404 ? 404 : 502).json({ error: e.status === 404 ? "לא נמצאה עטיפה להוצאה הזאת." : "מאגר העטיפות לא זמין כרגע." });
   }
 });
 
