@@ -162,7 +162,7 @@ test('search-result chord analysis uses a public supported track URL rather than
   assert.match(html, /id="analyzeFullAudio"/);
   assert.match(html, /track\.trackUrl/);
   assert.match(html, /track\.trackUrl/);
-  assert.match(html, /נתח את הקישור/);
+  assert.match(html, /fullAudioUrl/);
   assert.doesNotMatch(html, /analyzeUrl\(track\.previewUrl/);
 });
 
