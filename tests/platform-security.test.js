@@ -96,3 +96,13 @@ test('stem separation playback validates HTTPS URLs and exposes group transport 
   assert.match(html, /Promise\.allSettled\(stemAudios\.map\(audio=>audio\.play\(\)\)\)/);
   assert.match(html, /audio\.volume=Number\(input\.value\)\/100/);
 });
+test('timed lyric and chord alignment handles provider variants and bounded chord intervals', () => {
+  assert.match(html, /function buildTimedAlignment\(data\)/);
+  assert.match(html, /start_ms/);
+  assert.match(html, /end_ms/);
+  assert.match(html, /const scoreWords=/);
+  assert.match(html, /const scoreChords=/);
+  assert.match(html, /word\.start<=event\.end\+0\.08/);
+  assert.match(html, /Keep lyric lines readable even when the transcription has no punctuation/);
+  assert.match(html, /if\(words\.length<2\|\|!events\.length\)return null/);
+});
