@@ -974,4 +974,92 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
  }
 })();
 </script>
+
+<style>
+.auth-launch{border:1px solid #4c5d58;background:#14201d;color:#eafff8;border-radius:999px;padding:10px 16px;cursor:pointer;font-weight:600}
+.auth-overlay{position:fixed;inset:0;z-index:10000;background:#000b;backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:18px}
+.auth-overlay.open{display:flex}.auth-card{width:min(440px,100%);background:#101312;border:1px solid #34423e;border-radius:24px;padding:26px;box-shadow:0 24px 90px #000b;color:#f3f6f4;direction:rtl}
+.auth-card h2{margin:0 0 8px;font-size:25px}.auth-sub{color:#aab5b0;font-size:14px;line-height:1.6}.auth-card label{display:block;font-size:13px;margin:14px 0 6px;color:#d8e0dc}
+.auth-card input{width:100%;padding:13px 14px;border:1px solid #3b4944;border-radius:12px;background:#090c0b;color:white;outline-offset:2px}
+.auth-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.auth-actions button,.auth-link{border:1px solid #42554e;background:#1c2b25;color:#effff7;padding:11px 14px;border-radius:12px;cursor:pointer}.auth-actions button.primary{background:#c9f3df;color:#11241b;border-color:#c9f3df;font-weight:700}.auth-link{background:transparent;border:0;color:#b9e8d2;text-decoration:underline;padding:9px 4px}
+.auth-message{font-size:13px;line-height:1.6;margin-top:12px;color:#c7f1da;overflow-wrap:anywhere}.auth-message.error{color:#ffb9b9}.auth-close{float:left;background:transparent;border:0;color:#ddd;font-size:24px;cursor:pointer}
+@media(max-width:420px){.auth-card{padding:21px;border-radius:18px}}
+</style>
+<div class="auth-overlay" id="musicAuthOverlay" aria-hidden="true">
+ <section class="auth-card" role="dialog" aria-modal="true" aria-labelledby="musicAuthTitle">
+  <button class="auth-close" id="musicAuthClose" type="button" aria-label="סגירה">×</button>
+  <h2 id="musicAuthTitle">החשבון שלי</h2>
+  <p class="auth-sub" id="musicAuthSubtitle">נכנסים לחשבון כדי להמשיך עם Music in Style.</p>
+  <form id="musicAuthForm">
+   <label for="musicAuthEmail">כתובת מייל</label><input id="musicAuthEmail" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com">
+   <label for="musicAuthPassword">סיסמה</label><input id="musicAuthPassword" type="password" autocomplete="current-password" minlength="10" maxlength="128" placeholder="לפחות 10 תווים">
+   <div class="auth-actions"><button class="primary" type="submit" id="musicAuthSubmit">כניסה</button><button type="button" id="musicAuthSignup">יצירת חשבון</button></div>
+  </form>
+  <div class="auth-actions"><button type="button" id="musicAuthForgot">שכחתי סיסמה</button><button type="button" id="musicAuthReset" hidden>שמירת סיסמה חדשה</button></div>
+  <p class="auth-message" id="musicAuthMessage" role="status" aria-live="polite"></p>
+  <p class="auth-sub">הסיסמאות וקודי האימות מנוהלים על ידי ספק אימות מאובטח; הם אינם נשמרים באתר עצמו.</p>
+ </section>
+</div>
+<script>
+(()=>{
+ const $=id=>document.getElementById(id);
+ const overlay=$('musicAuthOverlay'),form=$('musicAuthForm'),email=$('musicAuthEmail'),password=$('musicAuthPassword'),message=$('musicAuthMessage'),submit=$('musicAuthSubmit'),signup=$('musicAuthSignup'),forgot=$('musicAuthForgot'),reset=$('musicAuthReset'),title=$('musicAuthTitle'),subtitle=$('musicAuthSubtitle');
+ let mode='login',resetToken='';
+ const say=(txt,error=false)=>{message.textContent=txt;message.classList.toggle('error',error)};
+ const open=()=>{overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');email.focus()};
+ const close=()=>{overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true')};
+ async function request(path,body){
+  const response=await fetch('/api/auth/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'הפעולה נכשלה. נסו שוב.');
+  return data;
+ }
+ function setMode(next){
+  mode=next;password.hidden=next==='forgot';password.required=next!=='forgot';password.autocomplete=next==='reset'?'new-password':'current-password';
+  submit.hidden=next==='reset';signup.hidden=next==='forgot'||next==='reset';forgot.hidden=next==='forgot'||next==='reset';reset.hidden=next!=='reset';
+  title.textContent=next==='signup'?'יצירת חשבון':next==='forgot'?'איפוס סיסמה':next==='reset'?'בחירת סיסמה חדשה':'החשבון שלי';
+  subtitle.textContent=next==='forgot'?'נשלח קישור מאובטח למייל כדי לבחור סיסמה חדשה.':next==='reset'?'בחרו סיסמה חדשה בת 10 תווים לפחות.':next==='signup'?'נרשמים עם כתובת מייל וסיסמה אישית.':'נכנסים לחשבון כדי להמשיך עם Music in Style.';
+  submit.textContent='כניסה';say('');
+ }
+ async function doLogin(isSignup){
+  try{
+   const data=await request(isSignup?'signup':'login',{email:email.value.trim(),password:password.value});
+   if(data.session){sessionStorage.setItem('musicInStyleSession',JSON.stringify(data.session));}
+   say(data.message|| (isSignup?'החשבון נוצר. בדקו את המייל לאימות.':'התחברתם בהצלחה.'));
+   if(!isSignup&&data.session){submit.textContent='מחובר ✓';}
+  }catch(e){say(e.message,true)}
+ }
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(mode==='reset'){
+   try{const data=await request('update-password',{access_token:resetToken,password:password.value});say(data.message);history.replaceState(null,'',location.pathname+location.search);resetToken='';setMode('login');}
+   catch(e){say(e.message,true)}return;
+  }
+  if(mode==='forgot'){
+   try{const data=await request('forgot-password',{email:email.value.trim()});say(data.message)}
+   catch(e){say(e.message,true)}return;
+  }
+  await doLogin(false);
+ });
+ signup.addEventListener('click',()=>{if(mode==='signup'){doLogin(true);return;}setMode('signup');signup.textContent='הרשמה';});
+ signup.addEventListener('click',()=>{if(mode==='signup')signup.textContent='יצירת חשבון';});
+ forgot.addEventListener('click',()=>setMode('forgot'));
+ reset.addEventListener('click',()=>form.requestSubmit());
+ $('musicAuthClose').addEventListener('click',close);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))close()});
+ // Add an account entry without changing the existing navigation layout.
+ const nav=document.querySelector('header nav')||document.querySelector('header');
+ if(nav){const b=document.createElement('button');b.className='auth-launch';b.type='button';b.textContent='החשבון שלי';b.addEventListener('click',()=>{setMode('login');open()});nav.appendChild(b);}
+ // Supabase email recovery redirects back with an access token in the URL fragment.
+ const hash=new URLSearchParams(location.hash.replace(/^#/,''));
+ if(hash.get('type')==='recovery'&&hash.get('access_token')){
+  resetToken=hash.get('access_token');setMode('reset');open();say('קישור האיפוס אומת. בחרו סיסמה חדשה.');
+ }
+ fetch('/api/auth/config').then(r=>r.json()).then(c=>{
+  if(!c.configured){const b=document.querySelector('.auth-launch');if(b)b.title='נדרשת הגדרת ספק אימות בשרת';}
+ }).catch(()=>{});
+})();
+</script>
+
 </body></html>
