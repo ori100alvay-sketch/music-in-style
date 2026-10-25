@@ -26,3 +26,22 @@ Set these environment variables in Render only after confirming the exact API en
 The `/api/analyze-url` endpoint expects JSON such as `{ "url": "https://..." }`.
 
 Important: the proxy is a basic integration template. It does not guarantee compatibility with a third-party provider's exact API schema; verify that schema before enabling real analysis.
+
+## User accounts and password recovery (Supabase Auth)
+
+The app now includes account creation, email/password sign-in, and a "Forgot password" flow. Authentication is handled by Supabase Auth; this app does not store plaintext passwords or recovery codes.
+
+**Required setup before account features can work:**
+1. Create a project at https://supabase.com/ and open **Project Settings → API**.
+2. In Render → your service → **Environment**, add:
+   - `SUPABASE_URL` = your project's Project URL.
+   - `SUPABASE_ANON_KEY` = the project's publishable/anon key (never use a service-role key here).
+   - `AUTH_REDIRECT_URL` = `https://music-in-style.onrender.com/`
+3. In Supabase **Authentication → URL Configuration**, add `https://music-in-style.onrender.com/` to the allowed redirect URLs.
+4. In Supabase **Authentication → Email / SMTP**, configure email delivery. For dependable delivery, use a verified SMTP provider and set its credentials in Supabase. Customize the password recovery email template to clearly identify Music in Style.
+5. Save settings and redeploy/restart the Render service. Test signup, confirmation email, login, password recovery email, and setting a new password from the recovery link.
+
+Security notes:
+- Use Supabase's built-in rate limits and email protections; do not expose any service-role secret in browser code or GitHub.
+- The app enforces a 10-character minimum password length and limits request sizes/rates, but the provider configuration and real email delivery must be tested before announcing account support as live.
+- Email delivery, allowed redirect URLs, and recovery-link behavior depend on Supabase project settings. Until those environment variables and SMTP settings are configured, the UI reports that account setup is unavailable.
