@@ -53,5 +53,7 @@ jobs:
       - name: Run Demucs worker regression tests
         working-directory: demucs-worker
         run: python -m unittest -v test_app.py
+      - name: Run root worker contract tests (mocked inference)
+        run: python -m unittest -v tests/test_demucs_worker.py
       - name: Check Python syntax
-        run: python -m py_compile separation-service/app.py separation-service/test_app.py demucs-worker/app.py demucs-worker/test_app.py
+        run: python -m py_compile separation-service/app.py separation-service/test_app.py demucs-worker/app.py demucs-worker/test_app.py demucs_worker.py tests/test_demucs_worker.py
