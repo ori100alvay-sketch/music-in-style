@@ -815,7 +815,10 @@ async function startStemSeparation(audioUrl){
   target.innerHTML='<p class="disabled-note">שולחים את השמע למנוע הפרדה… קובץ ארוך עשוי להימשך יותר מדקה.</p>';
   const start=await fetch('/api/separate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:audioUrl})});
   const data=await start.json().catch(()=>({}));
-  if(!start.ok||!data.id){target.innerHTML='<div class="analysis-notice"><strong>'+escapeHtml(data.error||'לא ניתן להתחיל הפרדת כלים.')+'</strong>'+(data.providerStatus?' <br>קוד שירות: '+escapeHtml(data.providerStatus):'')+(data.providerMessage?'<br>פרטי שירות: '+escapeHtml(data.providerMessage):'')+'</div>';return}
+  if(!start.ok||!data.id){
+   const creditIssue=start.status===402||data.providerStatus===402;
+   target.innerHTML='<div class="analysis-notice"><strong>'+escapeHtml(data.error||'לא ניתן להתחיל הפרדת כלים.')+'</strong>'+(creditIssue?'<p>כדי להפעיל מחדש את ההפרדה, יש להוסיף קרדיט לחשבון Replicate שממנו נוצר מפתח השרת, להמתין כמה דקות ולנסות שוב.</p><p><a href="https://replicate.com/account/billing#billing" target="_blank" rel="noopener noreferrer">פתיחת עמוד החיוב של Replicate ↗</a></p>':'')+(data.providerStatus?' <br>קוד שירות: '+escapeHtml(data.providerStatus):'')+(data.providerMessage&&!creditIssue?'<br>פרטי שירות: '+escapeHtml(data.providerMessage):'')+'</div>';return
+  }
   target.innerHTML='<p class="disabled-note" id="stemProgress" aria-live="polite">המשימה נשלחה. ממתינים לערוצים המופרדים…</p>';
   for(let i=0;i<120;i++){
    await new Promise(r=>setTimeout(r,2500));
