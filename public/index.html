@@ -591,7 +591,21 @@ function selectAction(action,track){
    else panel.innerHTML='<h3>ניתוח תווים</h3><p class="disabled-note">אין קובץ שמע ישיר זמין. הדבק קישור ישיר לקובץ שמע נתמך.</p>';
  }else if(action==='mix'){
    const source=track.previewUrl||'';
-   panel.innerHTML='<h3>ניתוח פלייבק והפרדת כלים</h3><p class="disabled-note">Brizm מחובר לניתוח נתוני שיר (BPM וסולם) לפי שם השיר והאמן. להפרדת ערוצים בפועל עדיין נדרש קובץ שמע נגיש והרשאת API פעילה. קישור לעמוד YouTube/Spotify אינו קובץ שמע ישיר.</p><div class="toolbar"><button class="tool-button" id="brizmAnalyze">נתח BPM וסולם</button></div><div id="brizmResults"></div><div id="stemResults"><div class="analysis-notice"><strong>הפרדת ערוצים אוטומטית עדיין לא פעילה.</strong><br>ממשק ההפרדה קיים, אבל השרת כרגע אינו מריץ Demucs או מנוע חלופי. לא נשלח שמע לשירות בתשלום ולא נציג כאילו ההפרדה התחילה.</div><p class="disabled-note">כדי להפעיל הפרדה אמיתית צריך לפרוס מנוע Demucs מתאים או לחבר ספק API עם מפתח והרשאת חיוב מפורשת.</p></div>';
+   panel.innerHTML='<h3>ניתוח פלייבק והפרדת כלים</h3><p class="disabled-note">Brizm מחובר לניתוח נתוני שיר (BPM וסולם) לפי שם השיר והאמן. להפרדת ערוצים בפועל עדיין נדרש קובץ שמע נגיש והרשאת API פעילה. קישור לעמוד YouTube/Spotify אינו קובץ שמע ישיר.</p><div class="toolbar"><button class="tool-button" id="brizmAnalyze">נתח BPM וסולם</button></div><div id="brizmResults"></div><div id="stemResults"><p class="disabled-note">בודקים אם מנוע הפרדת כלים מקומי זמין…</p></div>';
+   const stemStatus=document.getElementById('stemResults');
+   if(stemStatus){
+     fetch('/api/separation-status',{cache:'no-store'}).then(async response=>{
+       const status=await response.json().catch(()=>({}));
+       if(!response.ok)throw new Error('status unavailable');
+       if(status.available===true){
+         stemStatus.innerHTML='<div class="analysis-notice"><strong>מנוע הפרדת כלים זמין.</strong><br>המנוע דווח כזמין על ידי השרת. יש לבדוק ניתוח של קובץ לדוגמה לפני הצגת תוצאות למשתמש.</div>';
+       }else{
+         stemStatus.innerHTML='<div class="analysis-notice"><strong>הפרדת כלים עדיין לא פעילה.</strong><br>'+escapeHtml(status.reason||'לא נמצא מנוע הפרדה מקומי פעיל.')+'</div><p class="disabled-note">לא נשלח שמע לשירות בתשלום. הפתרון הנבחר הוא Demucs בקוד פתוח, אך הוא דורש סביבת Python ומשאבי זיכרון/מעבד שאינם מותקנים בשירות Node.js הנוכחי.</p>';
+       }
+     }).catch(()=>{
+       stemStatus.innerHTML='<div class="analysis-notice"><strong>לא ניתן לאמת את מצב מנוע ההפרדה.</strong><br>ההפרדה נשארת כבויה עד שהשרת יאשר שמנוע מקומי זמין.</div>';
+     });
+   }
    const brizmButton=document.getElementById('brizmAnalyze');
    if(brizmButton)brizmButton.onclick=async()=>{
      const out=document.getElementById('brizmResults');if(!out)return;
