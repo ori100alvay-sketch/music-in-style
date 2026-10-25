@@ -314,7 +314,7 @@ function flattenData(value,out={},prefix=''){
 }
 function findValue(flat,terms){const entry=Object.entries(flat).find(([k,v])=>terms.some(t=>k.toLowerCase().includes(t))&&(typeof v==='number'||(typeof v==='string'&&v.length<100)));return entry?entry[1]:null}
 function getChordItems(data){
- const items=[],seen=new Set(),chordPattern=/^[A-G](?:#|b)?(?:m|min|maj|dim|aug|sus|add|M|°|ø)?(?:[0-9]{0,2})?(?:\\/[A-G](?:#|b)?)?$/;
+ const items=[],seen=new Set(),chordPattern=/^[A-G](?:#|b)?(?:m|min|maj|dim|aug|sus|add|M|°|ø)?(?:[0-9]{0,2})?(?:\/[A-G](?:#|b)?)?$/;
  const add=value=>{if(typeof value!=='string')return;const chord=value.trim();if(chordPattern.test(chord)&&!seen.has(chord)){seen.add(chord);items.push(chord)}};
  const visited=new Set();
  function walk(value,key='',depth=0){
