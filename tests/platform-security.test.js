@@ -62,6 +62,16 @@ test('capabilities endpoint distinguishes built-in features from credential-gate
   assert.match(server, /needs: brizmConfigured \? \[\] : \["BRIZM_API_KEY"\]/);
 });
 
+test('free lyrics and music metadata providers are wired through safe server endpoints', () => {
+  assert.match(server, /app\.get\("\/api\/lyrics-search"/);
+  assert.match(server, /https:\/\/lrclib\.net\/api\/search/);
+  assert.match(server, /app\.get\("\/api\/music-metadata"/);
+  assert.match(server, /https:\/\/musicbrainz\.org\/ws\/2\/recording\//);
+  assert.match(server, /freeLyricsSearch: \{ available: true, provider: "LRCLIB", keyRequired: false/);
+  assert.match(server, /freeMusicMetadata: \{ available: true, provider: "MusicBrainz", keyRequired: false/);
+  assert.match(server, /slice\(0, 180\)/);
+});
+
 test('music notebook supports validated backup export and cross-device import', () => {
   assert.match(html, /exportNotebookBackup/);
   assert.match(html, /importNotebookBackup/);
