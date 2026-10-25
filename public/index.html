@@ -211,7 +211,7 @@ async function analyzeUrl(url,label){
         currentAnalysis=state.result||{};
         resultTitle.textContent=label||'תוצאות השיר';
         resultMessage.textContent='תוצאות האקורדים והמידע המוזיקלי:';
-        resultData.hidden=false;resultData.textContent=JSON.stringify(currentAnalysis,null,2);
+        resultData.hidden=true;resultData.textContent='';
         renderWorkspace(currentAnalysis);
         finished=true;break;
       }
