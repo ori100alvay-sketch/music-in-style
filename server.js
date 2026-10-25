@@ -190,7 +190,6 @@ app.get("/health", (_req, res) => { res.set("Cache-Control", "no-store"); res.js
 app.get("/api/capabilities", (_req, res) => {
   res.set("Cache-Control", "no-store");
   const brizmConfigured = Boolean(String(process.env.BRIZM_API_KEY || "").trim());
-  const replicateConfigured = Boolean(String(process.env.REPLICATE_API_TOKEN || "").trim());
   res.json({
     service: "music-in-style",
     generatedAt: new Date().toISOString(),
@@ -200,7 +199,7 @@ app.get("/api/capabilities", (_req, res) => {
       chordAnalysis: { available: true, provider: "Magic Chords", mode: "async-url", note: "Requires a public URL accepted by the provider; lyrics are not guaranteed." },
       lyricsTranscription: { available: true, provider: "Magic Chords", mode: "async-url", note: "Separate transcription job; accuracy depends on audio and provider output." },
       keyAndTempo: { available: brizmConfigured, configured: brizmConfigured, provider: "Brizm", needs: brizmConfigured ? [] : ["BRIZM_API_KEY"] },
-      stemSeparation: { available: replicateConfigured, configured: replicateConfigured, provider: "Replicate Demucs", needs: replicateConfigured ? [] : ["REPLICATE_API_TOKEN"] },
+      stemSeparation: { available: false, configured: false, provider: "Disabled in free-safe mode", needs: ["A local/open-source Demucs runtime"], note: "No audio is sent to paid inference services." },
       personalNotebook: { available: true, storage: "browser-local", note: "Data is stored in this browser/device unless exported by the user." }
     },
     security: { credentialsServerSideOnly: true, apiRateLimit: "per-process", requestBodyLimitBytes: 1048576, distributedRateLimit: false }
