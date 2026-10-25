@@ -48,6 +48,55 @@ app.post("/api/analyze-url", async (req, res) => {
   }
 });
 
+
+// Optional Replicate-backed Demucs separation. Configure REPLICATE_API_TOKEN in Render Environment.
+app.post("/api/separate", async (req, res) => {
+  const token = process.env.REPLICATE_API_TOKEN;
+  if (!token) return res.status(503).json({ error: "מנוע הפרדת הכלים עדיין לא הופעל בשרת. יש להוסיף REPLICATE_API_TOKEN בהגדרות Environment של Render." });
+  const rawUrl = String((req.body || {}).url || "").trim();
+  let audioUrl;
+  try {
+    audioUrl = new URL(rawUrl);
+    if (audioUrl.protocol !== "https:") throw new Error("HTTPS required");
+  } catch { return res.status(400).json({ error: "נדרש קישור HTTPS ישיר לקובץ שמע ציבורי (MP3/WAV וכדומה)." }); }
+  try {
+    const response = await fetch("https://api.replicate.com/v1/models/cjwbw/demucs/predictions", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "wait=1" },
+      body: JSON.stringify({ input: { audio: audioUrl.toString(), model_name: "htdemucs", output_format: "mp3", mp3_bitrate: 320 } }),
+      signal: AbortSignal.timeout(25000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.id) {
+      console.error("Demucs submission failed:", response.status, JSON.stringify(data).slice(0, 800));
+      return res.status(response.status === 429 ? 429 : 502).json({ error: "שירות הפרדת הכלים לא קיבל את הקובץ. בדוק שהקישור הוא קובץ שמע ישיר ונסה שוב." });
+    }
+    res.status(202).json({ id: data.id, status: data.status || "starting" });
+  } catch (err) {
+    console.error("Demucs submission error:", err.message);
+    res.status(502).json({ error: "לא הצלחנו להתחבר למנוע הפרדת הכלים כרגע." });
+  }
+});
+app.get("/api/separate/:predictionId", async (req, res) => {
+  const token = process.env.REPLICATE_API_TOKEN;
+  if (!token) return res.status(503).json({ error: "מנוע הפרדת הכלים לא מוגדר בשרת." });
+  const id = String(req.params.predictionId || "");
+  if (!/^[a-zA-Z0-9_-]{4,100}$/.test(id)) return res.status(400).json({ error: "מזהה הפרדה לא תקין." });
+  try {
+    const response = await fetch("https://api.replicate.com/v1/predictions/" + encodeURIComponent(id), {
+      headers: { "Authorization": "Bearer " + token, "Accept": "application/json" },
+      signal: AbortSignal.timeout(15000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return res.status(502).json({ error: "לא הצלחנו לקבל את מצב הפרדת הכלים." });
+    res.set("Cache-Control", "no-store");
+    res.json({ status: data.status, output: data.output || null, error: data.error || null });
+  } catch (err) {
+    console.error("Demucs status error:", err.message);
+    res.status(502).json({ error: "שגיאה בבדיקת מצב הפרדת הכלים." });
+  }
+});
+
 app.get("/api/jobs/:jobId", async (req, res) => {
   const jobId = String(req.params.jobId || "");
   if (!/^[a-zA-Z0-9_-]{4,160}$/.test(jobId)) return res.status(400).json({ error: "מזהה ניתוח לא תקין." });
