@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "Music in Style — מוזיקה בסטייל שלך",
+  "short_name": "Music in Style",
+  "description": "מרחב מוזיקלי אלגנטי לחיפוש שירים, אקורדים ואימון",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "orientation": "any",
+  "icons": [
+    {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
