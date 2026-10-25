@@ -342,7 +342,7 @@ function showTrackActions(track){
   workspace.innerHTML='<div class="action-grid">'+
   '<button class="action-card" data-action="listen"><strong>▶ לשמוע את השיר</strong><small>האזנה לתצוגה מקדימה כשזמינה</small></button>'+
   '<button class="action-card" data-action="notebook"><strong>＋ למחברת האישית</strong><small>שמירת השיר במכשיר הזה</small></button>'+
-  '<button class="action-card" data-action="analyze"><strong>♫ ניתוח אקורדים ומילים</strong><small>אקורדים, סולם, קצב ומילים כשהמנוע מחזיר אותם</small></button>'+
+  '<button class="action-card" data-action="analyze"><strong>♫ ניתוח אקורדים ומילים</strong><small>אקורדים, סולם, קצב ומילים כשהמנוע מחזיר אותם. בחיפוש שירים ייתכן שהמקור הוא קטע קצר בלבד</small></button>'+
   '<button class="action-card" data-action="notes"><strong>♫ ניתוח תווים</strong><small>תווים ומילים; שמירה למחברת כשהתוצאה זמינה</small></button>'+
   '<button class="action-card" data-action="mix"><strong>◉ ניתוח פלייבק</strong><small>הפרדת כלים ונגינה עם שליטה בעוצמות</small></button>'+
   '</div><div id="workspacePanel" class="workspace-panel"><p class="disabled-note">בחר פעולה. המחברת נשמרת מקומית בדפדפן במכשיר הזה.</p></div>';
@@ -361,10 +361,10 @@ function selectAction(action,track){
    panel.innerHTML='<h3>המחברת האישית</h3><p class="disabled-note">'+(exists?'השיר כבר שמור במחברת.':'השיר נשמר במחברת במכשיר הזה.')+'</p><div class="toolbar"><button class="tool-button" id="viewNotebook">הצג את המחברת ('+saved.length+')</button></div><div id="notebookList"></div>';
    document.getElementById('viewNotebook').onclick=()=>{const list=document.getElementById('notebookList');list.innerHTML='';saved.forEach(s=>{const p=document.createElement('p');p.className='disabled-note';p.textContent=s.title+' — '+s.artist;list.appendChild(p)})};
  }else if(action==='analyze'){
-   if(track.previewUrl)analyzeUrl(track.previewUrl,track.title+' — '+track.artist);
+   if(track.previewUrl)analyzeUrl(track.previewUrl,track.title+' — '+track.artist+' (ניתוח קטע תצוגה מקדימה)');
    else panel.innerHTML='<h3>ניתוח שיר</h3><p class="disabled-note">אין קטע שמע זמין לניתוח עבור התוצאה הזאת. נסה להדביק קישור ישיר לקובץ/שיר שנתמך על ידי מנוע הניתוח.</p>';
  }else if(action==='notes'){
-   if(track.previewUrl)analyzeUrl(track.previewUrl,track.title+' — ניתוח תווים ומילים');
+   if(track.previewUrl)analyzeUrl(track.previewUrl,track.title+' — ניתוח תווים ומילים (קטע תצוגה מקדימה)');
    else panel.innerHTML='<h3>ניתוח תווים</h3><p class="disabled-note">אין קובץ שמע ישיר זמין. הדבק קישור ישיר לקובץ שמע נתמך.</p>';
  }else if(action==='mix'){
    const source=track.previewUrl||'';
