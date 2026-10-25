@@ -72,6 +72,17 @@ test('free lyrics and music metadata providers are wired through safe server end
   assert.match(server, /slice\(0, 180\)/);
 });
 
+test('free public music services are wired as server-side endpoints and exposed in capabilities', () => {
+  for (const route of ['/api/lyrics-search', '/api/music-metadata', '/api/deezer-search', '/api/radio-search', '/api/cover-art/:releaseId']) assert.ok(server.includes(route), 'missing route ' + route);
+  for (const provider of ['lrclib.net/api/search', 'musicbrainz.org/ws/2/recording/', 'api.deezer.com/search/track', 'api.radio-browser.info/json/stations/search', 'coverartarchive.org/release/']) assert.ok(server.includes(provider), 'missing provider ' + provider);
+  assert.match(server, /freeTrackSearch: \{ available: true, provider: "Deezer"/);
+  assert.match(server, /freeRadioDirectory: \{ available: true, provider: "Radio Browser"/);
+  assert.match(server, /freeCoverArt: \{ available: true, provider: "Cover Art Archive"/);
+  assert.match(html, /id="freeTrackForm"/);
+  assert.match(html, /id="radioSearchForm"/);
+  assert.match(html, /id="freeLyricsForm"/);
+});
+
 test('music notebook supports validated backup export and cross-device import', () => {
   assert.match(html, /exportNotebookBackup/);
   assert.match(html, /importNotebookBackup/);
