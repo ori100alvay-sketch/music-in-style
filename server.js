@@ -120,9 +120,11 @@ app.post("/api/auth/forgot-password", async (req, res) => {
   const cfg = authConfig();
   if (!cfg) return res.status(503).json({ error: "מערכת איפוס הסיסמה עדיין לא הוגדרה בשרת." });
   try {
-    const response = await fetch(cfg.base + "/auth/v1/recover", {
+    const recoveryUrl = new URL(cfg.base + "/auth/v1/recover");
+    recoveryUrl.searchParams.set("redirect_to", String(process.env.AUTH_REDIRECT_URL || "https://music-in-style.onrender.com/"));
+    const response = await fetch(recoveryUrl.toString(), {
       method: "POST", headers: { "Content-Type": "application/json", "apikey": cfg.key },
-      body: JSON.stringify({ email, redirect_to: String(process.env.AUTH_REDIRECT_URL || "https://music-in-style.onrender.com/") }),
+      body: JSON.stringify({ email }),
       signal: AbortSignal.timeout(15000)
     });
     if (!response.ok) {
