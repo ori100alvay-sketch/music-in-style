@@ -359,7 +359,7 @@ async function fetchLyricsForAudio(url){
     const job=await start.json().catch(()=>({}));
     if(!start.ok||!job.job_id)return null;
     for(let attempt=0;attempt<18;attempt++){
-      await new Promise(resolve=>setTimeout(resolve,5000));
+      await new Promise(resolve=>setTimeout(resolve,12000));
       const response=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
       const state=await response.json().catch(()=>({}));
       if(response.status===429){
@@ -382,7 +382,7 @@ async function analyzeUrl(url,label){
     const job=await response.json();
     if(!response.ok||!job.job_id){showError(job.error||'לא הצלחנו להתחיל להוציא אקורדים מהשיר.');return}
     let finished=false;
-    for(let attempt=0;attempt<36;attempt++){
+    for(let attempt=0;attempt<24;attempt++){
       // Conservative polling reduces provider rate-limit errors. Lyrics transcription
       // is not started automatically because it is a separate provider job.
       await new Promise(resolve=>setTimeout(resolve,5000));
@@ -395,20 +395,18 @@ async function analyzeUrl(url,label){
         return;
       }
       if(poll.status===429){
-        const retrySeconds=Math.min(30,Math.max(5,Number(poll.headers.get('Retry-After'))||10));
+        const retrySeconds=Math.min(300,Math.max(30,Number(poll.headers.get('Retry-After'))||30));
         resultMessage.textContent=state.error||'השירות מגביל זמנית את הבדיקות. ממתינים '+retrySeconds+' שניות…';
         await new Promise(resolve=>setTimeout(resolve,retrySeconds*1000));
+        if(attempt>=21){resultTitle.textContent='הניתוח ממתין למכסה';resultMessage.textContent='ספק האקורדים עדיין מגביל בדיקות. לא שלחנו עוד בקשות; נסה שוב מאוחר יותר.';return}
         continue;
       }
       if(!poll.ok){showError(state.error||'לא הצלחנו לקבל את תוצאות השיר. נסו קישור אחר או נסו שוב מאוחר יותר.');return}
       if(state.status==='complete'){
         currentAnalysis=state.result||{};
         resultTitle.textContent=label||'תוצאות השיר';
-        resultMessage.textContent='האקורדים התקבלו. מנסים לקבל גם תמלול עם חותמות זמן כדי לסנכרן אותם למילים…';
-        // Merge a separate transcription job with chord data. Alignment is shown only if both contain compatible timestamps.
-        const transcription=await fetchLyricsForAudio(url);
-        if(transcription)currentAnalysis={...currentAnalysis,transcription};
-        resultMessage.textContent='תוצאות הניתוח: אקורדים יוצמדו למילים רק אם קיימים נתוני תזמון תואמים.';
+        // Do not start a second provider job automatically; it can exhaust the shared quota.
+        resultMessage.textContent='תוצאות האקורדים והמידע המוזיקלי:';
         resultData.hidden=true;resultData.textContent='';
         renderWorkspace(currentAnalysis);
         finished=true;break;
