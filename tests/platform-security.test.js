@@ -72,6 +72,18 @@ test('free lyrics and music metadata providers are wired through safe server end
   assert.match(server, /slice\(0, 180\)/);
 });
 
+test('security hardening limits authentication attempts and restricts provider analysis URLs', () => {
+  assert.match(server, /app\.use\("\/api\/auth", \(req, res, next\) =>/);
+  assert.match(server, /RateLimit-Auth-Limit/);
+  assert.match(server, /15 \* 60_000/);
+  assert.match(server, /function validatePublicMusicUrl\(input\)/);
+  assert.match(server, /url\.protocol !== "https:"/);
+  assert.match(server, /url\.username \|\| url\.password \|\| url\.port/);
+  assert.match(server, /open\.spotify\.com/);
+  assert.match(server, /const songUrl = validatePublicMusicUrl\(input\)/);
+  assert.match(server, /script-src 'self' 'unsafe-inline';/);
+});
+
 test('free public music services are wired as server-side endpoints and exposed in capabilities', () => {
   for (const route of ['/api/lyrics-search', '/api/music-metadata', '/api/deezer-search', '/api/radio-search', '/api/cover-art/:releaseId']) assert.ok(server.includes(route), 'missing route ' + route);
   for (const provider of ['lrclib.net/api/search', 'musicbrainz.org/ws/2/recording/', 'api.deezer.com/search/track', 'api.radio-browser.info/json/stations/search', 'coverartarchive.org/release/']) assert.ok(server.includes(provider), 'missing provider ' + provider);
