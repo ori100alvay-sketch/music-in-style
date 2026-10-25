@@ -132,7 +132,7 @@ test('practice studio exposes all expected controls and accessible status region
   for (const id of [
     'practice', 'metronomeBpm', 'metronomeRange', 'metronomeToggle',
     'tapTempo', 'beatsPerBar', 'progressionKey', 'progressionMood',
-    'progressionOutput', 'generateProgression', 'copyProgression'
+    'progressionOutput', 'generateProgression', 'playProgression', 'stopProgression', 'copyProgression'
   ]) {
     assert.match(html, new RegExp('id="' + id + '"'), 'missing practice studio control: ' + id);
   }
