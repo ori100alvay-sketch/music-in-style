@@ -58,3 +58,13 @@ test('capabilities endpoint distinguishes built-in features from credential-gate
   assert.match(server, /needs: replicateConfigured \? \[\] : \["REPLICATE_API_TOKEN"\]/);
   assert.match(server, /needs: brizmConfigured \? \[\] : \["BRIZM_API_KEY"\]/);
 });
+
+test('music notebook supports validated backup export and cross-device import', () => {
+  assert.match(html, /exportNotebookBackup/);
+  assert.match(html, /importNotebookBackup/);
+  assert.match(html, /schemaVersion:1/);
+  assert.match(html, /file\.size>2097152/);
+  assert.match(html, /data\.pages\.length>100/);
+  assert.match(html, /data\.songs\.length>500/);
+  assert.match(html, /ייבוא הגיבוי יחליף את המחברת/);
+});
