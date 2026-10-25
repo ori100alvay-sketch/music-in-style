@@ -195,3 +195,29 @@ test('music theory engine supports slash chords and extended jazz/pop harmony', 
   assert.equal(theory.parseChord('Fmaj7#11').quality, 'major-seventh-sharp-eleven');
   assert.equal(theory.parseChord('Aadd9').quality, 'add-ninth');
 });
+
+test('account APIs cover signup, login, email verification, recovery and password update', () => {
+  for (const route of [
+    '/api/auth/config',
+    '/api/auth/signup',
+    '/api/auth/login',
+    '/api/auth/verify-email',
+    '/api/auth/forgot-password',
+    '/api/auth/update-password'
+  ]) assert.ok(server.includes(route), 'missing account route: ' + route);
+  assert.match(server, /password\.length < 10/);
+  assert.match(server, /token_hash/);
+  assert.match(server, /SUPABASE_URL/);
+  assert.match(server, /SUPABASE_ANON_KEY/);
+  assert.match(server, /Cache-Control", "no-store"/);
+});
+
+test('account UI includes registration, login, reset and email-confirmation handling', () => {
+  assert.match(html, /id="musicAuthOverlay"/);
+  assert.match(html, /id="musicAuthSignup"/);
+  assert.match(html, /id="musicAuthForgot"/);
+  assert.match(html, /id="musicAuthReset"/);
+  assert.match(html, /verify-email/);
+  assert.match(html, /token_hash/);
+  assert.match(html, /musicInStyleSession/);
+});
