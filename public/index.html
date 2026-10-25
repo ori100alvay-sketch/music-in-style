@@ -817,7 +817,7 @@ async function startStemSeparation(audioUrl){
   const data=await start.json().catch(()=>({}));
   if(!start.ok||!data.id){
    const creditIssue=start.status===402||data.providerStatus===402;
-   target.innerHTML='<div class="analysis-notice"><strong>'+escapeHtml(data.error||'לא ניתן להתחיל הפרדת כלים.')+'</strong>'+(creditIssue?'<p>כדי להפעיל מחדש את ההפרדה, יש להוסיף קרדיט לחשבון Replicate שממנו נוצר מפתח השרת, להמתין כמה דקות ולנסות שוב.</p><p><a href="https://replicate.com/account/billing#billing" target="_blank" rel="noopener noreferrer">פתיחת עמוד החיוב של Replicate ↗</a></p>':'')+(data.providerStatus?' <br>קוד שירות: '+escapeHtml(data.providerStatus):'')+(data.providerMessage&&!creditIssue?'<br>פרטי שירות: '+escapeHtml(data.providerMessage):'')+'</div>';return
+   target.innerHTML='<div class="analysis-notice"><strong>'+escapeHtml(data.error||'לא ניתן להתחיל הפרדת כלים.')+'</strong>'+(data.freeMode?'<p>מצב חינמי פעיל: לא נשלח קובץ לשירות בתשלום ולא ייווצר חיוב. נדרש מנוע Demucs מקומי או שירות חינמי אמיתי כדי להפעיל הפרדה אוטומטית.</p>':(creditIssue?'<p>השרת מוגדר במצב חינמי ולא אמור לשלוח בקשות הפרדה בתשלום. אם ההודעה הזו מופיעה לאחר עדכון, ייתכן שהאתר עדיין לא נפרס לגרסה האחרונה.</p>':' '))+(data.providerStatus?' <br>קוד שירות: '+escapeHtml(data.providerStatus):'')+(data.providerMessage&&!creditIssue?'<br>פרטי שירות: '+escapeHtml(data.providerMessage):'')+'</div>';return
   }
   target.innerHTML='<p class="disabled-note" id="stemProgress" aria-live="polite">המשימה נשלחה. ממתינים לערוצים המופרדים…</p>';
   for(let i=0;i<120;i++){
