@@ -134,8 +134,8 @@ test('stem separation playback validates HTTPS URLs and exposes group transport 
   assert.match(html, /id="stemPlayAll"/);
   assert.match(html, /id="stemPauseAll"/);
   assert.match(html, /id="stemResetAll"/);
-  assert.match(html, /Promise\.allSettled\(stemAudios\.map\(audio=>audio\.play\(\)\)\)/);
-  assert.match(html, /audio\.volume=Number\(input\.value\)\/100/);
+  assert.match(html, /Promise\.allSettled\(stemAudios\.map\(audio=>\{/);
+  assert.match(html, /audio\.volume=\(muted\.has\(audio\.id\)/);
 });
 test('timed lyric and chord alignment handles provider variants and bounded chord intervals', () => {
   assert.match(html, /function buildTimedAlignment\(data\)/);
@@ -143,7 +143,7 @@ test('timed lyric and chord alignment handles provider variants and bounded chor
   assert.match(html, /end_ms/);
   assert.match(html, /const scoreWords=/);
   assert.match(html, /const scoreChords=/);
-  assert.match(html, /word\.start<=event\.end\+0\.08/);
+  assert.match(html, /word\.start<=event\.end/);
   assert.match(html, /Keep lyric lines readable even when the transcription has no punctuation/);
   assert.match(html, /if\(words\.length<2\|\|!events\.length\)return null/);
 });
@@ -158,11 +158,11 @@ test('stem mixer supports nested provider outputs, mute, solo and independent ch
   assert.match(html, /class="stem-channel"/);
 });
 
-test('search-result chord and lyric analysis can start directly from an available audio preview', () => {
-  assert.match(html, /id="analyzePreview"/);
-  assert.match(html, /track\.previewUrl/);
-  assert.match(html, /analyzeUrl\(track\.previewUrl/);
+test('search-result chord analysis uses a public supported track URL rather than a short preview file', () => {
   assert.match(html, /id="analyzeFullAudio"/);
+  assert.match(html, /track\.trackUrl/);
+  assert.match(html, /analyzeUrl\(track\.trackUrl/);
+  assert.doesNotMatch(html, /analyzeUrl\(track\.previewUrl/);
 });
 
 test('stem mixer synchronizes playback, seeking, pause and playback rate to a master track', () => {
@@ -225,7 +225,7 @@ test('music theory engine exposes progression analysis and maqam caveats without
   assert.equal(hijaz.kind, 'maqam');
   assert.match(hijaz.note, /12/);
   assert.match(theory.getTheory({mode:'chord',chord:'nonsense'}).error, /מבנה האקורד/);
-  assert.match(theorySource, /תיאוריה וחישוב מוזיקלי/);
+  assert.match(theorySource, /const MAQAMS =/);
   assert.match(server, /app\.get\("\/api\/music-theory"/);
 });
 
@@ -233,7 +233,7 @@ test('music theory engine supports slash chords and extended jazz/pop harmony', 
   const theory = require('../music-theory');
   assert.equal(theory.parseChord('C/E').bass, 'E');
   assert.equal(theory.transposeChord('C/E', 2), 'D/F#');
-  assert.deepEqual(theory.parseChord('G7b9').notes, ['G','B','D','F','C#']);
+  assert.deepEqual(theory.parseChord('G7b9').notes, ['G','B','D','F','G#']);
   assert.equal(theory.parseChord('Fmaj7#11').quality, 'major-seventh-sharp-eleven');
   assert.equal(theory.parseChord('Aadd9').quality, 'add-ninth');
 });
