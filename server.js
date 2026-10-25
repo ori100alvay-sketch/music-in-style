@@ -62,7 +62,7 @@ app.post("/api/separate", async (req, res) => {
   try {
     const response = await fetch("https://api.replicate.com/v1/models/cjwbw/demucs/predictions", {
       method: "POST",
-      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "wait=1" },
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "wait=5" },
       body: JSON.stringify({ input: { audio: audioUrl.toString(), model_name: "htdemucs", output_format: "mp3", mp3_bitrate: 320 } }),
       signal: AbortSignal.timeout(25000)
     });
