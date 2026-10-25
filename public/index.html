@@ -193,6 +193,19 @@ checkHealth();
 document.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{const target=document.querySelector(link.getAttribute('href'));if(target)target.setAttribute('tabindex','-1')}));
 function isHttpUrl(value){try{const u=new URL(value);return u.protocol==='http:'||u.protocol==='https:'}catch{return false}}
 function showError(message){resultBox.classList.add('visible');workspace.classList.remove('visible');resultTitle.textContent='לא הצלחנו להשלים את הבקשה';resultMessage.textContent=message;resultData.textContent=''}
+async function fetchLyricsForAudio(url){
+  const start=await fetch('/api/transcribe-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+  const job=await start.json().catch(()=>({}));
+  if(!start.ok||!job.job_id)return null;
+  for(let attempt=0;attempt<25;attempt++){
+    await new Promise(resolve=>setTimeout(resolve,1500));
+    const response=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
+    const state=await response.json().catch(()=>({}));
+    if(!response.ok||state.status==='failed')return null;
+    if(state.status==='complete')return state.result||null;
+  }
+  return null;
+}
 async function analyzeUrl(url,label){
   currentAudioUrl=url;
   searchBox.classList.remove('visible');searchBox.innerHTML='';
@@ -210,6 +223,9 @@ async function analyzeUrl(url,label){
       if(state.status==='complete'){
         currentAnalysis=state.result||{};
         resultTitle.textContent=label||'תוצאות השיר';
+        resultMessage.textContent='האקורדים זוהו. בודקים אם אפשר לקבל גם תמלול מילים…';
+        const transcription=await fetchLyricsForAudio(url);
+        if(transcription)currentAnalysis={...currentAnalysis,transcription};
         resultMessage.textContent='תוצאות האקורדים והמידע המוזיקלי:';
         resultData.hidden=true;resultData.textContent='';
         renderWorkspace(currentAnalysis);
