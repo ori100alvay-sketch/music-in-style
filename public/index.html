@@ -148,8 +148,21 @@ function selectAction(action,track){
    else panel.innerHTML='<h3>ניתוח תווים</h3><p class="disabled-note">אין קובץ שמע ישיר זמין. הדבק קישור ישיר לקובץ שמע נתמך.</p>';
  }else if(action==='mix'){
    const source=track.previewUrl||'';
-   panel.innerHTML='<h3>ניתוח פלייבק והפרדת כלים</h3><p class="disabled-note">אפשר להפעיל הפרדה ישירות מתוצאת החיפוש כאשר קיימת תצוגה מקדימה עם כתובת שמע נגישה. קישורי עמוד YouTube/Spotify אינם קובץ שמע, ולכן אי אפשר לשלוח אותם ישירות ל-Demucs. תצוגת המקדים עשויה להיות קצרה מהשיר המלא.</p><div class="toolbar"><button class="tool-button" id="startSeparation" '+(source?'':'disabled')+'>התחל הפרדת כלים</button></div><div id="stemResults">'+(source?'':'<p class="disabled-note">לתוצאה הזאת אין תצוגת שמע זמינה. בחר תוצאה אחרת שיש לה תצוגה מקדימה, או שנצטרך לחבר ספק שמע מורשה שתומך בניתוח השיר המלא.</p>')+'</div>';
+   panel.innerHTML='<h3>ניתוח פלייבק והפרדת כלים</h3><p class="disabled-note">Brizm מחובר לניתוח נתוני שיר (BPM וסולם) לפי שם השיר והאמן. להפרדת ערוצים בפועל עדיין נדרש קובץ שמע נגיש והרשאת API פעילה. קישור לעמוד YouTube/Spotify אינו קובץ שמע ישיר.</p><div class="toolbar"><button class="tool-button" id="brizmAnalyze">נתח BPM וסולם</button><button class="tool-button" id="startSeparation" '+(source?'':'disabled')+'>התחל הפרדת כלים</button></div><div id="brizmResults"></div><div id="stemResults">'+(source?'':'<p class="disabled-note">לתוצאה הזאת אין תצוגת שמע זמינה. כדי להפריד את השיר עצמו, צריך קובץ שמע מורשה ונגיש.</p>')+'</div>';
    const start=document.getElementById('startSeparation');if(start)start.onclick=()=>startStemSeparation(source);
+   const brizmButton=document.getElementById('brizmAnalyze');
+   if(brizmButton)brizmButton.onclick=async()=>{
+     const out=document.getElementById('brizmResults');if(!out)return;
+     out.innerHTML='<p class="disabled-note">Brizm מנתח נתוני שיר…</p>';brizmButton.disabled=true;
+     try{
+       const qs=new URLSearchParams({song:track.title||'',artist:track.artist||''});
+       const resp=await fetch('/api/brizm/key-bpm?'+qs.toString());
+       const data=await resp.json();
+       if(!resp.ok)throw new Error(data.error||'לא ניתן לנתח את השיר');
+       out.innerHTML='<div class="metric-row"><div class="metric"><span>BPM · קצב</span><strong>'+escapeHtml(data.tempo??'—')+'</strong></div><div class="metric"><span>סולם</span><strong>'+escapeHtml((data.key||'—')+(data.mode?' · '+data.mode:''))+'</strong></div></div>'+(data.camelot?'<p class="disabled-note">Camelot: '+escapeHtml(data.camelot)+'</p>':'');
+     }catch(err){out.innerHTML='<p class="disabled-note">'+escapeHtml(err.message)+'</p>'}
+     finally{brizmButton.disabled=false}
+   };
  }
 }
 function renderWorkspace(data){
