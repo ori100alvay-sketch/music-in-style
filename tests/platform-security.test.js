@@ -152,3 +152,15 @@ test('timed chord alignment improves event deduplication, lyric phrase breaks an
   assert.match(html, /Hide repeated chord labels on adjacent words/);
   assert.match(html, /row\.start-prev\.start>1\.15/);
 });
+
+test('lyric transcription normalizes text and reconstructs timed word segments', () => {
+  assert.match(html, /function extractLyrics\(data\)/);
+  assert.match(html, /const reconstruct=segments=>/);
+  assert.match(html, /part\.start-previous\.end/);
+  assert.match(html, /replace\(\/\\n\{3,\}\/g,'\\n\\n'\)/);
+});
+test('chord display only labels chord changes across lyric lines', () => {
+  assert.match(html, /const compact=\[\];let previousChord=''/);
+  assert.match(html, /cell\.chord&&cell\.chord!==previousChord\?cell\.chord:''/);
+  assert.match(html, /if\(cell\.chord\)previousChord=cell\.chord/);
+});
