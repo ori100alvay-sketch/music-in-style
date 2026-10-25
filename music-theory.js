@@ -28,21 +28,31 @@ const MAQAMS = {
   saba: { name:"Saba", he:"צַבָּא", intervals:[0,1,3,5,6,8,10], note:"קירוב 12-צלילי; מסורת המקאם כוללת התנהגות מלודית שאינה נלכדת ברשימת תווים בלבד." }
 };
 const CHORDS = [
-  {suffix:"maj7", aliases:["maj7","M7","Δ7"], intervals:[0,4,7,11], quality:"major-seventh"},
+  {suffix:"maj7#11", aliases:["maj7#11"], intervals:[0,4,7,11,18], quality:"major-seventh-sharp-eleven"},
+  {suffix:"mMaj7", aliases:["mMaj7","m(maj7)"], intervals:[0,3,7,11], quality:"minor-major-seventh"},
   {suffix:"m7b5", aliases:["m7b5","ø"], intervals:[0,3,6,10], quality:"half-diminished"},
   {suffix:"dim7", aliases:["dim7","°7"], intervals:[0,3,6,9], quality:"diminished-seventh"},
-  {suffix:"mMaj7", aliases:["mMaj7","m(maj7)"], intervals:[0,3,7,11], quality:"minor-major-seventh"},
-  {suffix:"7#11", aliases:["7#11"], intervals:[0,4,7,10,6], quality:"dominant-sharp-eleven"},
-  {suffix:"9", aliases:["9"], intervals:[0,4,7,10,14], quality:"dominant-ninth"},
+  {suffix:"7b9", aliases:["7b9"], intervals:[0,4,7,10,13], quality:"dominant-flat-nine"},
+  {suffix:"7#9", aliases:["7#9"], intervals:[0,4,7,10,15], quality:"dominant-sharp-nine"},
+  {suffix:"7#11", aliases:["7#11"], intervals:[0,4,7,10,18], quality:"dominant-sharp-eleven"},
+  {suffix:"7b5", aliases:["7b5"], intervals:[0,4,6,10], quality:"dominant-flat-five"},
+  {suffix:"7#5", aliases:["7#5"], intervals:[0,4,8,10], quality:"dominant-sharp-five"},
   {suffix:"maj9", aliases:["maj9","M9"], intervals:[0,4,7,11,14], quality:"major-ninth"},
+  {suffix:"m13", aliases:["m13"], intervals:[0,3,7,10,14,21], quality:"minor-thirteenth"},
+  {suffix:"m11", aliases:["m11"], intervals:[0,3,7,10,14,17], quality:"minor-eleventh"},
   {suffix:"m9", aliases:["m9","min9"], intervals:[0,3,7,10,14], quality:"minor-ninth"},
-  {suffix:"13", aliases:["13"], intervals:[0,4,7,10,14,21], quality:"dominant-thirteenth"},
-  {suffix:"7", aliases:["7"], intervals:[0,4,7,10], quality:"dominant-seventh"},
-  {suffix:"m7", aliases:["m7","min7"], intervals:[0,3,7,10], quality:"minor-seventh"},
-  {suffix:"6", aliases:["6"], intervals:[0,4,7,9], quality:"major-sixth"},
-  {suffix:"m6", aliases:["m6"], intervals:[0,3,7,9], quality:"minor-sixth"},
+  {suffix:"add9", aliases:["add9"], intervals:[0,4,7,14], quality:"add-ninth"},
+  {suffix:"7sus4", aliases:["7sus4"], intervals:[0,5,7,10], quality:"dominant-suspended-fourth"},
   {suffix:"sus2", aliases:["sus2"], intervals:[0,2,7], quality:"suspended-second"},
   {suffix:"sus4", aliases:["sus4","sus"], intervals:[0,5,7], quality:"suspended-fourth"},
+  {suffix:"maj7", aliases:["maj7","M7","Δ7"], intervals:[0,4,7,11], quality:"major-seventh"},
+  {suffix:"13", aliases:["13"], intervals:[0,4,7,10,14,21], quality:"dominant-thirteenth"},
+  {suffix:"11", aliases:["11"], intervals:[0,4,7,10,14,17], quality:"dominant-eleventh"},
+  {suffix:"9", aliases:["9"], intervals:[0,4,7,10,14], quality:"dominant-ninth"},
+  {suffix:"7", aliases:["7"], intervals:[0,4,7,10], quality:"dominant-seventh"},
+  {suffix:"m7", aliases:["m7","min7"], intervals:[0,3,7,10], quality:"minor-seventh"},
+  {suffix:"m6", aliases:["m6"], intervals:[0,3,7,9], quality:"minor-sixth"},
+  {suffix:"6", aliases:["6"], intervals:[0,4,7,9], quality:"major-sixth"},
   {suffix:"aug", aliases:["aug","+","+"], intervals:[0,4,8], quality:"augmented"},
   {suffix:"dim", aliases:["dim","°"], intervals:[0,3,6], quality:"diminished"},
   {suffix:"m", aliases:["m","min","-"], intervals:[0,3,7], quality:"minor"},
@@ -65,15 +75,17 @@ function scaleNotes(root, scaleName="major") {
 }
 function parseChord(symbol) {
   if (typeof symbol !== "string" || symbol.length > 32) return null;
-  const match = symbol.trim().replace(/♯/g,"#").replace(/♭/g,"b").match(/^([A-G](?:#|b)?)(.*)$/);
+  const cleaned = symbol.trim().replace(/♯/g,"#").replace(/♭/g,"b");
+  const match = cleaned.match(/^([A-G](?:#|b)?)([^/]*)(?:\/([A-G](?:#|b)?))?$/);
   if (!match) return null;
-  const root = normalizeNote(match[1]);
-  if (!root) return null;
+  const root = normalizeNote(match[1]), bass = match[3] ? normalizeNote(match[3]) : null;
+  if (!root || (match[3] && !bass)) return null;
   let suffix = match[2].replace(/^\s+/,"");
   if (suffix.startsWith("min")) suffix = "m" + suffix.slice(3);
   const chord = CHORDS.find(c => c.aliases.includes(suffix));
   if (!chord) return null;
-  return { symbol: match[1] + suffix, root, suffix, quality: chord.quality, intervals: chord.intervals.slice(), notes: chord.intervals.map(i => noteAt(root,i)) };
+  const notes = [...new Set(chord.intervals.map(i => noteAt(root,i)))];
+  return { symbol: match[1] + suffix + (match[3] ? "/" + match[3] : ""), root, bass, suffix, quality: chord.quality, intervals: chord.intervals.slice(), notes };
 }
 function diatonicTriads(root, scaleName="major") {
   const notes = scaleNotes(root,scaleName), scale = SCALES[scaleName];
@@ -89,7 +101,9 @@ function diatonicTriads(root, scaleName="major") {
 function transposeChord(symbol, semitones) {
   const chord = parseChord(symbol);
   if (!chord || !Number.isInteger(semitones) || Math.abs(semitones)>48) return null;
-  return noteAt(chord.root,semitones) + chord.suffix;
+  const root = noteAt(chord.root,semitones);
+  const bass = chord.bass ? "/" + noteAt(chord.bass,semitones) : "";
+  return root + chord.suffix + bass;
 }
 function analyzeProgression(symbols, root, scaleName="major") {
   if (!Array.isArray(symbols) || symbols.length>128) return null;
