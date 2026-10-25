@@ -316,3 +316,13 @@ test('CI workflow runs the test suite and syntax checks on main updates', () => 
   assert.match(workflow, /npm test/);
   assert.match(workflow, /node --check server\.js/);
 });
+
+test('instrument separation stays explicitly disabled until a local engine is installed and verified', () => {
+  assert.match(server, /app\.get\("\/api\/separation-status"/);
+  assert.match(server, /available: false, configured: false, provider: "Disabled in free-safe mode"/);
+  assert.match(server, /No local Demucs runtime is installed/);
+  assert.match(server, /app\.post\("\/api\/separate", async \(_req, res\) => \{\s*return res\.status\(501\)/);
+  assert.match(server, /Paid inference providers are intentionally not called/);
+  assert.match(html, /הפרדת כלים עדיין לא פעילה/);
+  assert.match(html, /ההפרדה נשארת כבויה עד שהשרת יאשר שמנוע מקומי זמין/);
+});
