@@ -431,6 +431,12 @@ function pruneRecentAnalysisJobs(now = Date.now()) {
     if (now - value.createdAt >= ANALYSIS_DEDUPE_MS) recentAnalysisJobs.delete(key);
   }
 }
+function forgetRecentAnalysisJob(jobId) {
+  for (const [key, value] of recentAnalysisJobs) {
+    if (value.jobId === String(jobId)) recentAnalysisJobs.delete(key);
+  }
+}
+
 
 app.post("/api/analyze-url", async (req, res) => {
   const input = String((req.body || {}).url || "").trim();
@@ -472,6 +478,11 @@ app.post("/api/transcribe-url", async (req, res) => {
   const input = String((req.body || {}).url || "").trim();
   const songUrl = validatePublicMusicUrl(input);
   if (!songUrl) return res.status(400).json({ error: "מטעמי אבטחה, ניתן לתמלל רק קישורי HTTPS ציבוריים מפלטפורמות מוזיקה נתמכות." });
+  if (magicChordsIsCoolingDown()) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((magicChordsCooldownUntil - Date.now()) / 1000));
+    res.set("Retry-After", String(retryAfterSeconds));
+    return res.status(429).json({ error: `ספק האקורדים הגביל בקשות לאחרונה. המתינו עוד ${retryAfterSeconds} שניות לפני ניסיון תמלול נוסף.`, providerStatus: 429, retryAfterSeconds });
+  }
   try {
     const job = await providerFetch(MAGIC_CHORDS + "/transcribe/url", {
       method: "POST",
@@ -522,13 +533,20 @@ app.get("/api/jobs/:jobId", async (req, res) => {
     const state = String(status.status || status.state || "").toLowerCase();
     if (["complete", "completed", "succeeded", "success", "done"].includes(state)) {
       const result = await providerFetch(MAGIC_CHORDS + "/jobs/" + encodeURIComponent(jobId) + "/result");
+      forgetRecentAnalysisJob(jobId);
       return res.json({ status: "complete", result });
     }
-    if (["failed", "error", "cancelled", "canceled"].includes(state)) return res.status(422).json({ status: "failed", error: status.error || status.message || "ניתוח השיר נכשל. נסו קישור אחר." });
+    if (["failed", "error", "cancelled", "canceled"].includes(state)) {
+      forgetRecentAnalysisJob(jobId);
+      return res.status(422).json({ status: "failed", error: status.error || status.message || "ניתוח השיר נכשל. נסו קישור אחר." });
+    }
     return res.json({ status: state || "processing", message: "השיר עדיין בתהליך ניתוח." });
   } catch (err) {
     console.error("Analysis status check failed:", err.message, "providerStatus:", err.status || "unknown");
-    if (err.status === 404) return res.status(404).json({ error: "לא נמצא ניתוח עבור השיר הזה. ייתכן שהמשימה פגה תוקף; נסו להפעיל ניתוח חדש." });
+    if (err.status === 404) {
+      forgetRecentAnalysisJob(jobId);
+      return res.status(404).json({ error: "לא נמצא ניתוח עבור השיר הזה. ייתכן שהמשימה פגה תוקף; נסו להפעיל ניתוח חדש." });
+    }
     if (err.status === 429) {
       noteMagicChordsRateLimit(30);
       res.set("Retry-After", "30");
