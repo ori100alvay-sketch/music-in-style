@@ -88,6 +88,7 @@ app.get("/api/capabilities", (_req, res) => {
     generatedAt: new Date().toISOString(),
     capabilities: {
       songSearch: { available: true, provider: "Apple iTunes Search", note: "Search metadata and short previews; not full-song access." },
+      musicTheory: { available: true, provider: "Built-in Music in Style Theory Engine", features: ["scales and modes", "chord construction", "diatonic triads", "progression analysis", "transposition", "maqam approximations"], note: "Rule-based theory calculations; not a replacement for audio recognition or expert maqam performance analysis." },
       chordAnalysis: { available: true, provider: "Magic Chords", mode: "async-url", note: "Requires a public URL accepted by the provider; lyrics are not guaranteed." },
       lyricsTranscription: { available: true, provider: "Magic Chords", mode: "async-url", note: "Separate transcription job; accuracy depends on audio and provider output." },
       keyAndTempo: { available: brizmConfigured, configured: brizmConfigured, provider: "Brizm", needs: brizmConfigured ? [] : ["BRIZM_API_KEY"] },
