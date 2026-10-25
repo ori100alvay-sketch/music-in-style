@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Music in Stil</title>
+<style>
+:root{color-scheme:dark;--bg:#090a10;--panel:#121522;--line:#292d42;--text:#f4f5fb;--muted:#a6abc1;--purple:#8b5cf6;--cyan:#22d3ee}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#17142e 0,#090a10 55%);font-family:system-ui,Arial,sans-serif;color:var(--text);min-height:100vh;display:grid;place-items:center;padding:24px}
+main{width:min(760px,100%)}.brand{font-size:13px;letter-spacing:.18em;color:var(--cyan);font-weight:800}.hero{font-size:clamp(38px,8vw,70px);line-height:1.02;margin:18px 0}.hero span{background:linear-gradient(90deg,var(--purple),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}.lead{color:var(--muted);font-size:18px;line-height:1.7}.panel{margin-top:28px;background:#121522dd;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 24px 80px #0006}.row{display:flex;gap:10px;flex-wrap:wrap}input{flex:1;min-width:190px;background:#090a10;border:1px solid var(--line);color:white;border-radius:12px;padding:14px;font-size:16px}button{border:0;border-radius:12px;padding:14px 20px;background:linear-gradient(100deg,var(--purple),#5b8cff);color:white;font-weight:700;font-size:15px;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.hint{color:var(--muted);font-size:13px;margin-top:12px}pre{white-space:pre-wrap;overflow-wrap:anywhere;color:#d9e4ff;line-height:1.6}.status{display:inline-flex;align-items:center;gap:8px;color:#9cebdc;font-size:14px}.dot{width:8px;height:8px;border-radius:50%;background:#34d399}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">MUSIC IN STIL</div>
+  <h1 class="hero">המוזיקה שלך.<br><span>בסטייל שלך.</span></h1>
+  <p class="lead">מרחב למוזיקאים לגלות שירים, לעבוד על הרמוניה ולהתחיל לנתח מוזיקה — בממשק נקי, כהה ומודרני.</p>
+  <section class="panel">
+    <div class="status"><span class="dot"></span><span id="health">בודק חיבור לשרת…</span></div>
+    <h2>ניתוח שיר</h2>
+    <form id="analyze">
+      <div class="row">
+        <input id="songUrl" type="url" placeholder="הדבק קישור לשיר" required>
+        <button id="submit" type="submit">נתח שיר</button>
+      </div>
+    </form>
+    <p class="hint">ניתוח אמיתי דורש הגדרה של ספק AI ותמיכה שלו בקישור שנשלח.</p>
+    <pre id="result" aria-live="polite"></pre>
+  </section>
+</main>
+<script>
+async function checkHealth(){const el=document.getElementById('health');try{const r=await fetch('/health');const d=await r.json();el.textContent=d.ok?'השרת מחובר':'השרת לא זמין';}catch{el.textContent='לא ניתן להתחבר לשרת';}}
+checkHealth();
+document.getElementById('analyze').addEventListener('submit',async e=>{e.preventDefault();const btn=document.getElementById('submit'),out=document.getElementById('result');btn.disabled=true;out.textContent='מנסה לנתח…';try{const r=await fetch('/api/analyze-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:document.getElementById('songUrl').value.trim()})});const d=await r.json();out.textContent=JSON.stringify(d,null,2);if(!r.ok)out.textContent='הניתוח עדיין לא זמין: '+(d.error||'שגיאה לא ידועה')+'\n\n'+JSON.stringify(d,null,2);}catch(err){out.textContent='לא ניתן להגיע לשרת. בדוק שהאתר נפרס בהצלחה. '+err.message;}finally{btn.disabled=false;}});
+</script>
+</body>
+</html>
