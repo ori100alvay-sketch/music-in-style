@@ -5,8 +5,44 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const MAGIC_CHORDS = "https://magic-chords.dev/api/v1";
 app.disable("x-powered-by");
-app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+// Security headers: the UI currently uses inline scripts/styles, so the CSP is
+// deliberately compatible with the existing app while blocking plugins/frames.
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Content-Security-Policy", "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https:");
+  if (process.env.NODE_ENV === "production") res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  next();
+});
+// Lightweight per-process rate limiting for API abuse. For multi-instance production,
+// use the hosting provider/WAF or a shared store so limits apply across instances.
+const rateBuckets = new Map();
+app.use("/api", (req, res, next) => {
+  const now = Date.now();
+  const key = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  const windowMs = 60_000;
+  const limit = req.path.startsWith("/jobs/") || req.path.startsWith("/separate/") ? 90 : 30;
+  let bucket = rateBuckets.get(key);
+  if (!bucket || now - bucket.startedAt >= windowMs) bucket = { startedAt: now, count: 0 };
+  bucket.count += 1;
+  rateBuckets.set(key, bucket);
+  if (rateBuckets.size > 5000) {
+    for (const [ip, value] of rateBuckets) if (now - value.startedAt >= windowMs) rateBuckets.delete(ip);
+  }
+  res.setHeader("RateLimit-Limit", String(limit));
+  res.setHeader("RateLimit-Remaining", String(Math.max(0, limit - bucket.count)));
+  if (bucket.count > limit) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({ error: "יותר מדי בקשות בפרק זמן קצר. נסו שוב בעוד דקה." });
+  }
+  rateBuckets.set(key, bucket);
+  next();
+});
+app.use(cors({ origin: process.env.ALLOWED_ORIGIN ? process.env.ALLOWED_ORIGIN.split(",").map(v => v.trim()).filter(Boolean) : true, methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
+app.use(express.json({ limit: "1mb", strict: true }));
 app.use(express.static(path.join(__dirname, "public"), { maxAge: process.env.NODE_ENV === "production" ? "1h" : 0, etag: true }));
 
 async function providerFetch(url, options = {}) {
