@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const theory = require("./music-theory");
 const app = express();
 const PORT = process.env.PORT || 10000;
 const MAGIC_CHORDS = "https://magic-chords.dev/api/v1";
@@ -62,6 +63,19 @@ async function providerFetch(url, options = {}) {
   if (!response.ok) { const error = new Error(data.error || data.detail || data.message || "Music analysis service error"); error.status = response.status; error.details = data; throw error; }
   return data;
 }
+app.get("/api/music-theory", (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const result = theory.getTheory({
+    mode: String(req.query.mode || "scale"),
+    root: String(req.query.root || "C"),
+    scale: String(req.query.scale || "major"),
+    chord: String(req.query.chord || ""),
+    chords: String(req.query.chords || ""),
+    maqam: String(req.query.maqam || "hijaz")
+  });
+  if (result.error) return res.status(400).json(result);
+  res.json({ ...result, engine: "Music in Style Theory Engine", engineVersion: 1, note: "תיאוריה וחישוב מוזיקלי; ניתוח שמע בפועל דורש מנוע אודיו נפרד." });
+});
 app.get("/health", (_req, res) => { res.set("Cache-Control", "no-store"); res.json({ ok: true, service: "music-in-style", message: "Music in Style server is running" }); });
 // Honest capability discovery for the UI and support diagnostics. "configured" means
 // a server-side credential exists; it does not claim that a provider is healthy or paid.
