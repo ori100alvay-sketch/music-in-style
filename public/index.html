@@ -54,28 +54,33 @@ document.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('c
 function isHttpUrl(value){try{const u=new URL(value);return u.protocol==='http:'||u.protocol==='https:'}catch{return false}}
 function showError(message){resultBox.classList.add('visible');workspace.classList.remove('visible');resultTitle.textContent='לא הצלחנו להשלים את הבקשה';resultMessage.textContent=message;resultData.textContent=''}
 async function analyzeUrl(url,label){
-  searchBox.classList.remove('visible');searchBox.innerHTML='';resultBox.classList.add('visible');resultTitle.textContent='מכינים את הניתוח';resultMessage.textContent='שולחים את השיר למנוע הניתוח…';resultData.textContent='';submitBtn.disabled=true;
+  currentAudioUrl=url;
+  searchBox.classList.remove('visible');searchBox.innerHTML='';
+  resultBox.classList.add('visible');resultData.hidden=true;resultTitle.textContent='מכינים את האקורדים';resultMessage.textContent='מבקשים את תוצאות השיר…';resultData.textContent='';submitBtn.disabled=true;
   try{
     const response=await fetch('/api/analyze-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
     const job=await response.json();
-    if(!response.ok||!job.job_id){showError(job.error||'לא ניתן להתחיל את הניתוח.');return}
-    resultTitle.textContent=label||'מנתחים את השיר';resultMessage.textContent='הניתוח התחיל. זה עשוי לקחת מעט זמן…';
+    if(!response.ok||!job.job_id){showError(job.error||'לא הצלחנו להתחיל להוציא אקורדים מהשיר.');return}
+    let finished=false;
     for(let attempt=0;attempt<40;attempt++){
       await new Promise(resolve=>setTimeout(resolve,1800));
       const poll=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
       const state=await poll.json();
+      if(!poll.ok){showError(state.error||'לא הצלחנו לקבל את תוצאות השיר. נסה שוב.');return}
       if(state.status==='complete'){
-        resultTitle.textContent='הניתוח הושלם';
-        resultMessage.textContent='התקבלו תוצאות הניתוח המוזיקלי:';
-        resultData.textContent=JSON.stringify(state.result,null,2);
-        return;
+        currentAnalysis=state.result||{};
+        resultTitle.textContent=label||'תוצאות השיר';
+        resultMessage.textContent='תוצאות האקורדים והמידע המוזיקלי:';
+        resultData.hidden=false;resultData.textContent=JSON.stringify(currentAnalysis,null,2);
+        renderWorkspace(currentAnalysis);
+        finished=true;break;
       }
-      if(!poll.ok){showError(state.error||'שירות הניתוח לא הצליח להשלים את הבקשה.');return}
-      resultMessage.textContent='מנתחים את השיר… נא להמתין ('+(attempt+1)+'/'+40+')';
+      if(state.status==='failed'){showError(state.error||'לא הצלחנו להשלים את בקשת האקורדים.');return}
+      resultTitle.textContent='מכינים את תוצאות השיר';
+      resultMessage.textContent='עוד רגע… בודקים את התוצאות ('+(attempt+1)+' מתוך 40)';
     }
-    resultTitle.textContent='הניתוח עדיין מתבצע';
-    resultMessage.textContent='השיר עדיין בעיבוד. נסה שוב בעוד רגע.';
-  }catch(error){showError('לא ניתן להתחבר לשירות הניתוח. בדוק שהאתר נפרס ונסה שוב.')}
+    if(!finished){resultTitle.textContent='התוצאות מתעכבות';resultMessage.textContent='השירות עדיין לא החזיר תוצאה. אפשר לבחור שוב באפשרות האקורדים בעוד רגע.'}
+  }catch(error){showError('לא ניתן להתחבר לשירות האקורדים כרגע. נסה שוב.')}
   finally{submitBtn.disabled=false}
 }
 async function searchSongs(query){
@@ -96,8 +101,7 @@ async function searchSongs(query){
       meta.append(title,artist);button.appendChild(meta);
       const arrow=document.createElement('span');arrow.className='song-arrow';arrow.textContent=track.previewUrl?'›':'↗';button.appendChild(arrow);
       button.addEventListener('click',()=>{
-        if(track.previewUrl){input.value=track.title+' — '+track.artist;analyzeUrl(track.previewUrl,track.title+' — '+track.artist)}
-        else if(track.trackUrl){window.open(track.trackUrl,'_blank','noopener,noreferrer')}
+        currentTrack=track;currentAudioUrl=track.previewUrl||'';showTrackActions(track);
       });
       list.appendChild(button);
     });
@@ -117,7 +121,7 @@ function showTrackActions(track){
   workspace.innerHTML='<div class="action-grid">'+
   '<button class="action-card" data-action="listen"><strong>▶ לשמוע את השיר</strong><small>האזנה לתצוגה מקדימה כשזמינה</small></button>'+
   '<button class="action-card" data-action="notebook"><strong>＋ למחברת האישית</strong><small>שמירת השיר במכשיר הזה</small></button>'+
-  '<button class="action-card" data-action="analyze"><strong>⌁ להוציא אקורדים</strong><small>ניתוח אקורדים, BPM וסולם כשזמינים</small></button>'+
+  '<button class="action-card" data-action="analyze"><strong>♫ אקורדים לשיר</strong><small>הצגת אקורדים, BPM וסולם כשהמידע זמין</small></button>'+
   '<button class="action-card" data-action="notes"><strong>♫ תווים וייצוא</strong><small>קבצי PDF / MIDI / MusicXML אם המנוע תומך</small></button>'+
   '<button class="action-card" data-action="mix"><strong>◉ פלייבק בהרכבה אישית</strong><small>שליטה בעוצמת כל כלי — נדרשת הפרדת ערוצים</small></button>'+
   '</div><div id="workspacePanel" class="workspace-panel"><p class="disabled-note">בחר פעולה. המחברת נשמרת מקומית בדפדפן במכשיר הזה.</p></div>';
@@ -152,7 +156,7 @@ function renderWorkspace(data){
  '<div class="action-grid">'+
  '<button class="action-card" data-result-action="listen"><strong>▶ לשמוע את השיר</strong><small>נגן את מקור השמע אם הוא זמין</small></button>'+
  '<button class="action-card" data-result-action="notebook"><strong>＋ למחברת האישית</strong><small>שמור את הניתוח במכשיר הזה</small></button>'+
- '<button class="action-card" data-result-action="lyrics"><strong>♬ אקורדים על גבי המילים</strong><small>תצוגת שירה ונגינה מסונכרנת</small></button>'+
+ '<button class="action-card" data-result-action="lyrics"><strong>♬ אקורדים ומילים</strong><small>הצגת האקורדים לצד המילים כשהן זמינות</small></button>'+
  '<button class="action-card" data-result-action="notes"><strong>♫ תווים וייצוא</strong><small>PDF, MIDI או MusicXML כשהייצוא זמין</small></button>'+
  '<button class="action-card" data-result-action="mix"><strong>◉ פלייבק בהרכבה אישית</strong><small>שליטה נפרדת בכלי הנגינה</small></button></div><div id="analysisPanel" class="workspace-panel"><h3>האקורדים שזוהו</h3><div>'+chords.map(ch=>'<span class="chord-token">'+escapeHtml(ch)+'</span>').join('')+'</div><p class="disabled-note">הנתונים מוצגים לפי מה שמנוע הניתוח החזיר. אם BPM או מילים חסרים בתוצאה, יוצג מקף במקום לנחש.</p></div>';
  workspace.querySelectorAll('[data-result-action]').forEach(btn=>btn.addEventListener('click',()=>renderResultAction(btn.dataset.resultAction,data)));
