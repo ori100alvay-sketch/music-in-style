@@ -5,11 +5,13 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+import hmac
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 app = FastAPI(title="Music in Style local Demucs worker", docs_url=None, redoc_url=None)
-WORKER_TOKEN = os.environ.get("DEMUCS_WORKER_TOKEN", "").strip()\nMAX_BYTES = 25 * 1024 * 1024
+WORKER_TOKEN = os.environ.get("DEMUCS_WORKER_TOKEN", "").strip()
+MAX_BYTES = 25 * 1024 * 1024
 MAX_SECONDS = 8 * 60
 ALLOWED_SUFFIXES = {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus", ".aac"}
 
@@ -31,7 +33,13 @@ def capabilities():
 
 
 @app.post("/separate")
-async def separate(audio: UploadFile = File(...)):
+async def separate(audio: UploadFile = File(...), x_worker_token: str | None = Header(default=None)):
+    if not WORKER_TOKEN:
+        raise HTTPException(503, "Worker is not configured with an access token.")
+    if not x_worker_token or not hmac.compare_digest(x_worker_token, WORKER_TOKEN):
+        raise HTTPException(401, "Unauthorized.")
+    if shutil.which("demucs") is None or shutil.which("ffprobe") is None or shutil.which("ffmpeg") is None:
+        raise HTTPException(503, "Demucs runtime is not installed.")
     suffix = Path(audio.filename or "").suffix.lower()
     if suffix not in ALLOWED_SUFFIXES:
         raise HTTPException(415, "Unsupported audio type. Upload MP3, WAV, FLAC, M4A, OGG, OPUS or AAC.")
