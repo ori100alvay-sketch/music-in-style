@@ -119,5 +119,6 @@ async def separate(audio: UploadFile = File(...), x_worker_token: str | None = H
     finally:
         if not response_ready:
             shutil.rmtree(tmp, ignore_errors=True)
-        if not audio.closed:
-            await audio.close()
+        # Starlette UploadFile does not expose a public .closed attribute.
+        # Closing directly is supported and safe even after a failed request.
+        await audio.close()
