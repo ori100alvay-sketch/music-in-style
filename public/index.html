@@ -174,6 +174,17 @@ body{background:radial-gradient(ellipse at 50% -12%,#292929 0,transparent 43%),r
 .progression-output{min-height:60px;border:1px solid #302e43;border-radius:12px;background:#0a0a10;padding:14px;direction:ltr;text-align:center;font-size:clamp(18px,3vw,24px);line-height:1.8;word-spacing:8px;margin:12px 0}
 .practice-note{font-size:11px!important;color:#85859a!important;margin-top:12px!important}
 @media(max-width:640px){.practice-studio{padding:8px 18px 60px}.practice-grid{grid-template-columns:1fr}.practice-card{padding:17px}}
+</style><style>
+/* Accessibility tools and chord QA lab */
+.access-fab{position:fixed;left:16px;bottom:82px;z-index:900;border:1px solid #615783;border-radius:999px;background:#19152a;color:#fff;padding:12px 15px;box-shadow:0 8px 30px #0008;cursor:pointer;font-size:13px}
+.access-panel{display:none;position:fixed;left:14px;bottom:138px;z-index:901;width:min(330px,calc(100vw - 28px));max-height:70vh;overflow:auto;border:1px solid #51476f;border-radius:16px;padding:16px;background:#10101af5;box-shadow:0 20px 70px #000b}
+.access-panel.open{display:block}.access-panel h2{font-size:16px;margin:0 0 12px}.access-panel .access-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;font-size:13px}.access-panel button,.qa-button{border:1px solid #50476e;background:#211b35;color:#fff;border-radius:9px;padding:9px 11px;cursor:pointer;min-height:40px}.access-panel input[type=range]{width:110px}.access-panel button:focus-visible,.access-fab:focus-visible,.qa-button:focus-visible{outline:3px solid #67e8f9;outline-offset:3px}
+body.a11y-large{font-size:1.12em}body.a11y-large p,body.a11y-large button,body.a11y-large input,body.a11y-large label{font-size:1.08em!important}
+body.a11y-high-contrast{--muted:#fff;--line:#fff;background:#000!important;color:#fff!important}body.a11y-high-contrast .feature,body.a11y-high-contrast .workspace-panel,body.a11y-high-contrast .result,body.a11y-high-contrast .song-option{background:#000!important;border-color:#fff!important;color:#fff!important}
+body.a11y-links a{text-decoration:underline!important;text-decoration-thickness:2px!important;text-underline-offset:3px}
+body.a11y-no-motion *,body.a11y-no-motion *:before,body.a11y-no-motion *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+.chord-qa{border:1px solid #38334f;border-radius:15px;background:#0d0d16;padding:15px;margin:14px 0}.chord-qa h3{margin:0 0 7px;font-size:16px}.chord-qa textarea{width:100%;min-height:82px;border:1px solid #48415f;border-radius:10px;background:#08080e;color:#fff;padding:11px;font:inherit;resize:vertical}.chord-qa .qa-controls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.qa-result{font-size:13px;line-height:1.85;color:#d9d5eb;overflow-wrap:anywhere}.qa-good{color:#9de8c4}.qa-warn{color:#ffd28b}.stem-sync-tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.stem-sync-tools button{border:1px solid #51476f;border-radius:9px;background:#211b35;color:#fff;padding:9px 12px;min-height:40px}
+@media(max-width:480px){.access-fab{left:10px;bottom:75px;padding:10px 12px}.access-panel{left:10px;bottom:125px;width:calc(100vw - 20px)}}
 </style></head><body><div class="shell">
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">חיפוש שירים</a><a href="#practice">חדר אימון</a><button class="notebook-launch" type="button" onclick="openNotebook()">המחברת שלי</button><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button><a href="/copyright.html">זכויות יוצרים ותנאי שימוש</a></nav></header>
 <main id="top"><section class="hero">
@@ -727,4 +738,57 @@ document.getElementById('analyzeForm').addEventListener('submit',async e=>{
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}), { once: true });
 }
-</script><button type="button" class="notebook-fixed-access" onclick="openNotebook()" aria-label="פתיחת המחברת האישית"><span class="fixed-note-icon">♫</span><span>המחברת האישית</span></button></body></html>
+</script>
+<section class="access-panel" id="accessPanel" aria-labelledby="accessTitle" aria-hidden="true">
+ <h2 id="accessTitle">אפשרויות נגישות</h2>
+ <div class="access-row"><span>טקסט גדול</span><button type="button" id="a11yLarge" aria-pressed="false">הפעלה</button></div>
+ <div class="access-row"><span>ניגודיות גבוהה</span><button type="button" id="a11yContrast" aria-pressed="false">הפעלה</button></div>
+ <div class="access-row"><span>קו תחתון לקישורים</span><button type="button" id="a11yLinks" aria-pressed="false">הפעלה</button></div>
+ <div class="access-row"><span>צמצום תנועה</span><button type="button" id="a11yMotion" aria-pressed="false">הפעלה</button></div>
+ <div class="access-row"><span>גודל טקסט</span><input id="a11yScale" type="range" min="90" max="140" step="5" value="100" aria-label="גודל טקסט באחוזים"><output id="a11yScaleOut">100%</output></div>
+ <button type="button" id="a11yReset">איפוס נגישות</button>
+ <p class="disabled-note">ההגדרות משפיעות על התצוגה במכשיר הזה. זהו כלי עזר ואינו תחליף להתאמה מקצועית לתקן נגישות.</p>
+</section>
+<button type="button" class="access-fab" id="accessToggle" aria-controls="accessPanel" aria-expanded="false">♿ נגישות</button>
+<button type="button" class="notebook-fixed-access" onclick="openNotebook()" aria-label="פתיחת המחברת האישית"><span class="fixed-note-icon">♫</span><span>המחברת האישית</span></button>
+<script>
+/* Accessibility preferences and chord quality checks */
+(()=>{
+ const panel=document.getElementById('accessPanel'),toggle=document.getElementById('accessToggle');
+ if(panel&&toggle){
+  const prefs={large:false,contrast:false,links:false,motion:false,scale:100};
+  const set=(key,on)=>{prefs[key]=on;document.body.classList.toggle(({large:'a11y-large',contrast:'a11y-high-contrast',links:'a11y-links',motion:'a11y-no-motion'})[key],on);const b=document.getElementById(({large:'a11yLarge',contrast:'a11yContrast',links:'a11yLinks',motion:'a11yMotion'})[key]);if(b){b.setAttribute('aria-pressed',String(on));b.textContent=on?'פעיל':'הפעלה'}};
+  toggle.addEventListener('click',()=>{const open=!panel.classList.contains('open');panel.classList.toggle('open',open);panel.setAttribute('aria-hidden',String(!open));toggle.setAttribute('aria-expanded',String(open));if(open)panel.querySelector('button')?.focus()});
+  document.getElementById('a11yLarge').addEventListener('click',()=>set('large',!prefs.large));
+  document.getElementById('a11yContrast').addEventListener('click',()=>set('contrast',!prefs.contrast));
+  document.getElementById('a11yLinks').addEventListener('click',()=>set('links',!prefs.links));
+  document.getElementById('a11yMotion').addEventListener('click',()=>set('motion',!prefs.motion));
+  document.getElementById('a11yScale').addEventListener('input',e=>{prefs.scale=Number(e.target.value);document.documentElement.style.fontSize=prefs.scale+'%';document.getElementById('a11yScaleOut').textContent=prefs.scale+'%'});
+  document.getElementById('a11yReset').addEventListener('click',()=>{['large','contrast','links','motion'].forEach(k=>set(k,false));document.getElementById('a11yScale').value=100;document.documentElement.style.fontSize='100%';document.getElementById('a11yScaleOut').textContent='100%'});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('open')){panel.classList.remove('open');panel.setAttribute('aria-hidden','true');toggle.setAttribute('aria-expanded','false');toggle.focus()}});
+ }
+ const rootNames=['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
+ const chordPattern=/^([A-G](?:#|b)?)(?:maj|min|m|M|dim|aug|sus(?:2|4)?|add\d+|\d+|°|ø)*(?:\/(?:[A-G](?:#|b)?))?$/;
+ function normalizeRoot(root){return ({Db:'C#',Eb:'D#',Gb:'F#',Ab:'G#',Bb:'A#',Cb:'B',Fb:'E',E#:'F',B#:'C'})[root]||root}
+ function transpose(token,steps){const m=token.match(/^([A-G](?:#|b)?)(.*)$/);if(!m)return token;const root=normalizeRoot(m[1]),i=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'].indexOf(root);if(i<0)return token;return ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][(i+steps+120)%12]+m[2]}
+ function runQA(){
+  const input=document.getElementById('chordQaInput'),out=document.getElementById('chordQaResult');if(!input||!out)return;
+  const tokens=input.value.trim().split(/[\s,;|·]+/).filter(Boolean);
+  if(!tokens.length){out.textContent='הדבק רצף אקורדים לבדיקה.';return}
+  const invalid=tokens.filter(t=>!chordPattern.test(t)),valid=tokens.filter(t=>chordPattern.test(t)),counts={};
+  valid.forEach(t=>counts[t]=(counts[t]||0)+1);
+  const repeated=Object.entries(counts).filter(([,n])=>n>1).map(([ch,n])=>ch+' × '+n);
+  const shift=Number(document.getElementById('chordQaShift').value)||0;
+  const transposed=valid.map(ch=>transpose(ch,shift));
+  const same=valid.map(ch=>transpose(transpose(ch,shift),-shift));
+  const roundTrip=valid.every((ch,i)=>same[i]===ch);
+  out.innerHTML='<p class="'+(invalid.length?'qa-warn':'qa-good')+'">'+(invalid.length?'אקורדים לבדיקה נוספת: '+invalid.map(escapeHtml).join(', '):'מבנה האקורדים תקין לפי בדיקת התחביר הבסיסית.')+'</p><p>נבדקו '+tokens.length+' פריטים · תקינים תחבירית: '+valid.length+' · לא תקינים/לא מזוהים: '+invalid.length+'</p><p>אקורדים שחוזרים ברצף: '+(repeated.length?repeated.map(escapeHtml).join(', '):'אין כפילויות מדויקות')+'</p><p>העברה ב-'+(shift>0?'+':'')+shift+' חצאי טונים: <strong dir="ltr">'+transposed.map(escapeHtml).join(' · ')+'</strong></p><p class="'+(roundTrip?'qa-good':'qa-warn')+'">'+(roundTrip?'בדיקת חזרה לסולם המקורי עברה.':'בדיקת חזרה לסולם המקורי דורשת בדיקה ידנית.')+'</p><p class="disabled-note">זו בדיקת תחביר ועקביות בלבד: היא אינה מאמתת שהאקורדים נכונים להקלטה או לסולם המקורי.</p>';
+ }
+ const panel=document.getElementById('workspacePanel');
+ if(panel&&!document.getElementById('chordQaLab')){
+  const qa=document.createElement('section');qa.id='chordQaLab';qa.className='chord-qa';qa.innerHTML='<h3>מעבדת בדיקת אקורדים</h3><p class="disabled-note">בדיקת תחביר, אקורדים חוזרים והעברה בין סולמות — ללא ניחוש אקורדים שלא זוהו.</p><label for="chordQaInput">רצף אקורדים</label><textarea id="chordQaInput" placeholder="לדוגמה: Am F C G | Dm7 G7 Cmaj7"></textarea><div class="qa-controls"><label for="chordQaShift">העברה בחצאי טונים</label><select id="chordQaShift"><option value="-5">−5</option><option value="-2">−2</option><option value="-1">−1</option><option value="0" selected>0</option><option value="1">+1</option><option value="2">+2</option><option value="5">+5</option></select><button class="qa-button" id="runChordQa" type="button">בדוק אקורדים</button><button class="qa-button" id="copyChordQa" type="button">העתק תוצאה</button></div><div class="qa-result" id="chordQaResult" aria-live="polite">התוצאות יוצגו כאן.</div>';
+  panel.appendChild(qa);qa.querySelector('#runChordQa').addEventListener('click',runQA);qa.querySelector('#chordQaInput').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')runQA()});qa.querySelector('#copyChordQa').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(qa.querySelector('#chordQaResult').innerText);qa.querySelector('#chordQaResult').insertAdjacentHTML('beforeend','<p class="qa-good">התוצאה הועתקה.</p>')}catch{qa.querySelector('#chordQaResult').insertAdjacentHTML('beforeend','<p class="qa-warn">העתקה אוטומטית אינה זמינה בדפדפן הזה.</p>')}});
+ }
+})();
+</script>
+</body></html>
