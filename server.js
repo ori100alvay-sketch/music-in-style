@@ -411,6 +411,11 @@ app.get("/api/search-song", async (req, res) => {
 // Reuse recent jobs for the same URL to avoid duplicate paid/provider requests.
 const recentAnalysisJobs = new Map();
 const ANALYSIS_DEDUPE_MS = 3 * 60_000;
+let magicChordsCooldownUntil = 0;
+function magicChordsIsCoolingDown() { return Date.now() < magicChordsCooldownUntil; }
+function noteMagicChordsRateLimit(seconds = 60) {
+  magicChordsCooldownUntil = Math.max(magicChordsCooldownUntil, Date.now() + seconds * 1000);
+}
 function pruneRecentAnalysisJobs(now = Date.now()) {
   for (const [key, value] of recentAnalysisJobs) {
     if (now - value.createdAt >= ANALYSIS_DEDUPE_MS) recentAnalysisJobs.delete(key);
@@ -421,6 +426,11 @@ app.post("/api/analyze-url", async (req, res) => {
   const input = String((req.body || {}).url || "").trim();
   const songUrl = validatePublicMusicUrl(input);
   if (!songUrl) return res.status(400).json({ error: "מטעמי אבטחה, ניתן לנתח רק קישורי HTTPS ציבוריים מפלטפורמות מוזיקה נתמכות (YouTube, SoundCloud, Spotify, Apple Music, Bandcamp או Archive.org)." });
+  if (magicChordsIsCoolingDown()) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((magicChordsCooldownUntil - Date.now()) / 1000));
+    res.set("Retry-After", String(retryAfterSeconds));
+    return res.status(429).json({ error: `ספק האקורדים הגביל בקשות לאחרונה. המתינו עוד ${retryAfterSeconds} שניות לפני ניסיון נוסף.`, providerStatus: 429, retryAfterSeconds });
+  }
   const now = Date.now();
   pruneRecentAnalysisJobs(now);
   const cacheKey = songUrl.toString();
@@ -437,8 +447,9 @@ app.post("/api/analyze-url", async (req, res) => {
   } catch (err) {
     console.error("Analysis submission failed:", err.message, "providerStatus:", err.status || "unknown");
     if (err.status === 429) {
+      noteMagicChordsRateLimit(60);
       res.set("Retry-After", "60");
-      return res.status(429).json({ error: "שירות האקורדים הגיע למגבלת הבקשות שלו. המתינו כדקה לפני ניסיון נוסף. אם זה נמשך, ייתכן שמכסת החשבון של ספק האקורדים הסתיימה.", providerStatus: 429, retryAfterSeconds: 60 });
+      return res.status(429).json({ error: "ספק האקורדים הגביל את הבקשות. עצרנו ניסיונות חוזרים; המתינו כדקה ונסו שוב. אם זה נמשך, צריך לבדוק את מכסת ה-API של הספק.", providerStatus: 429, retryAfterSeconds: 60 });
     }
     return res.status(502).json({ error: "לא הצלחנו להתחיל את ניתוח השיר. ודאו שהקישור מוביל למדיה ציבורית ונסו שוב.", providerStatus: err.status || null });
   }
@@ -495,8 +506,9 @@ app.get("/api/jobs/:jobId", async (req, res) => {
     console.error("Analysis status check failed:", err.message, "providerStatus:", err.status || "unknown");
     if (err.status === 404) return res.status(404).json({ error: "לא נמצא ניתוח עבור השיר הזה. ייתכן שהמשימה פגה תוקף; נסו להפעיל ניתוח חדש." });
     if (err.status === 429) {
-      res.set("Retry-After", "10");
-      return res.status(429).json({ error: "שירות האקורדים מגביל זמנית את בדיקות המצב. ממתינים מעט לפני ניסיון נוסף." });
+      noteMagicChordsRateLimit(30);
+      res.set("Retry-After", "30");
+      return res.status(429).json({ error: "ספק האקורדים הגביל את בדיקות המצב. המתינו כחצי דקה לפני ניסיון נוסף.", retryAfterSeconds: 30 });
     }
     if (err.status === 503) return res.status(503).json({ error: "שירות האקורדים אינו זמין זמנית. נסו שוב בעוד רגע." });
     return res.status(502).json({ error: "שירות האקורדים לא הצליח להחזיר את מצב הניתוח. נסו קישור ציבורי אחר או נסו שוב מאוחר יותר." });
