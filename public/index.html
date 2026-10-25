@@ -580,28 +580,48 @@ function collectNestedArrays(data,predicate){
  walk(data,'',0);return found;
 }
 function buildTimedAlignment(data){
- const timeKeys=['start','start_time','startTime','start_sec','start_seconds','start_ms','timestamp','timestamp_ms','time','time_ms','onset','begin','offset'];
- const wordArrays=collectNestedArrays(data,(arr,path)=>/(word|segment|token|transcript|lyric)/i.test(path)&&arr.some(item=>item&&typeof item==='object'&&typeof(item.word||item.text||item.token)==='string'&&timedValue(item,timeKeys)!==null));
- const chordArrays=collectNestedArrays(data,(arr,path)=>/(chord|harmony|event|timeline|segment|frame)/i.test(path)&&arr.some(item=>item&&typeof item==='object'&&typeof(item.chord||item.name||item.label||item.chord_name||item.symbol)==='string'&&timedValue(item,timeKeys)!==null));
+ const wordTimeKeys=['start','start_time','startTime','start_sec','start_seconds','start_ms','timestamp','timestamp_ms','time','time_ms','onset','begin'];
+ const chordTimeKeys=[...wordTimeKeys,'offset','end','end_time','endTime','end_sec','end_seconds','end_ms','timestamp_end'];
+ const chordPattern=/^[A-G](?:#|b)?(?:maj|min|m|M|dim|aug|sus(?:2|4)?|add\\d+|\\d+|°|ø)*(?:\\/[A-G](?:#|b)?)?$/;
+ const wordArrays=collectNestedArrays(data,(arr,path)=>/(word|token|transcript|lyric|segment)/i.test(path)&&arr.filter(item=>item&&typeof item==='object'&&typeof(item.word||item.text||item.token)==='string'&&timedValue(item,wordTimeKeys)!==null).length>=2);
+ const chordArrays=collectNestedArrays(data,(arr,path)=>/(chord|harmony|event|timeline|segment|frame|beat)/i.test(path)&&arr.filter(item=>item&&typeof item==='object'&&typeof(item.chord||item.chord_name||item.symbol||item.label||item.name)==='string'&&timedValue(item,chordTimeKeys)!==null&&chordPattern.test(String(item.chord||item.chord_name||item.symbol||item.label||item.name).trim())).length>=1);
  if(!wordArrays.length||!chordArrays.length)return null;
- const bestWords=wordArrays.sort((a,b)=>b.value.length-a.value.length)[0].value;
- const bestChords=chordArrays.sort((a,b)=>b.value.length-a.value.length)[0].value;
- function seconds(item){
-  const ms=timedValue(item,['start_ms','timestamp_ms','time_ms']);if(ms!==null)return ms/1000;
-  const raw=timedValue(item,timeKeys);if(raw===null)return null;
-  if(timedValue(item,['start_sec','start_seconds'])!==null)return raw;
+ const scoreWords=item=>item.value.filter(x=>x&&typeof x==='object'&&typeof(x.word||x.text||x.token)==='string'&&timedValue(x,wordTimeKeys)!==null).length+( /(word|token)/i.test(item.path)?1000:0)+(/transcript|lyric/i.test(item.path)?200:0);
+ const scoreChords=item=>item.value.filter(x=>x&&typeof x==='object'&&typeof(x.chord||x.chord_name||x.symbol||x.label||x.name)==='string'&&timedValue(x,chordTimeKeys)!==null).length+(/chord|harmony/i.test(item.path)?1000:0);
+ const bestWords=wordArrays.sort((a,b)=>scoreWords(b)-scoreWords(a))[0].value;
+ const bestChords=chordArrays.sort((a,b)=>scoreChords(b)-scoreChords(a))[0].value;
+ function seconds(item,kind){
+  const keys=kind==='end'?['end_ms','timestamp_end']:kind==='start'?['start_ms','timestamp_ms','time_ms']:['start_ms','timestamp_ms','time_ms'];
+  const ms=timedValue(item,keys);if(ms!==null)return ms/1000;
+  const explicitSeconds=timedValue(item,kind==='end'?['end_sec','end_seconds']:['start_sec','start_seconds']);
+  if(explicitSeconds!==null)return explicitSeconds;
+  const raw=timedValue(item,kind==='end'?['end','end_time','endTime','offset']:wordTimeKeys);
+  if(raw===null)return null;
+  // Large bare timestamps are commonly milliseconds; explicit *_sec fields above win.
   return raw>10000?raw/1000:raw;
  }
- const words=bestWords.map(item=>({text:String(item.word||item.text||item.token||'').trim(),start:seconds(item)})).filter(x=>x.text&&x.start!==null).sort((a,b)=>a.start-b.start);
- const events=bestChords.map(item=>({chord:String(item.chord||item.name||item.label||item.chord_name||item.symbol||'').trim(),start:seconds(item)})).filter(x=>x.chord&&x.start!==null).sort((a,b)=>a.start-b.start);
- if(!words.length||!events.length)return null;
- let current=-1;const rows=[];
- for(const word of words){while(current+1<events.length&&events[current+1].start<=word.start)current++;rows.push({text:word.text,chord:current>=0?events[current].chord:''})}
+ const words=bestWords.map(item=>({text:String(item.word||item.text||item.token||'').trim(),start:seconds(item,'start'),raw:item})).filter(x=>x.text&&x.start!==null&&x.start>=0).sort((a,b)=>a.start-b.start);
+ const events=bestChords.map(item=>({chord:String(item.chord||item.chord_name||item.symbol||item.label||item.name||'').trim(),start:seconds(item,'start'),end:seconds(item,'end'),raw:item})).filter(x=>x.chord&&chordPattern.test(x.chord)&&x.start!==null&&x.start>=0).sort((a,b)=>a.start-b.start);
+ if(words.length<2||!events.length)return null;
+ const rows=[];let current=-1;
+ for(const word of words){
+  while(current+1<events.length&&events[current+1].start<=word.start)current++;
+  const event=current>=0?events[current]:null;
+  // If the provider supplied a bounded chord interval, don't carry it beyond its end.
+  const chord=event&&(event.end===null||word.start<=event.end+0.08)?event.chord:'';
+  rows.push({text:word.text,chord,start:word.start});
+ }
  if(!rows.some(row=>row.chord))return null;
+ // Keep lyric lines readable even when the transcription has no punctuation.
  const lines=[];let line=[];
- for(let i=0;i<rows.length;i++){line.push(rows[i]);if(/[.!?…]$/.test(rows[i].text)){lines.push(line);line=[]}}
+ for(let i=0;i<rows.length;i++){
+  const row=rows[i],prev=rows[i-1];
+  if(line.length&&(row.text.includes('\\n')||(prev&&row.start-prev.start>1.35))){lines.push(line);line=[]}
+  line.push({text:row.text.replace(/\\n/g,''),chord:row.chord});
+  if(/[.!?…]$/.test(row.text)){lines.push(line);line=[]}
+ }
  if(line.length)lines.push(line);
- return lines.length?lines:[rows];
+ return lines.length?lines:null;
 }
 function transposeChord(chord,semitones){
  if(!semitones||!chord)return chord;
