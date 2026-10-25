@@ -310,7 +310,7 @@ input[type=range],.stem-row input[type=range],.practice-range{accent-color:#8bbf
  const stop=()=>{if(interval!==null){clearInterval(interval);interval=null}};const tick=()=>{remaining=Math.max(0,duration-elapsedBefore-(Date.now()-startedAt)/1000);draw();if(remaining<=0){stop();$('focusStatus').textContent='הזמן הסתיים — קח רגע מנוחה וסמן מה השתפר.';if('vibrate'in navigator)navigator.vibrate([150,80,150])}};
  document.querySelectorAll('[data-minutes]').forEach(b=>b.addEventListener('click',()=>{stop();duration=Number(b.dataset.minutes)*60;remaining=duration;elapsedBefore=0;$('focusStatus').textContent='נבחרו '+b.dataset.minutes+' דקות.';draw()}));
  $('focusStart').addEventListener('click',()=>{if(interval!==null||remaining<=0)return;startedAt=Date.now();interval=setInterval(tick,250);$('focusStatus').textContent=$('practiceGoal').value.trim()?'מתרגלים: '+$('practiceGoal').value.trim():'האימון התחיל. הישאר ממוקד.'});
- $('focusPause').addEventListener('click',()=>{if(interval===null)return;elapsedBefore+=Date.now()-startedAt;stop();remaining=Math.max(0,duration-elapsedBefore/1000);draw();$('focusStatus').textContent='האימון מושהה. לחץ התחל כדי להמשיך.'});
+ $('focusPause').addEventListener('click',()=>{if(interval===null)return;elapsedBefore+=(Date.now()-startedAt)/1000;stop();remaining=Math.max(0,duration-elapsedBefore);draw();$('focusStatus').textContent='האימון מושהה. לחץ התחל כדי להמשיך.'});
  $('focusReset').addEventListener('click',()=>{stop();elapsedBefore=0;remaining=duration;draw();$('focusStatus').textContent='הטיימר אופס.'});draw();
 })();
 </script>
