@@ -91,6 +91,17 @@ test('security hardening limits authentication attempts and restricts provider a
   assert.match(server, /script-src 'self' 'unsafe-inline';/);
 });
 
+test('local Demucs remains safely disabled until a real worker is deployed and verified', () => {
+  assert.match(server, /app\.get\("\/api\/separation-status"/);
+  assert.match(server, /available: false,[\s\S]{0,100}mode: "disabled"/);
+  assert.match(server, /No local Demucs runtime is installed in this Render Node\.js service/);
+  assert.match(server, /app\.post\("\/api\/separate", async \(_req, res\) => \{[\s\S]*?status\(501\)/);
+  assert.match(server, /freeMode: true/);
+  assert.match(server, /Paid inference providers are intentionally not called/);
+  assert.match(html, /הפרדת כלים עדיין לא פעילה/);
+  assert.match(html, /לא ניתן לאמת את מצב מנוע ההפרדה/);
+});
+
 test('free public music services are wired as server-side endpoints and exposed in capabilities', () => {
   for (const route of ['/api/lyrics-search', '/api/music-metadata', '/api/deezer-search', '/api/radio-search', '/api/cover-art/:releaseId']) assert.ok(server.includes(route), 'missing route ' + route);
   for (const provider of ['lrclib.net/api/search', 'musicbrainz.org/ws/2/recording/', 'api.deezer.com/search/track', 'api.radio-browser.info/json/stations/search', 'coverartarchive.org/release/']) assert.ok(server.includes(provider), 'missing provider ' + provider);
