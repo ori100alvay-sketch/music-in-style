@@ -338,10 +338,12 @@ app.post("/api/separate", async (req, res) => {
       const providerMessage = String(data.detail || data.error || data.title || "").slice(0, 240);
       let message = "מנוע הפרדת הכלים דחה את השמע.";
       if (response.status === 401 || response.status === 403) message = "מנוע ההפרדה דחה את הרשאת השרת. יש לבדוק את REPLICATE_API_TOKEN ב-Render.";
-            else if (response.status === 404) message = "מנוע ההפרדה לא נמצא בכתובת השירות. עדכנו את כתובת המנוע או את גרסת המודל.";
-      else if (response.status === 429) message = "מנוע ההפרדה עמוס או שמכסת השימוש הסתיימה. נסו שוב מאוחר יותר.";
+      else if (response.status === 402) message = "חשבון Replicate ללא יתרת קרדיט מספקת. יש להוסיף קרדיט לחשבון השירות; זו אינה שגיאה בקובץ השמע.";
+      else if (response.status === 404) message = "מנוע ההפרדה לא נמצא בכתובת השירות. עדכנו את כתובת המנוע או את גרסת המודל.";
+      else if (response.status === 429) message = "מנוע ההפרדה עמוס או שמכסת הבקשות הסתיימה. נסו שוב מאוחר יותר.";
       else if (response.status === 422 || response.status === 400) message = "מנוע ההפרדה לא הצליח לקבל את קובץ השמע. ייתכן שהקישור אינו קובץ שמע נגיש או שהפורמט אינו נתמך.";
-      return res.status(response.status === 429 ? 429 : 502).json({ error: message, providerStatus: response.status, providerMessage });
+      const httpStatus = response.status === 402 ? 402 : response.status === 429 ? 429 : 502;
+      return res.status(httpStatus).json({ error: message, providerStatus: response.status, providerMessage: response.status === 402 ? "Replicate returned 402: insufficient credit to run this model." : providerMessage, actionUrl: response.status === 402 ? "https://replicate.com/account/billing#billing" : null });
     }
     res.status(202).json({ id: data.id, status: data.status || "starting" });
   } catch (err) {
