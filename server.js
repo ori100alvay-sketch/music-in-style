@@ -492,6 +492,19 @@ app.post("/api/transcribe-url", async (req, res) => {
 // Free-safe mode: do not submit inference jobs to paid third-party services.
 // True AI stem separation needs a model runtime; this Node/Render setup has no local
 // Demucs runtime configured. Return an honest explanation instead of causing charges.
+// This service is a Node.js free-tier deployment; no local ML runtime is installed.
+ // Keep the status explicit so the UI never implies separation is running.
+app.get("/api/separation-status", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json({
+    available: false,
+    mode: "disabled",
+    engine: null,
+    reason: "No local Demucs runtime is installed in this Render Node.js service. Paid inference providers are intentionally not called.",
+    nextStep: "Deploy a self-hosted Python/Demucs worker on compute with sufficient RAM, then integrate it explicitly."
+  });
+});
+
 app.post("/api/separate", async (_req, res) => {
   return res.status(501).json({
     error: "הפרדת כלים ב-AI אינה זמינה כרגע במצב חינמי. כדי למנוע חיובים, האתר לא שולח את השמע לשירות חיצוני בתשלום. צריך לחבר מנוע הפרדה חינמי שרץ על השרת או במכשיר לפני שאפשר להפריד שיר אוטומטית.",
