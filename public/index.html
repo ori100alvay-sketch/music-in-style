@@ -733,10 +733,39 @@ async function startStemSeparation(audioUrl){
     target.innerHTML='<div class="stem-master"><strong>מיקס ערוצים</strong><p class="disabled-note">הפעל את כל הערוצים יחד. כפתורי השתקה ו־Solo משפיעים על המיקס, ומחוון העוצמה שולט בכל ערוץ בנפרד.</p><div class="stem-sync-tools"><button type="button" id="stemPlayAll">▶ נגן מיקס</button><button type="button" id="stemPauseAll">Ⅱ עצור</button><button type="button" id="stemResetAll">↺ להתחלה</button><button type="button" id="stemSoloClear">ביטול Solo</button></div></div>'+entries.map(([name,url],idx)=>'<div class="stem-channel" data-channel="'+idx+'"><div class="stem-channel-head"><strong>'+escapeHtml(name)+'</strong><div class="stem-channel-actions"><button type="button" class="stem-mute" aria-pressed="false" data-audio="stem'+idx+'">השתק</button><button type="button" class="stem-solo" aria-pressed="false" data-audio="stem'+idx+'">Solo</button></div></div><div class="stem-row"><span>עוצמה</span><input aria-label="עוצמת '+escapeHtml(name)+'" class="stem-volume" data-audio="stem'+idx+'" type="range" min="0" max="100" value="100"><output>100%</output></div><audio id="stem'+idx+'" controls preload="metadata" style="width:100%;margin:5px 0" src="'+escapeHtml(url)+'"></audio></div>').join('');
     const stemAudios=[...target.querySelectorAll('audio')];
     const muted=new Set(),soloed=new Set();
-    const applyMix=()=>stemAudios.forEach((audio,index)=>{const slider=target.querySelector('.stem-volume[data-audio="'+audio.id+'"]');const gain=slider?Number(slider.value)/100:1;audio.volume=(muted.has(audio.id)||(soloed.size>0&&!soloed.has(audio.id)))?0:gain});
-    target.querySelector('#stemPlayAll').addEventListener('click',async()=>{const results=await Promise.allSettled(stemAudios.map(audio=>{try{if(audio.readyState>0&&audio.currentTime>0&&audio.ended)audio.currentTime=0}catch{}return audio.play()}));if(results.some(r=>r.status==='rejected')){const note=document.createElement('p');note.className='analysis-notice';note.textContent='חלק מהערוצים לא התחילו. אם זה קורה, לחץ על נגן בכל ערוץ בנפרד; הדפדפן או ספק הקבצים עשויים לחסום ניגון משותף.';target.querySelector('.stem-sync-tools').insertAdjacentElement('afterend',note)}});
-    target.querySelector('#stemPauseAll').addEventListener('click',()=>stemAudios.forEach(audio=>audio.pause()));
-    target.querySelector('#stemResetAll').addEventListener('click',()=>stemAudios.forEach(audio=>{audio.pause();try{audio.currentTime=0}catch{}}));
+    const masterAudio=stemAudios[0];
+    const applyMix=()=>stemAudios.forEach(audio=>{const slider=target.querySelector('.stem-volume[data-audio="'+audio.id+'"]');const gain=slider?Number(slider.value)/100:1;audio.volume=(muted.has(audio.id)||(soloed.size>0&&!soloed.has(audio.id)))?0:gain});
+    // Keep separated tracks aligned to the same timeline while the mix plays.
+    // Small drift is corrected gently; larger drift is snapped back to the master.
+    const syncTracks=()=>{
+      if(!masterAudio||masterAudio.paused||masterAudio.ended)return;
+      for(const audio of stemAudios.slice(1)){
+        if(audio.readyState<2||audio.seeking)continue;
+        const drift=audio.currentTime-masterAudio.currentTime;
+        if(Math.abs(drift)>0.22){try{audio.currentTime=masterAudio.currentTime}catch{}}
+        if(audio.playbackRate!==masterAudio.playbackRate)audio.playbackRate=masterAudio.playbackRate;
+      }
+    };
+    let syncTimer=null;
+    const stopSync=()=>{if(syncTimer!==null){clearInterval(syncTimer);syncTimer=null}};
+    masterAudio?.addEventListener('play',()=>{stopSync();syncTimer=setInterval(syncTracks,400)});
+    masterAudio?.addEventListener('pause',()=>{stopSync();stemAudios.slice(1).forEach(audio=>audio.pause())});
+    masterAudio?.addEventListener('ended',()=>{stopSync();stemAudios.slice(1).forEach(audio=>audio.pause())});
+    masterAudio?.addEventListener('seeking',()=>stemAudios.slice(1).forEach(audio=>{if(audio.readyState>0)try{audio.currentTime=masterAudio.currentTime}catch{}}));
+    target.querySelector('#stemPlayAll').addEventListener('click',async()=>{
+      const startAt=masterAudio&&Number.isFinite(masterAudio.currentTime)?masterAudio.currentTime:0;
+      const results=await Promise.allSettled(stemAudios.map(audio=>{
+        try{if(audio.readyState>0){audio.currentTime=masterAudio?.ended?0:startAt;audio.playbackRate=masterAudio?.playbackRate||1}}catch{}
+        return audio.play();
+      }));
+      if(results.some(r=>r.status==='rejected')){
+        const note=document.createElement('p');note.className='analysis-notice';note.textContent='חלק מהערוצים לא התחילו. ייתכן שקישור אחד פג או שספק הקבצים חוסם ניגון. נסה לנגן כל ערוץ בנפרד.';
+        target.querySelector('.stem-sync-tools').insertAdjacentElement('afterend',note);
+      }
+      syncTracks();
+    });
+    target.querySelector('#stemPauseAll').addEventListener('click',()=>{stopSync();stemAudios.forEach(audio=>audio.pause())});
+    target.querySelector('#stemResetAll').addEventListener('click',()=>{stopSync();stemAudios.forEach(audio=>{audio.pause();try{audio.currentTime=0}catch{}})});
     target.querySelector('#stemSoloClear').addEventListener('click',()=>{soloed.clear();target.querySelectorAll('.stem-solo').forEach(btn=>{btn.setAttribute('aria-pressed','false');btn.classList.remove('active')});applyMix()});
     target.querySelectorAll('.stem-mute').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.audio;if(muted.has(id))muted.delete(id);else muted.add(id);btn.setAttribute('aria-pressed',String(muted.has(id)));btn.classList.toggle('active',muted.has(id));applyMix()}));
     target.querySelectorAll('.stem-solo').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.audio;if(soloed.has(id))soloed.delete(id);else soloed.add(id);btn.setAttribute('aria-pressed',String(soloed.has(id)));btn.classList.toggle('active',soloed.has(id));applyMix()}));
