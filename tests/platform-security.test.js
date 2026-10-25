@@ -328,14 +328,25 @@ test('CI workflow runs the test suite and syntax checks on main updates', () => 
   assert.match(workflow, /node --check server\.js/);
 });
 
-test('instrument separation stays explicitly disabled until a local engine is installed and verified', () => {
-  assert.match(server, /app\.get\("\/api\/separation-status"/);
-  assert.match(server, /available: false, configured: false, provider: "Disabled in free-safe mode"/);
-  assert.match(server, /No local Demucs runtime is installed/);
-  assert.match(server, /app\.post\("\/api\/separate", async \(_req, res\) => \{\s*return res\.status\(501\)/);
-  assert.match(server, /Paid inference providers are intentionally not called/);
-  assert.match(html, /הפרדת כלים עדיין לא פעילה/);
-  assert.match(html, /ההפרדה נשארת כבויה עד שהשרת יאשר שמנוע מקומי זמין/);
+test('local Demucs is wired through a health-checked CPU-only worker, not a paid provider', () => {
+  const dockerfile = fs.readFileSync('Dockerfile', 'utf8');
+  const render = fs.readFileSync('render.yaml', 'utf8');
+  const worker = fs.readFileSync('demucs_worker.py', 'utf8');
+  assert.match(server, /api\\/separation-status/);
+  assert.match(server, /DEMUCS_WORKER_URL/);
+  assert.match(server, /await checkDemucsWorker\\(\\)/);
+  assert.match(server, /api\\/separate/);
+  assert.match(server, /new FormData\\(\\)/);
+  assert.match(server, /Local Demucs only/);
+  assert.match(dockerfile, /torch==2\\.5\\.1/);
+  assert.match(dockerfile, /demucs==4\\.0\\.1/);
+  assert.match(dockerfile, /download\\.pytorch\\.org\\/whl\\/cpu/);
+  assert.match(render, /runtime: docker/);
+  assert.match(worker, /DEVICE = "cpu"/);
+  assert.match(worker, /MAX_UPLOAD_BYTES/);
+  assert.match(worker, /MAX_DURATION_SECONDS/);
+  assert.match(html, /הפרד כלים במנוע המקומי/);
+  assert.match(html, /לא נשלח שמע לספק בתשלום/);
 });
 
 
