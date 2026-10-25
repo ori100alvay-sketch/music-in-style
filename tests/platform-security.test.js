@@ -352,9 +352,9 @@ test('local Demucs is wired through a health-checked CPU-only worker, not a paid
   assert.ok(server.includes("/api/separate"));
   assert.match(server, /new FormData\\(\\)/);
   assert.match(server, /Local Demucs only/);
-  assert.match(dockerfile, /torch==2\\.5\\.1/);
-  assert.match(dockerfile, /demucs==4\\.0\\.1/);
-  assert.match(dockerfile, /download\\.pytorch\\.org\\/whl\\/cpu/);
+  assert.ok(dockerfile.includes("torch==2.5.1"));
+  assert.ok(dockerfile.includes("demucs==4.0.1"));
+  assert.ok(dockerfile.includes("download.pytorch.org/whl/cpu"));
   assert.match(render, /runtime: docker/);
   assert.match(worker, /DEVICE = "cpu"/);
   assert.match(worker, /MAX_UPLOAD_BYTES/);
