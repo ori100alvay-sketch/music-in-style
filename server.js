@@ -310,47 +310,17 @@ app.post("/api/transcribe-url", async (req, res) => {
   }
 });
 
-// Optional Replicate-backed Demucs separation. Configure REPLICATE_API_TOKEN in Render Environment.
-app.post("/api/separate", async (req, res) => {
-  const token = process.env.REPLICATE_API_TOKEN;
-  if (!token) return res.status(503).json({ error: "מנוע הפרדת הכלים עדיין לא הופעל בשרת. יש להוסיף REPLICATE_API_TOKEN בהגדרות Environment של Render." });
-  const rawUrl = String((req.body || {}).url || "").trim();
-  let audioUrl;
-  try {
-    audioUrl = new URL(rawUrl);
-    if (audioUrl.protocol !== "https:") throw new Error("HTTPS required");
-  } catch { return res.status(400).json({ error: "נדרש קישור HTTPS ישיר לקובץ שמע ציבורי (MP3/WAV וכדומה)." }); }
-  try {
-    // Replicate requires an explicit version for community models such as cjwbw/demucs.
-    // Creating through /v1/predictions avoids the old model-scoped endpoint that can return 404.
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", "Prefer": "wait=5" },
-      body: JSON.stringify({
-        version: "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953",
-        input: { audio: audioUrl.toString(), model_name: "htdemucs", output_format: "mp3", mp3_bitrate: 320 }
-      }),
-      signal: AbortSignal.timeout(25000)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.id) {
-      console.error("Demucs submission failed:", response.status, JSON.stringify(data).slice(0, 1200));
-      const providerMessage = String(data.detail || data.error || data.title || "").slice(0, 240);
-      let message = "מנוע הפרדת הכלים דחה את השמע.";
-      if (response.status === 401 || response.status === 403) message = "מנוע ההפרדה דחה את הרשאת השרת. יש לבדוק את REPLICATE_API_TOKEN ב-Render.";
-      else if (response.status === 402) message = "חשבון Replicate ללא יתרת קרדיט מספקת. יש להוסיף קרדיט לחשבון השירות; זו אינה שגיאה בקובץ השמע.";
-      else if (response.status === 404) message = "מנוע ההפרדה לא נמצא בכתובת השירות. עדכנו את כתובת המנוע או את גרסת המודל.";
-      else if (response.status === 429) message = "מנוע ההפרדה עמוס או שמכסת הבקשות הסתיימה. נסו שוב מאוחר יותר.";
-      else if (response.status === 422 || response.status === 400) message = "מנוע ההפרדה לא הצליח לקבל את קובץ השמע. ייתכן שהקישור אינו קובץ שמע נגיש או שהפורמט אינו נתמך.";
-      const httpStatus = response.status === 402 ? 402 : response.status === 429 ? 429 : 502;
-      return res.status(httpStatus).json({ error: message, providerStatus: response.status, providerMessage: response.status === 402 ? "Replicate returned 402: insufficient credit to run this model." : providerMessage, actionUrl: response.status === 402 ? "https://replicate.com/account/billing#billing" : null });
-    }
-    res.status(202).json({ id: data.id, status: data.status || "starting" });
-  } catch (err) {
-    console.error("Demucs submission error:", err.message);
-    res.status(502).json({ error: "לא הצלחנו להתחבר למנוע הפרדת הכלים כרגע." });
-  }
+// Free-safe mode: do not submit inference jobs to paid third-party services.
+// True AI stem separation needs a model runtime; this Node/Render setup has no local
+// Demucs runtime configured. Return an honest explanation instead of causing charges.
+app.post("/api/separate", async (_req, res) => {
+  return res.status(501).json({
+    error: "הפרדת כלים ב-AI אינה זמינה כרגע במצב חינמי. כדי למנוע חיובים, האתר לא שולח את השמע לשירות חיצוני בתשלום. צריך לחבר מנוע הפרדה חינמי שרץ על השרת או במכשיר לפני שאפשר להפריד שיר אוטומטית.",
+    providerStatus: null,
+    freeMode: true
+  });
 });
+
 app.get("/api/separate/:predictionId", async (req, res) => {
   const token = process.env.REPLICATE_API_TOKEN;
   if (!token) return res.status(503).json({ error: "מנוע הפרדת הכלים לא מוגדר בשרת." });
