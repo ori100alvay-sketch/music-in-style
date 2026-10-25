@@ -30,8 +30,18 @@ def health():
     try:
         import torch
         import demucs
+        # Importing the runtime is not proof that separation works. The service
+        # stays unavailable to the UI until an explicit real-audio smoke test is recorded.
+        smoke_ok = os.getenv("DEMUCS_SMOKE_TEST_OK", "").strip().lower() == "true"
+        try:
+            stem_count = int(os.getenv("DEMUCS_SMOKE_TEST_STEM_COUNT", "0"))
+        except ValueError:
+            stem_count = 0
+        ready = smoke_ok and stem_count >= 4
         return {"ok": True, "engine": "demucs", "version": APP_VERSION,
-                "model": MODEL, "device": DEVICE, "torch": torch.__version__}
+                "model": MODEL, "device": DEVICE, "torch": torch.__version__,
+                "readyForSeparation": ready,
+                "smokeTest": {"ok": ready, "stemCount": stem_count if ready else 0}}
     except Exception as exc:
         raise HTTPException(status_code=503, detail="Demucs runtime is not ready") from exc
 
