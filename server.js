@@ -408,17 +408,39 @@ app.get("/api/search-song", async (req, res) => {
   } catch (err) { console.error("Song search failed:", err.message); res.status(502).json({ error: "חיפוש השירים לא זמין כרגע. אפשר לנסות שוב או להדביק קישור ישיר לשיר." }); }
 });
 
+// Reuse recent jobs for the same URL to avoid duplicate paid/provider requests.
+const recentAnalysisJobs = new Map();
+const ANALYSIS_DEDUPE_MS = 3 * 60_000;
+function pruneRecentAnalysisJobs(now = Date.now()) {
+  for (const [key, value] of recentAnalysisJobs) {
+    if (now - value.createdAt >= ANALYSIS_DEDUPE_MS) recentAnalysisJobs.delete(key);
+  }
+}
+
 app.post("/api/analyze-url", async (req, res) => {
   const input = String((req.body || {}).url || "").trim();
   const songUrl = validatePublicMusicUrl(input);
   if (!songUrl) return res.status(400).json({ error: "מטעמי אבטחה, ניתן לנתח רק קישורי HTTPS ציבוריים מפלטפורמות מוזיקה נתמכות (YouTube, SoundCloud, Spotify, Apple Music, Bandcamp או Archive.org)." });
+  const now = Date.now();
+  pruneRecentAnalysisJobs(now);
+  const cacheKey = songUrl.toString();
+  const recent = recentAnalysisJobs.get(cacheKey);
+  if (recent && recent.jobId) {
+    res.set("X-Analysis-Job-Reused", "true");
+    return res.status(202).json({ job_id: recent.jobId, status: "processing", message: "ממשיכים לבדוק את הניתוח שכבר התחיל." });
+  }
   try {
-    const job = await providerFetch(MAGIC_CHORDS + "/analyze/url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: songUrl.toString() }) });
+    const job = await providerFetch(MAGIC_CHORDS + "/analyze/url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: cacheKey }) });
     if (!job.job_id) return res.status(502).json({ error: "שירות הניתוח לא החזיר מזהה משימה." });
+    recentAnalysisJobs.set(cacheKey, { jobId: String(job.job_id), createdAt: Date.now() });
     res.status(202).json({ job_id: job.job_id, status: job.status || "processing", message: "הניתוח התחיל." });
   } catch (err) {
-    console.error("Analysis submission failed:", err.message);
-    res.status(err.status === 429 ? 429 : 502).json({ error: err.status === 429 ? "שירות הניתוח הגיע למגבלת הבקשות הזמנית. נסו שוב מאוחר יותר." : "לא הצלחנו להתחיל את ניתוח השיר. ודאו שהקישור מוביל למדיה ציבורית ונסו שוב.", providerStatus: err.status || null });
+    console.error("Analysis submission failed:", err.message, "providerStatus:", err.status || "unknown");
+    if (err.status === 429) {
+      res.set("Retry-After", "60");
+      return res.status(429).json({ error: "שירות האקורדים הגיע למגבלת הבקשות שלו. המתינו כדקה לפני ניסיון נוסף. אם זה נמשך, ייתכן שמכסת החשבון של ספק האקורדים הסתיימה.", providerStatus: 429, retryAfterSeconds: 60 });
+    }
+    return res.status(502).json({ error: "לא הצלחנו להתחיל את ניתוח השיר. ודאו שהקישור מוביל למדיה ציבורית ונסו שוב.", providerStatus: err.status || null });
   }
 });
 
