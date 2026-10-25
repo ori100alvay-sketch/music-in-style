@@ -1057,10 +1057,12 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
  }
  function setMode(next){
   mode=next;password.hidden=next==='forgot';password.required=next!=='forgot';password.autocomplete=next==='reset'?'new-password':'current-password';
-  submit.hidden=next==='reset';submit.textContent=next==='signup'?'יצירת חשבון':next==='forgot'?'שליחת קישור איפוס':'כניסה';signup.hidden=next==='forgot'||next==='reset';forgot.hidden=next==='forgot'||next==='reset';reset.hidden=next!=='reset';
+  submit.hidden=next==='reset';submit.textContent=next==='signup'?'יצירת חשבון':next==='forgot'?'שליחת קישור איפוס':'כניסה';
+  signup.hidden=next==='forgot'||next==='reset';signup.textContent=next==='signup'?'חזרה לכניסה':'יצירת חשבון';
+  forgot.hidden=next==='forgot'||next==='reset';reset.hidden=next!=='reset';
   title.textContent=next==='signup'?'יצירת חשבון':next==='forgot'?'איפוס סיסמה':next==='reset'?'בחירת סיסמה חדשה':'החשבון שלי';
   subtitle.textContent=next==='forgot'?'נשלח קישור מאובטח למייל כדי לבחור סיסמה חדשה.':next==='reset'?'בחרו סיסמה חדשה בת 10 תווים לפחות.':next==='signup'?'נרשמים עם כתובת מייל וסיסמה אישית.':'נכנסים לחשבון כדי להמשיך עם Music in Style.';
-  submit.textContent='כניסה';say('');
+  say('');
  }
  async function doLogin(isSignup){
   try{
@@ -1082,8 +1084,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   }
   await doLogin(mode==='signup');
  });
- signup.addEventListener('click',()=>{if(mode==='signup'){doLogin(true);return;}setMode('signup');signup.textContent='הרשמה';});
- signup.addEventListener('click',()=>{if(mode==='signup')signup.textContent='יצירת חשבון';});
+ signup.addEventListener('click',()=>setMode(mode==='signup'?'login':'signup'));
  forgot.addEventListener('click',()=>setMode('forgot'));
  reset.addEventListener('click',()=>form.requestSubmit());
  $('musicAuthClose').addEventListener('click',close);
