@@ -505,23 +505,58 @@ app.post("/api/transcribe-url", async (req, res) => {
 // Demucs runtime configured. Return an honest explanation instead of causing charges.
 // This service is a Node.js free-tier deployment; no local ML runtime is installed.
  // Keep the status explicit so the UI never implies separation is running.
-app.get("/api/separation-status", (_req, res) => {
+const DEMUCS_WORKER_URL = String(process.env.DEMUCS_WORKER_URL || "http://127.0.0.1:8001").replace(/\/$/, "");
+async function checkDemucsWorker() {
+  try {
+    const response = await fetch(DEMUCS_WORKER_URL + "/health", { signal: AbortSignal.timeout(2500) });
+    const status = await response.json().catch(() => ({}));
+    const available = Boolean(response.ok && status.ok === true && status.engine === "demucs");
+    return { available, mode: available ? "local" : "disabled", engine: available ? "Demucs" : null,
+      device: status.device || "cpu", model: status.model || null,
+      reason: available ? "מנוע Demucs מקומי מגיב לבדיקת הבריאות." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+  } catch {
+    return { available: false, mode: "disabled", engine: null,
+      reason: "מנוע Demucs המקומי אינו מותקן או אינו מגיב. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+  }
+}
+app.get("/api/separation-status", async (_req, res) => {
   res.set("Cache-Control", "no-store");
-  res.json({
-    available: false,
-    mode: "disabled",
-    engine: null,
-    reason: "No local Demucs runtime is installed in this Render Node.js service. Paid inference providers are intentionally not called.",
-    nextStep: "Deploy a self-hosted Python/Demucs worker on compute with sufficient RAM, then integrate it explicitly."
-  });
+  const status = await checkDemucsWorker();
+  res.status(200).json({ ...status, freeMode: true, provider: "Local Demucs only" });
 });
 
-app.post("/api/separate", async (_req, res) => {
-  return res.status(501).json({
-    error: "הפרדת כלים ב-AI אינה זמינה כרגע במצב חינמי. כדי למנוע חיובים, האתר לא שולח את השמע לשירות חיצוני בתשלום. צריך לחבר מנוע הפרדה חינמי שרץ על השרת או במכשיר לפני שאפשר להפריד שיר אוטומטית.",
-    providerStatus: null,
-    freeMode: true
-  });
+app.post("/api/separate", async (req, res) => {
+  const status = await checkDemucsWorker();
+  if (!status.available) return res.status(503).json({ error: "מנוע Demucs המקומי אינו זמין כרגע. לא נשלח שמע לשירות בתשלום.", providerStatus: null, freeMode: true, separationAvailable: false });
+  const filename = String(req.headers["x-audio-filename"] || "audio.wav").split(/[\\/]/).pop().replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
+  const allowed = new Set([".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac"]);
+  const ext = path.extname(filename).toLowerCase();
+  if (!allowed.has(ext)) return res.status(415).json({ error: "סוג קובץ לא נתמך. יש לבחור WAV, MP3, FLAC, OGG, M4A או AAC." });
+  const chunks = [];
+  let total = 0;
+  try {
+    for await (const chunk of req) {
+      total += chunk.length;
+      if (total > 25 * 1024 * 1024) return res.status(413).json({ error: "הקובץ גדול מדי. המגבלה היא 25MB." });
+      chunks.push(chunk);
+    }
+    if (!total) return res.status(400).json({ error: "לא נבחר קובץ שמע או שהקובץ ריק." });
+    const form = new FormData();
+    form.append("file", new Blob(chunks, { type: req.headers["content-type"] || "application/octet-stream" }), filename);
+    const response = await fetch(DEMUCS_WORKER_URL + "/separate", { method: "POST", body: form, signal: AbortSignal.timeout(10 * 60_000) });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      return res.status(response.status).json({ error: body.detail || "Demucs לא הצליח להפריד את הקובץ. ייתכן שנדרש יותר זיכרון או זמן." });
+    }
+    const archive = Buffer.from(await response.arrayBuffer());
+    res.set("Content-Type", "application/zip");
+    res.set("Content-Disposition", 'attachment; filename="music-in-style-stems.zip"');
+    res.set("Cache-Control", "no-store");
+    return res.send(archive);
+  } catch (err) {
+    console.error("Local Demucs request failed:", err.message);
+    return res.status(502).json({ error: "לא הצלחנו להשלים הפרדה מקומית. בדוק שהקובץ תקין ונסה שוב." });
+  }
 });
 
 // No paid Replicate polling route is exposed in free-safe mode.
