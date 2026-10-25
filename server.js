@@ -247,7 +247,7 @@ app.get("/api/capabilities", (_req, res) => {
       chordAnalysis: { available: true, provider: "Magic Chords", mode: "async-url", note: "Requires a public URL accepted by the provider; lyrics are not guaranteed." },
       lyricsTranscription: { available: true, provider: "Magic Chords", mode: "async-url", note: "Separate transcription job; accuracy depends on audio and provider output." },
       keyAndTempo: { available: brizmConfigured, configured: brizmConfigured, provider: "Brizm", needs: brizmConfigured ? [] : ["BRIZM_API_KEY"] },
-      stemSeparation: { available: false, configured: false, provider: "Disabled in free-safe mode", needs: ["A local/open-source Demucs runtime"], note: "No audio is sent to paid inference services." },
+      stemSeparation: { available: false, configured: Boolean(String(process.env.DEMUCS_WORKER_URL || "").trim()), provider: "Local Demucs only", endpoint: "/api/separation-status", note: "Availability is determined by a live worker health check; the engine must pass a real separation test before being enabled. No audio is sent to paid inference services." },
       personalNotebook: { available: true, storage: "browser-local", note: "Data is stored in this browser/device unless exported by the user." }
     },
     security: { credentialsServerSideOnly: true, apiRateLimit: "per-process", requestBodyLimitBytes: 1048576, distributedRateLimit: false }
@@ -510,13 +510,13 @@ async function checkDemucsWorker() {
   try {
     const response = await fetch(DEMUCS_WORKER_URL + "/health", { signal: AbortSignal.timeout(2500) });
     const status = await response.json().catch(() => ({}));
-    const available = Boolean(response.ok && status.ok === true && status.engine === "demucs");
+    const available = Boolean(response.ok && status.ok === true && status.engine === "demucs" && status.readyForSeparation === true && status.smokeTest && status.smokeTest.ok === true && Number(status.smokeTest.stemCount) >= 4);
     return { available, mode: available ? "local" : "disabled", engine: available ? "Demucs" : null,
       device: status.device || "cpu", model: status.model || null,
-      reason: available ? "מנוע Demucs מקומי מגיב לבדיקת הבריאות." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+      reason: available ? "מנוע Demucs מקומי עבר בדיקת הפרדה אמיתית והחזיר ארבעה ערוצים." : status.engine === "demucs" ? "Demucs מותקן, אך לא התקבלה הוכחה לבדיקת הפרדה מוצלחת של ארבעה ערוצים. ההפרדה נשארת כבויה." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
   } catch {
     return { available: false, mode: "disabled", engine: null,
-      reason: "מנוע Demucs המקומי אינו מותקן או אינו מגיב. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+      reason: "לא ניתן להגיע למנוע Demucs המקומי. בדוק שה-worker רץ ושהכתובת DEMUCS_WORKER_URL נכונה. לא ייעשה שימוש בשירות הפרדה בתשלום." };
   }
 }
 app.get("/api/separation-status", async (_req, res) => {
