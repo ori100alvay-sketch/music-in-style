@@ -106,6 +106,10 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.ok(dockerfile.includes('download.pytorch.org/whl/cpu'));
   assert.ok(render.includes('runtime: docker'));
   assert.ok(worker.includes('DEVICE = "cpu"'));
+  assert.ok(worker.includes('readyForSeparation'));
+  assert.ok(worker.includes('DEMUCS_SMOKE_TEST_OK'));
+  assert.match(server, /status\.readyForSeparation === true/);
+  assert.match(server, /status\.smokeTest\.ok === true/);
   assert.ok(worker.includes('MAX_UPLOAD_BYTES'));
   assert.ok(worker.includes('MAX_DURATION_SECONDS'));
   assert.ok(html.includes('הפרד כלים במנוע המקומי'));
