@@ -1,14 +1,21 @@
-name: Music in Style regression tests
+name: Music in Style quality and security checks
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -16,5 +23,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Run regression tests
-        run: npm test
+      - name: Check server JavaScript syntax
+        run: node --check server.js
+      - name: Run regression and platform security tests
+        run: node --test
+      - name: Verify required PWA and security files exist
+        run: |
+          test -s public/manifest.webmanifest
+          test -s public/sw.js
+          test -s public/icon.svg
+          test -s public/copyright.html
+          test -s tests/platform-security.test.js
