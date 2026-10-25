@@ -1,5 +1,6 @@
 """Opt-in local Demucs service. It is not enabled by the Node app by default."""
 import os
+import hmac
 import shutil
 import subprocess
 import tempfile
@@ -7,7 +8,7 @@ import uuid
 import zipfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
@@ -15,6 +16,7 @@ app = FastAPI(title="Music in Style Local Stem Separation", version="0.1.0")
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(40 * 1024 * 1024)))
 SEPARATION_TIMEOUT_SECONDS = int(os.getenv("SEPARATION_TIMEOUT_SECONDS", "900"))
 MODEL_NAME = os.getenv("DEMUCS_MODEL", "htdemucs")
+API_TOKEN = os.getenv("DEMUCS_API_TOKEN", "").strip()
 ALLOWED_EXTENSIONS = {".wav", ".mp3", ".flac", ".m4a", ".ogg", ".opus", ".aac"}
 
 @app.get("/health")
@@ -34,7 +36,12 @@ def health():
     }
 
 @app.post("/separate")
-async def separate(file: UploadFile = File(...)):
+async def separate(file: UploadFile = File(...), authorization: str | None = Header(default=None)):
+    if not API_TOKEN:
+        raise HTTPException(status_code=503, detail="Local separation service is not configured with an API token.")
+    expected = "Bearer " + API_TOKEN
+    if not authorization or not hmac.compare_digest(authorization, expected):
+        raise HTTPException(status_code=401, detail="Unauthorized.")
     name = Path(file.filename or "audio.wav").name
     suffix = Path(name).suffix.lower()
     if suffix not in ALLOWED_EXTENSIONS:
