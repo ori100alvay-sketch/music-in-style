@@ -43,3 +43,9 @@ Security notes:
 - Use Supabase's built-in rate limits and email protections; do not expose any service-role secret in browser code or GitHub.
 - The app enforces a 10-character minimum password length and limits request sizes/rates, but the provider configuration and real email delivery must be tested before announcing account support as live.
 - Email delivery, allowed redirect URLs, and recovery-link behavior depend on Supabase project settings. Until those environment variables and SMTP settings are configured, the UI reports that account setup is unavailable.
+
+## Local/open-source stem separation prototype
+
+An opt-in Demucs service scaffold is available in [`separation-service/`](separation-service/README.md). It uses an open-source model locally and does not call Replicate or another paid inference API. It is intentionally **not connected to the production UI/API yet**.
+
+Before enabling it, run the Python unit tests in GitHub Actions and then perform a real audio smoke test on a machine with adequate RAM/CPU (or GPU). The service health endpoint deliberately reports `readyForSeparation: false` until that real model-and-audio test is done. Hosting compute, storage, and model downloads may still incur costs; do not deploy to a paid host without explicit budget approval.
