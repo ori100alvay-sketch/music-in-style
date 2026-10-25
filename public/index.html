@@ -1039,7 +1039,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
    try{const data=await request('forgot-password',{email:email.value.trim()});say(data.message)}
    catch(e){say(e.message,true)}return;
   }
-  await doLogin(false);
+  await doLogin(mode==='signup');
  });
  signup.addEventListener('click',()=>{if(mode==='signup'){doLogin(true);return;}setMode('signup');signup.textContent='הרשמה';});
  signup.addEventListener('click',()=>{if(mode==='signup')signup.textContent='יצירת חשבון';});
