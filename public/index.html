@@ -375,10 +375,10 @@ async function analyzeUrl(url,label){
     const job=await response.json();
     if(!response.ok||!job.job_id){showError(job.error||'לא הצלחנו להתחיל להוציא אקורדים מהשיר.');return}
     let finished=false;
-    for(let attempt=0;attempt<40;attempt++){
-      // Magic Chords limits status/result reads to about 30 per minute.
-      // Poll every 3 seconds so one analysis stays comfortably under that limit.
-      await new Promise(resolve=>setTimeout(resolve,3000));
+    for(let attempt=0;attempt<36;attempt++){
+      // Conservative polling reduces provider rate-limit errors. Lyrics transcription
+      // is not started automatically because it is a separate provider job.
+      await new Promise(resolve=>setTimeout(resolve,5000));
       let poll,state;
       try {
         poll=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
@@ -388,17 +388,15 @@ async function analyzeUrl(url,label){
         return;
       }
       if(poll.status===429){
-        resultMessage.textContent=state.error||'השירות ביקש להאט את בדיקות המצב. ממתינים מעט…';
-        await new Promise(resolve=>setTimeout(resolve,8000));
+        const retrySeconds=Math.min(30,Math.max(5,Number(poll.headers.get('Retry-After'))||10));
+        resultMessage.textContent=state.error||'השירות מגביל זמנית את הבדיקות. ממתינים '+retrySeconds+' שניות…';
+        await new Promise(resolve=>setTimeout(resolve,retrySeconds*1000));
         continue;
       }
       if(!poll.ok){showError(state.error||'לא הצלחנו לקבל את תוצאות השיר. נסו קישור אחר או נסו שוב מאוחר יותר.');return}
       if(state.status==='complete'){
         currentAnalysis=state.result||{};
         resultTitle.textContent=label||'תוצאות השיר';
-        resultMessage.textContent='האקורדים זוהו. בודקים אם אפשר לקבל גם תמלול מילים…';
-        const transcription=await fetchLyricsForAudio(url);
-        if(transcription)currentAnalysis={...currentAnalysis,transcription};
         resultMessage.textContent='תוצאות האקורדים והמידע המוזיקלי:';
         resultData.hidden=true;resultData.textContent='';
         renderWorkspace(currentAnalysis);
