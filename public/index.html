@@ -440,20 +440,38 @@ function extractLyrics(data){
  return '';
 }
 function timedValue(item,keys){for(const key of keys){const value=item?.[key];if(value!==null&&value!==''&&Number.isFinite(Number(value)))return Number(value)}return null}
+function collectNestedArrays(data,predicate){
+ const found=[],seen=new Set();
+ function walk(value,path,depth){
+  if(!value||typeof value!=='object'||depth>10||seen.has(value))return;seen.add(value);
+  if(Array.isArray(value)){if(value.length&&predicate(value,path))found.push({value,path});for(const item of value)walk(item,path,depth+1);return}
+  for(const [key,child] of Object.entries(value))walk(child,path?path+'.'+key:key,depth+1);
+ }
+ walk(data,'',0);return found;
+}
 function buildTimedAlignment(data){
- const transcriptRoot=data?.transcription||data?.transcriptResult||data?.lyricsResult||data?.result?.transcription||{};
- const words=transcriptRoot.words||transcriptRoot.segments||data?.words||data?.segments||data?.result?.words||data?.result?.segments;
- const chordRoots=[data?.chords,data?.chord_events,data?.chordEvents,data?.timeline,data?.result?.chords,data?.result?.chord_events,data?.result?.timeline,data?.analysis?.chords];
- const events=[];
- for(const root of chordRoots){if(!Array.isArray(root))continue;for(const item of root){if(!item||typeof item!=='object')continue;const chord=String(item.chord||item.name||item.label||item.chord_name||item.symbol||'').trim();const start=timedValue(item,['start','start_time','startTime','time','timestamp','onset','t']);if(chord&&start!==null)events.push({chord,start})}}
- if(!Array.isArray(words)||!words.length||!events.length)return null;
- events.sort((a,b)=>a.start-b.start);
- const timedWords=[];
- for(const item of words){if(!item||typeof item!=='object')continue;const text=String(item.word||item.text||item.token||'').trim();const start=timedValue(item,['start','start_time','startTime','timestamp','begin']);if(text&&start!==null)timedWords.push({text,start})}
- if(!timedWords.length)return null;
- let current=0;const rows=[];
- for(const word of timedWords){while(current+1<events.length&&events[current+1].start<=word.start)current++;rows.push({text:word.text,chord:events[current].chord})}
- return rows.length?[rows]:null;
+ const timeKeys=['start','start_time','startTime','start_sec','start_seconds','start_ms','timestamp','timestamp_ms','time','time_ms','onset','begin','offset'];
+ const wordArrays=collectNestedArrays(data,(arr,path)=>/(word|segment|token|transcript|lyric)/i.test(path)&&arr.some(item=>item&&typeof item==='object'&&typeof(item.word||item.text||item.token)==='string'&&timedValue(item,timeKeys)!==null));
+ const chordArrays=collectNestedArrays(data,(arr,path)=>/(chord|harmony|event|timeline|segment|frame)/i.test(path)&&arr.some(item=>item&&typeof item==='object'&&typeof(item.chord||item.name||item.label||item.chord_name||item.symbol)==='string'&&timedValue(item,timeKeys)!==null));
+ if(!wordArrays.length||!chordArrays.length)return null;
+ const bestWords=wordArrays.sort((a,b)=>b.value.length-a.value.length)[0].value;
+ const bestChords=chordArrays.sort((a,b)=>b.value.length-a.value.length)[0].value;
+ function seconds(item){
+  const ms=timedValue(item,['start_ms','timestamp_ms','time_ms']);if(ms!==null)return ms/1000;
+  const raw=timedValue(item,timeKeys);if(raw===null)return null;
+  if(timedValue(item,['start_sec','start_seconds'])!==null)return raw;
+  return raw>10000?raw/1000:raw;
+ }
+ const words=bestWords.map(item=>({text:String(item.word||item.text||item.token||'').trim(),start:seconds(item)})).filter(x=>x.text&&x.start!==null).sort((a,b)=>a.start-b.start);
+ const events=bestChords.map(item=>({chord:String(item.chord||item.name||item.label||item.chord_name||item.symbol||'').trim(),start:seconds(item)})).filter(x=>x.chord&&x.start!==null).sort((a,b)=>a.start-b.start);
+ if(!words.length||!events.length)return null;
+ let current=-1;const rows=[];
+ for(const word of words){while(current+1<events.length&&events[current+1].start<=word.start)current++;rows.push({text:word.text,chord:current>=0?events[current].chord:''})}
+ if(!rows.some(row=>row.chord))return null;
+ const lines=[];let line=[];
+ for(let i=0;i<rows.length;i++){line.push(rows[i]);if(/[.!?…]$/.test(rows[i].text)){lines.push(line);line=[]}}
+ if(line.length)lines.push(line);
+ return lines.length?lines:[rows];
 }
 function transposeChord(chord,semitones){
  if(!semitones||!chord)return chord;
