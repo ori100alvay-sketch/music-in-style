@@ -138,3 +138,9 @@ test('BPM analysis omits Camelot numeric metadata and chord parser accepts alter
   assert.match(html, /\[\#b\]\\d\+/);
   assert.match(html, /function buildTimedAlignment\(data\)/);
 });
+
+test('Demucs separation uses version-pinned Replicate predictions endpoint', () => {
+  assert.match(server, /https:\/\/api\.replicate\.com\/v1\/predictions/);
+  assert.match(server, /version: "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953"/);
+  assert.doesNotMatch(server, /api\.replicate\.com\/v1\/models\/cjwbw\/demucs\/predictions/);
+});
