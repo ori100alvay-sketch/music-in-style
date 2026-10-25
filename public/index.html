@@ -313,7 +313,28 @@ function flattenData(value,out={},prefix=''){
   return out;
 }
 function findValue(flat,terms){const entry=Object.entries(flat).find(([k,v])=>terms.some(t=>k.toLowerCase().includes(t))&&(typeof v==='number'||(typeof v==='string'&&v.length<100)));return entry?entry[1]:null}
-function getChordItems(data){const flat=flattenData(data);const items=[];for(const [k,v] of Object.entries(flat)){if(/chord/i.test(k)&&typeof v==='string'&&v.length<20)items.push(v)}return [...new Set(items)].slice(0,80)}
+function getChordItems(data){
+ const items=[],seen=new Set(),chordPattern=/^[A-G](?:#|b)?(?:m|min|maj|dim|aug|sus|add|M|°|ø)?(?:[0-9]{0,2})?(?:\\/[A-G](?:#|b)?)?$/;
+ const add=value=>{if(typeof value!=='string')return;const chord=value.trim();if(chordPattern.test(chord)&&!seen.has(chord)){seen.add(chord);items.push(chord)}};
+ const visited=new Set();
+ function walk(value,key='',depth=0){
+  if(!value||typeof value!=='object'||depth>10||visited.has(value))return;visited.add(value);
+  if(Array.isArray(value)){for(const item of value)walk(item,key,depth+1);return}
+  const chordKey=/(chord|harmony|progression)/i.test(key);
+  if(chordKey){
+   for(const field of ['chord','chord_name','name','label','symbol','value'])add(value[field]);
+   if(typeof value.text==='string')add(value.text);
+  }
+  for(const [childKey,child] of Object.entries(value)){
+   if(typeof child==='string'&&/(chord|harmony|progression)/i.test(childKey))add(child);
+   else if(child&&typeof child==='object')walk(child,childKey,depth+1);
+  }
+ }
+ walk(data);
+ const flat=flattenData(data);
+ for(const [key,value] of Object.entries(flat))if(/chord/i.test(key)&&typeof value==='string')add(value);
+ return items.slice(0,80);
+}
 
 let activeNotebookPageId='';
 function getNotebookData(){
