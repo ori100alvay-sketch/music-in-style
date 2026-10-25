@@ -582,7 +582,7 @@ function collectNestedArrays(data,predicate){
 function buildTimedAlignment(data){
  const wordTimeKeys=['start','start_time','startTime','start_sec','start_seconds','start_ms','timestamp','timestamp_ms','time','time_ms','onset','begin'];
  const chordTimeKeys=[...wordTimeKeys,'offset','end','end_time','endTime','end_sec','end_seconds','end_ms','timestamp_end'];
- const chordPattern=/^[A-G](?:#|b)?(?:maj|min|m|M|dim|aug|sus(?:2|4)?|add\\d+|\\d+|°|ø)*(?:\\/[A-G](?:#|b)?)?$/;
+ const chordPattern=/^[A-G](?:#|b)?(?:maj|min|m|M|dim|aug|sus(?:2|4)?|add\d+|\d+|°|ø)*(?:\/[A-G](?:#|b)?)?$/;
  const wordArrays=collectNestedArrays(data,(arr,path)=>/(word|token|transcript|lyric|segment)/i.test(path)&&arr.filter(item=>item&&typeof item==='object'&&typeof(item.word||item.text||item.token)==='string'&&timedValue(item,wordTimeKeys)!==null).length>=2);
  const chordArrays=collectNestedArrays(data,(arr,path)=>/(chord|harmony|event|timeline|segment|frame|beat)/i.test(path)&&arr.filter(item=>item&&typeof item==='object'&&typeof(item.chord||item.chord_name||item.symbol||item.label||item.name)==='string'&&timedValue(item,chordTimeKeys)!==null&&chordPattern.test(String(item.chord||item.chord_name||item.symbol||item.label||item.name).trim())).length>=1);
  if(!wordArrays.length||!chordArrays.length)return null;
