@@ -97,3 +97,24 @@ test('timestamped transcription words are aligned to timestamped chord events', 
   assert.ok(rows);
   assert.deepEqual(Array.from(rows[0], word => [word.text, word.chord]), [['שלום', 'Am'], ['עולם', 'G']]);
 });
+
+test('nested provider envelopes are searched for timestamped words and chord events', () => {
+  const data = { data: { result: {
+    transcription: { words: [
+      { text: 'בית', start_ms: 100 },
+      { text: 'ופזמון', start_ms: 2100 }
+    ] },
+    chord_events: [
+      { chord_name: 'Dm', start_ms: 0 },
+      { chord_name: 'C', start_ms: 2000 }
+    ]
+  } } };
+  const rows = sandbox.findAlignedLyrics(data);
+  assert.ok(rows);
+  assert.deepEqual(Array.from(rows.flat(), word => [word.text, word.chord]), [['בית', 'Dm'], ['ופזמון', 'C']]);
+});
+
+test('the alignment parser does not create chord assignments when timestamps are absent', () => {
+  const data = { transcription: { words: [{ text: 'מילה' }] }, chords: [{ chord: 'Am' }] };
+  assert.equal(sandbox.findAlignedLyrics(data), null);
+});
