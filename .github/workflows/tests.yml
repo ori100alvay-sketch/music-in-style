@@ -48,7 +48,7 @@ jobs:
       - name: Run local separation service tests (mocked Demucs)
         run: python -m unittest -v test_app.py
       - name: Run separate Demucs worker regression tests (mocked inference)
-        run: python -m unittest -v ../demucs-worker/test_app.py
+        run: cd ../demucs-worker && python -m unittest -v test_app.py
       - name: Check Python syntax
         run: |
           python -m py_compile app.py test_app.py
