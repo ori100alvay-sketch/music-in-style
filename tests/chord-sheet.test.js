@@ -121,7 +121,7 @@ test('the alignment parser does not create chord assignments when timestamps are
 
 
 test('every inline browser script parses as valid JavaScript', () => {
-  const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)];
+  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
   assert.ok(scripts.length > 0, 'expected at least one inline script');
   for (const [index, match] of scripts.entries()) {
     assert.doesNotThrow(() => new vm.Script(match[1]), 'inline script #' + (index + 1) + ' should parse');
@@ -146,7 +146,7 @@ test('practice studio does not require an API key or external audio library', ()
   const studioEnd = html.indexOf('})();', studioStart);
   assert.notEqual(studioEnd, -1);
   const code = html.slice(studioStart, studioEnd);
-  assert.match(code, /AudioContext\|window\.webkitAudioContext/);
+  assert.match(code, /AudioContext|window\.webkitAudioContext/);
   assert.match(code, /navigator\.clipboard\.writeText/);
   assert.doesNotMatch(code, /BRIZM_API_KEY|REPLICATE_API_TOKEN/);
 });
