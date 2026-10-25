@@ -195,6 +195,8 @@ app.get("/api/capabilities", (_req, res) => {
     generatedAt: new Date().toISOString(),
     capabilities: {
       songSearch: { available: true, provider: "Apple iTunes Search", note: "Search metadata and short previews; not full-song access." },
+      freeLyricsSearch: { available: true, provider: "LRCLIB", keyRequired: false, endpoint: "/api/lyrics-search" },
+      freeMusicMetadata: { available: true, provider: "MusicBrainz", keyRequired: false, endpoint: "/api/music-metadata", note: "Free for non-commercial use; rate limited to about one request per second." },
       musicTheory: { available: true, provider: "Built-in Music in Style Theory Engine", features: ["scales and modes", "chord construction", "diatonic triads", "progression analysis", "transposition", "maqam approximations"], note: "Rule-based theory calculations; not a replacement for audio recognition or expert maqam performance analysis." },
       chordAnalysis: { available: true, provider: "Magic Chords", mode: "async-url", note: "Requires a public URL accepted by the provider; lyrics are not guaranteed." },
       lyricsTranscription: { available: true, provider: "Magic Chords", mode: "async-url", note: "Separate transcription job; accuracy depends on audio and provider output." },
@@ -256,6 +258,48 @@ app.get("/api/replicate-status", async (_req, res) => {
   }
 });
 
+
+// Free, keyless lyrics search via LRCLIB. Respect its rate limits and identify the client.
+app.get("/api/lyrics-search", async (req, res) => {
+  const q = String(req.query.q || "").trim().slice(0, 180);
+  if (!q) return res.status(400).json({ error: "יש להזין שם שיר או אמן." });
+  try {
+    const url = new URL("https://lrclib.net/api/search");
+    url.searchParams.set("q", q);
+    const data = await providerFetch(url.toString(), { headers: { "User-Agent": "MusicInStyle/1.0 (https://music-in-style.onrender.com)" } });
+    res.set("Cache-Control", "public, max-age=300");
+    res.json({ provider: "LRCLIB", free: true, results: Array.isArray(data) ? data.slice(0, 10).map(x => ({
+      id: x.id, title: x.trackName || x.name || "", artist: x.artistName || "",
+      album: x.albumName || "", duration: x.duration || null,
+      instrumental: Boolean(x.instrumental), synced: Boolean(x.syncedLyrics),
+      lyrics: x.plainLyrics || null, syncedLyrics: x.syncedLyrics || null
+    })) : [] });
+  } catch (e) {
+    const status = e.status === 429 ? 429 : 502;
+    res.status(status).json({ error: status === 429 ? "שירות המילים ביקש להמתין. נסו שוב בעוד מעט." : "שירות המילים החינמי לא זמין כרגע." });
+  }
+});
+
+// Free music metadata lookup via MusicBrainz. Non-commercial use; one request per second.
+app.get("/api/music-metadata", async (req, res) => {
+  const q = String(req.query.q || "").trim().slice(0, 180);
+  if (!q) return res.status(400).json({ error: "יש להזין שם שיר או אמן." });
+  try {
+    const url = new URL("https://musicbrainz.org/ws/2/recording/");
+    url.searchParams.set("query", q);
+    url.searchParams.set("fmt", "json");
+    url.searchParams.set("limit", "8");
+    const data = await providerFetch(url.toString(), { headers: { "User-Agent": "MusicInStyle/1.0 (https://music-in-style.onrender.com)" } });
+    res.set("Cache-Control", "public, max-age=3600");
+    res.json({ provider: "MusicBrainz", free: true, results: (data.recordings || []).slice(0, 8).map(x => ({
+      id: x.id, title: x.title || "", artist: (x["artist-credit"] || []).map(a => a.name || a.artist?.name || "").join(""),
+      lengthMs: x.length || null, firstReleaseDate: x["first-release-date"] || null,
+      disambiguation: x.disambiguation || ""
+    })) });
+  } catch (e) {
+    res.status(e.status === 503 ? 503 : 502).json({ error: "שירות פרטי המוזיקה לא זמין כרגע. נסו שוב מאוחר יותר." });
+  }
+});
 
 app.get("/api/search-song", async (req, res) => {
   const term = String(req.query.q || "").trim();
