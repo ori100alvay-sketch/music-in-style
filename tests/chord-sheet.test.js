@@ -95,7 +95,7 @@ test('timestamped transcription words are aligned to timestamped chord events', 
   };
   const rows = sandbox.findAlignedLyrics(data);
   assert.ok(rows);
-  assert.deepEqual(Array.from(rows[0], word => [word.text, word.chord]), [['שלום', 'Am'], ['עולם', 'G']]);
+  assert.deepEqual(Array.from(rows.flat(), word => [word.text, word.chord]), [['שלום', 'Am'], ['עולם', 'G']]);
 });
 
 test('nested provider envelopes are searched for timestamped words and chord events', () => {
