@@ -212,7 +212,7 @@ body{background:radial-gradient(ellipse at 50% -12%,#292929 0,transparent 43%),r
  <div class="notebook-app">
   <div class="notebook-top"><div><h2 id="notebookTitle">המחברת המוזיקלית שלי</h2><p>דפים אישיים, רשימות שירים ואקורדים — במקום אחד</p></div><button class="notebook-btn secondary" type="button" onclick="closeNotebook()">✕ סגירה</button></div>
   <div class="notebook-layout">
-   <aside class="notebook-sidebar"><h3>הדפים שלי</h3><div id="notebookPages" class="notebook-pages"></div><div class="notebook-toolbar"><button class="notebook-btn" type="button" onclick="addNotebookPage()">＋ דף חדש</button></div><p class="notebook-status">השמירה מתבצעת אוטומטית במכשיר הזה.</p></aside>
+   <aside class="notebook-sidebar"><h3>הדפים שלי</h3><div id="notebookPages" class="notebook-pages"></div><div class="notebook-toolbar"><button class="notebook-btn" type="button" onclick="addNotebookPage()">＋ דף חדש</button><button class="notebook-btn secondary" type="button" onclick="exportNotebookBackup()">ייצוא גיבוי</button><button class="notebook-btn secondary" type="button" onclick="document.getElementById('notebookImportFile').click()">ייבוא גיבוי</button><input id="notebookImportFile" type="file" accept="application/json,.json" hidden onchange="importNotebookBackup(this.files&amp;&amp;this.files[0]);this.value=''"></div><p class="notebook-status">השמירה מתבצעת במכשיר הזה. לכניסה ממכשיר אחר, ייצא גיבוי וייבא אותו שם.</p></aside>
    <section class="notebook-main"><h3 id="notebookPageTitle">דף חדש</h3><textarea id="notebookEditor" class="notebook-editor" placeholder="כתוב כאן ידנית: רעיונות, אקורדים, מילים שכתבת, סדר שירים להופעה..."></textarea>
     <div class="notebook-toolbar"><button class="notebook-btn" type="button" onclick="saveNotebookPage()">שמור דף</button><button class="notebook-btn secondary" type="button" onclick="renameNotebookPage()">שינוי שם הדף</button><button class="notebook-btn secondary" type="button" onclick="deleteNotebookPage()">מחיקת דף</button></div>
     <div class="notebook-top" style="margin-top:22px;padding-top:17px"><div><h3 style="margin:0">פלייליסט השירים והאקורדים</h3><p>שמור שירים מהחיפוש באתר וגלול ביניהם בנוחות.</p></div><button class="notebook-btn" type="button" onclick="addCurrentTrackToNotebook()">＋ הוסף שיר נבחר</button></div>
@@ -348,6 +348,27 @@ function getNotebookData(){
  return {pages:[{id:'page-'+Date.now(),title:'הדף הראשון',text:''}],songs:[]};
 }
 function saveNotebookData(d){try{localStorage.setItem('misMusicNotebook',JSON.stringify(d));return true}catch{return false}}
+function exportNotebookBackup(){
+ saveNotebookPage(false);const data=getNotebookData();
+ const backup={app:'Music in Style',schemaVersion:1,exportedAt:new Date().toISOString(),data};
+ const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='music-in-style-notebook-'+new Date().toISOString().slice(0,10)+'.json';
+ document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const status=document.getElementById('notebookStatus');if(status)status.textContent='קובץ גיבוי נוצר. שמור אותו במקום בטוח — הוא עשוי להכיל מילים ורעיונות אישיים.';
+}
+async function importNotebookBackup(file){
+ const status=document.getElementById('notebookStatus');if(!file)return;
+ if(file.size>2097152){if(status)status.textContent='קובץ הגיבוי גדול מדי (המגבלה היא 2MB).';return}
+ try{const parsed=JSON.parse(await file.text());const data=parsed&&parsed.data?parsed.data:parsed;
+ if(!data||!Array.isArray(data.pages)||!Array.isArray(data.songs)||data.pages.length>100||data.songs.length>500)throw new Error('invalid');
+ const pages=data.pages.every(p=>p&&typeof p.id==='string'&&typeof p.title==='string'&&typeof p.text==='string'&&p.title.length<=200&&p.text.length<=100000);
+ const songs=data.songs.every(s=>s&&typeof s==='object');if(!pages||!songs)throw new Error('invalid');
+ if(!confirm('ייבוא הגיבוי יחליף את המחברת השמורה במכשיר הזה. מומלץ לייצא גיבוי נוכחי לפני ההחלפה. להמשיך?'))return;
+ const clean={pages:data.pages.map(p=>({id:p.id.slice(0,100),title:p.title.slice(0,60),text:p.text})),songs:data.songs};
+ if(!clean.pages.length)clean.pages=[{id:'page-'+Date.now(),title:'הדף הראשון',text:''}];
+ if(!saveNotebookData(clean))throw new Error('storage');activeNotebookPageId=clean.pages[0].id;renderNotebook();if(status)status.textContent='הגיבוי יובא בהצלחה למכשיר הזה.';
+ }catch(err){if(status)status.textContent=err&&err.message==='storage'?'אין מספיק מקום באחסון הדפדפן לשמירת הגיבוי.':'קובץ גיבוי לא תקין או לא תואם ל-Music in Style.'}
+}
 function openNotebook(){
  const overlay=document.getElementById('notebookOverlay');if(!overlay)return;
  overlay.classList.add('open');document.body.style.overflow='hidden';
