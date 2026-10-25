@@ -5,6 +5,8 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const MAGIC_CHORDS = "https://magic-chords.dev/api/v1";
 app.disable("x-powered-by");
+// Render terminates TLS and forwards one trusted proxy hop.
+app.set("trust proxy", 1);
 // Security headers: the UI currently uses inline scripts/styles, so the CSP is
 // deliberately compatible with the existing app while blocking plugins/frames.
 app.use((req, res, next) => {
@@ -22,7 +24,7 @@ app.use((req, res, next) => {
 const rateBuckets = new Map();
 app.use("/api", (req, res, next) => {
   const now = Date.now();
-  const key = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  const key = String(req.ip || req.socket.remoteAddress || "unknown");
   const windowMs = 60_000;
   const limit = req.path.startsWith("/jobs/") || req.path.startsWith("/separate/") ? 90 : 30;
   let bucket = rateBuckets.get(key);
@@ -41,7 +43,7 @@ app.use("/api", (req, res, next) => {
   rateBuckets.set(key, bucket);
   next();
 });
-app.use(cors({ origin: process.env.ALLOWED_ORIGIN ? process.env.ALLOWED_ORIGIN.split(",").map(v => v.trim()).filter(Boolean) : true, methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
+app.use(cors({ origin: process.env.ALLOWED_ORIGIN ? process.env.ALLOWED_ORIGIN.split(",").map(v => v.trim()).filter(Boolean) : false, methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
 app.use(express.json({ limit: "1mb", strict: true }));
 app.use(express.static(path.join(__dirname, "public"), { maxAge: process.env.NODE_ENV === "production" ? "1h" : 0, etag: true }));
 
