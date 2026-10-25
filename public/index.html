@@ -608,42 +608,65 @@ function buildTimedAlignment(data){
  const wordArrays=collectNestedArrays(data,(arr,path)=>/(word|token|transcript|lyric|segment)/i.test(path)&&arr.filter(item=>item&&typeof item==='object'&&typeof(item.word||item.text||item.token)==='string'&&timedValue(item,wordTimeKeys)!==null).length>=2);
  const chordArrays=collectNestedArrays(data,(arr,path)=>/(chord|harmony|event|timeline|segment|frame|beat)/i.test(path)&&arr.filter(item=>item&&typeof item==='object'&&typeof(item.chord||item.chord_name||item.symbol||item.label||item.name)==='string'&&timedValue(item,chordTimeKeys)!==null&&chordPattern.test(String(item.chord||item.chord_name||item.symbol||item.label||item.name).trim())).length>=1);
  if(!wordArrays.length||!chordArrays.length)return null;
- const scoreWords=item=>item.value.filter(x=>x&&typeof x==='object'&&typeof(x.word||x.text||x.token)==='string'&&timedValue(x,wordTimeKeys)!==null).length+( /(word|token)/i.test(item.path)?1000:0)+(/transcript|lyric/i.test(item.path)?200:0);
- const scoreChords=item=>item.value.filter(x=>x&&typeof x==='object'&&typeof(x.chord||x.chord_name||x.symbol||x.label||x.name)==='string'&&timedValue(x,chordTimeKeys)!==null).length+(/chord|harmony/i.test(item.path)?1000:0);
- const bestWords=wordArrays.sort((a,b)=>scoreWords(b)-scoreWords(a))[0].value;
- const bestChords=chordArrays.sort((a,b)=>scoreChords(b)-scoreChords(a))[0].value;
+ const scoreWords=item=>item.value.filter(x=>x&&typeof x==='object'&&typeof(x.word||x.text||x.token)==='string'&&timedValue(x,wordTimeKeys)!==null).length+(/(word|token)/i.test(item.path)?1000:0)+(/transcript|lyric/i.test(item.path)?200:0);
+ const scoreChords=item=>item.value.filter(x=>x&&typeof x==='object'&&typeof(x.chord||x.chord_name||x.symbol||x.label||x.name)==='string'&&timedValue(x,chordTimeKeys)!==null&&chordPattern.test(String(x.chord||x.chord_name||x.symbol||x.label||x.name).trim())).length+(/chord|harmony/i.test(item.path)?1000:0);
+ const bestWords=[...wordArrays].sort((a,b)=>scoreWords(b)-scoreWords(a))[0].value;
+ const bestChords=[...chordArrays].sort((a,b)=>scoreChords(b)-scoreChords(a))[0].value;
  function seconds(item,kind){
-  const keys=kind==='end'?['end_ms','timestamp_end']:kind==='start'?['start_ms','timestamp_ms','time_ms']:['start_ms','timestamp_ms','time_ms'];
-  const ms=timedValue(item,keys);if(ms!==null)return ms/1000;
-  const explicitSeconds=timedValue(item,kind==='end'?['end_sec','end_seconds']:['start_sec','start_seconds']);
-  if(explicitSeconds!==null)return explicitSeconds;
-  const raw=timedValue(item,kind==='end'?['end','end_time','endTime','offset']:wordTimeKeys);
-  if(raw===null)return null;
-  // Large bare timestamps are commonly milliseconds; explicit *_sec fields above win.
+  const msKeys=kind==='end'?['end_ms','timestamp_end_ms']:['start_ms','timestamp_ms','time_ms'];
+  const ms=timedValue(item,msKeys);if(ms!==null)return ms/1000;
+  const sec=timedValue(item,kind==='end'?['end_sec','end_seconds']:['start_sec','start_seconds']);
+  if(sec!==null)return sec;
+  const keys=kind==='end'?['end','end_time','endTime','offset']:wordTimeKeys;
+  const raw=timedValue(item,keys);if(raw===null)return null;
+  // Normalize large unlabelled timestamps only when they clearly look like milliseconds.
   return raw>10000?raw/1000:raw;
  }
- const words=bestWords.map(item=>({text:String(item.word||item.text||item.token||'').trim(),start:seconds(item,'start'),raw:item})).filter(x=>x.text&&x.start!==null&&x.start>=0).sort((a,b)=>a.start-b.start);
- const events=bestChords.map(item=>({chord:String(item.chord||item.chord_name||item.symbol||item.label||item.name||'').trim(),start:seconds(item,'start'),end:seconds(item,'end'),raw:item})).filter(x=>x.chord&&chordPattern.test(x.chord)&&x.start!==null&&x.start>=0).sort((a,b)=>a.start-b.start);
+ const words=bestWords.map(item=>({text:String(item.word||item.text||item.token||'').trim(),start:seconds(item,'start'),raw:item})).filter(x=>x.text&&x.start!==null&&Number.isFinite(x.start)&&x.start>=0).sort((a,b)=>a.start-b.start);
+ const events=bestChords.map(item=>({chord:String(item.chord||item.chord_name||item.symbol||item.label||item.name||'').trim(),start:seconds(item,'start'),end:seconds(item,'end'),raw:item})).filter(x=>x.chord&&chordPattern.test(x.chord)&&x.start!==null&&Number.isFinite(x.start)&&x.start>=0).sort((a,b)=>a.start-b.start);
  if(words.length<2||!events.length)return null;
+ // Collapse repeated provider events at the same instant and remove exact consecutive duplicates.
+ const cleanEvents=[];
+ for(const event of events){
+  const previous=cleanEvents[cleanEvents.length-1];
+  if(previous&&Math.abs(previous.start-event.start)<0.035){cleanEvents[cleanEvents.length-1]=event;continue}
+  if(previous&&previous.chord===event.chord&&event.start-previous.start<0.18)continue;
+  cleanEvents.push(event);
+ }
  const rows=[];let current=-1;
  for(const word of words){
-  while(current+1<events.length&&events[current+1].start<=word.start)current++;
-  const event=current>=0?events[current]:null;
-  // If the provider supplied a bounded chord interval, don't carry it beyond its end.
-  const chord=event&&(event.end===null||word.start<=event.end+0.08)?event.chord:'';
+  while(current+1<cleanEvents.length&&cleanEvents[current+1].start<=word.start+0.015)current++;
+  const event=current>=0?cleanEvents[current]:null;
+  const next=current+1<cleanEvents.length?cleanEvents[current+1]:null;
+  const hasExplicitEnd=event&&event.end!==null&&Number.isFinite(event.end)&&event.end>=event.start;
+  const validByEnd=!hasExplicitEnd||word.start<=event.end+0.06;
+  // Never carry a chord through a gap that is explicitly outside its interval.
+  const chord=event&&validByEnd?event.chord:'';
   rows.push({text:word.text,chord,start:word.start});
  }
  if(!rows.some(row=>row.chord))return null;
- // Keep lyric lines readable even when the transcription has no punctuation.
+ // Build readable lyric phrases using provider line breaks, punctuation and timing gaps.
  const lines=[];let line=[];
  for(let i=0;i<rows.length;i++){
   const row=rows[i],prev=rows[i-1];
-  if(line.length&&(row.text.includes('\\n')||(prev&&row.start-prev.start>1.35))){lines.push(line);line=[]}
-  line.push({text:row.text.replace(/\\n/g,''),chord:row.chord});
-  if(/[.!?…]$/.test(row.text)){lines.push(line);line=[]}
+  const hardBreak=/(?:\n|\\n)/.test(row.text);
+  const gap=prev&&row.start-prev.start>1.15;
+  if(line.length&&(hardBreak||gap)){lines.push(line);line=[]}
+  const cleanText=row.text.replace(/(?:\n|\\n)/g,'').trim();
+  if(cleanText)line.push({text:cleanText,chord:row.chord});
+  if(/[.!?…,:;׃]$/.test(cleanText)||line.length>=12){lines.push(line);line=[]}
  }
  if(line.length)lines.push(line);
- return lines.length?lines:null;
+ // Hide repeated chord labels on adjacent words; retain the chord change at its first word.
+ const compact=lines.map(line=>{
+  let previousChord='';
+  return line.map(cell=>{
+   const chord=cell.chord&&cell.chord!==previousChord?cell.chord:'';
+   if(cell.chord)previousChord=cell.chord;
+   return {...cell,chord};
+  });
+ }).filter(line=>line.length);
+ return compact.length?compact:null;
 }
 function transposeChord(chord,semitones){
  if(!semitones||!chord)return chord;
