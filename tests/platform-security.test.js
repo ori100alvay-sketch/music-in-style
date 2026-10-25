@@ -248,3 +248,12 @@ test('focused practice timer supports presets, pause/resume and reset with consi
   assert.match(html, /id="focusPause"/);
   assert.match(html, /id="focusReset"/);
 });
+
+test('Replicate 402 insufficient-credit errors return an actionable billing message', () => {
+  assert.match(server, /response\.status === 402\) message = "חשבון Replicate ללא יתרת קרדיט מספקת/);
+  assert.match(server, /const httpStatus = response\.status === 402 \? 402/);
+  assert.match(server, /actionUrl: response\.status === 402 \? "https:\/\/replicate\.com\/account\/billing#billing"/);
+  assert.match(html, /const creditIssue=start\.status===402\|\|data\.providerStatus===402/);
+  assert.match(html, /פתיחת עמוד החיוב של Replicate/);
+  assert.match(html, /rel="noopener noreferrer"/);
+});
