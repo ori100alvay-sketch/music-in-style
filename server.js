@@ -94,7 +94,16 @@ async function providerFetch(url, options = {}) {
   const raw = await response.text();
   let data;
   try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw.slice(0, 1500) }; }
-  if (!response.ok) { const error = new Error(data.error || data.detail || data.message || "Music analysis service error"); error.status = response.status; error.details = data; throw error; }
+  if (!response.ok) {
+    const error = new Error(data.error || data.detail || data.message || "Music analysis service error");
+    error.status = response.status;
+    error.details = data;
+    const retryAfter = Number(response.headers.get("retry-after"));
+    const resetAt = Number(response.headers.get("x-ratelimit-reset"));
+    error.retryAfterSeconds = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(86400, Math.ceil(retryAfter)) :
+      Number.isFinite(resetAt) && resetAt > Date.now() / 1000 ? Math.min(86400, Math.ceil(resetAt - Date.now() / 1000)) : null;
+    throw error;
+  }
   return data;
 }
 
@@ -413,8 +422,9 @@ const recentAnalysisJobs = new Map();
 const ANALYSIS_DEDUPE_MS = 3 * 60_000;
 let magicChordsCooldownUntil = 0;
 function magicChordsIsCoolingDown() { return Date.now() < magicChordsCooldownUntil; }
-function noteMagicChordsRateLimit(seconds = 60) {
-  magicChordsCooldownUntil = Math.max(magicChordsCooldownUntil, Date.now() + seconds * 1000);
+function noteMagicChordsRateLimit(seconds = 3600) {
+  const safeSeconds = Math.max(60, Math.min(86400, Number(seconds) || 3600));
+  magicChordsCooldownUntil = Math.max(magicChordsCooldownUntil, Date.now() + safeSeconds * 1000);
 }
 function pruneRecentAnalysisJobs(now = Date.now()) {
   for (const [key, value] of recentAnalysisJobs) {
@@ -447,9 +457,10 @@ app.post("/api/analyze-url", async (req, res) => {
   } catch (err) {
     console.error("Analysis submission failed:", err.message, "providerStatus:", err.status || "unknown");
     if (err.status === 429) {
-      noteMagicChordsRateLimit(60);
-      res.set("Retry-After", "60");
-      return res.status(429).json({ error: "ספק האקורדים הגביל את הבקשות. עצרנו ניסיונות חוזרים; המתינו כדקה ונסו שוב. אם זה נמשך, צריך לבדוק את מכסת ה-API של הספק.", providerStatus: 429, retryAfterSeconds: 60 });
+      const retryAfterSeconds = err.retryAfterSeconds || 3600;
+      noteMagicChordsRateLimit(retryAfterSeconds);
+      res.set("Retry-After", String(retryAfterSeconds));
+      return res.status(429).json({ error: "ספק האקורדים הגביל את הבקשות. עצרנו בקשות חדשות עד שהמגבלה צפויה להתאפס (כ-" + Math.ceil(retryAfterSeconds / 60) + " דקות). כל משתמשי האתר חולקים את מכסת הספק; אם החסימה נמשכת, יש להמתין לאיפוס המכסה או להגדיר ספק/API משלנו.", providerStatus: 429, retryAfterSeconds });
     }
     return res.status(502).json({ error: "לא הצלחנו להתחיל את ניתוח השיר. ודאו שהקישור מוביל למדיה ציבורית ונסו שוב.", providerStatus: err.status || null });
   }
