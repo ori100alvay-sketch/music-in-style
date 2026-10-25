@@ -58,7 +58,7 @@ test('capabilities endpoint distinguishes built-in features from credential-gate
   assert.match(server, /distributedRateLimit: false/);
   assert.match(server, /lyricsTranscription:/);
   assert.match(server, /stemSeparation:/);
-  assert.match(server, /stemSeparation: \{ available: false, configured: false, provider: "Disabled in free-safe mode"/);
+  assert.match(server, /stemSeparation: \{ available: false, configured: Boolean\(String\(process\.env\.DEMUCS_WORKER_URL/);
   assert.match(server, /needs: brizmConfigured \? \[\] : \["BRIZM_API_KEY"\]/);
 });
 
@@ -206,12 +206,11 @@ test('BPM analysis omits Camelot numeric metadata and chord parser accepts alter
   assert.match(html, /function buildTimedAlignment\(data\)/);
 });
 
-test('stem separation is disabled in free-safe mode and cannot submit paid inference jobs', () => {
-  assert.match(server, /app\.post\("\/api\/separate", async \(_req, res\) =>/);
-  assert.match(server, /status\(501\)\.json\(/);
+test('stem separation requires a healthy local worker and never falls back to paid inference', () => {
+  assert.match(server, /app\.post\("\/api\/separate", async \(req, res\) =>/);
+  assert.match(server, /if \(!status\.available\) return res\.status\(503\)/);
   assert.match(server, /No audio is sent to paid inference services/);
   assert.doesNotMatch(server, /api\.replicate\.com\/v1\/predictions/);
-  assert.doesNotMatch(server, /version: "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953"/);
 });
 
 test('timed chord alignment improves event deduplication, lyric phrase breaks and repeated chord labels', () => {
@@ -317,10 +316,11 @@ test('focused practice timer supports presets, pause/resume and reset with consi
   assert.match(html, /id="focusReset"/);
 });
 
-test('free-safe stem separation explains why automatic AI separation is unavailable', () => {
-  assert.match(server, /הפרדת כלים ב-AI אינה זמינה כרגע במצב חינמי/);
-  assert.match(html, /data\.freeMode/);
-  assert.match(html, /נדרש מנוע Demucs מקומי או שירות חינמי אמיתי/);
+test('stem separation UI displays availability only after a live local worker health check', () => {
+  assert.match(server, /app\.get\("\/api\/separation-status"/);
+  assert.match(server, /status\.readyForSeparation === true/);
+  assert.match(html, /fetch\('\/api\/separation-status'/);
+  assert.match(html, /ההפרדה נשארת כבויה עד שהשרת יאשר שמנוע מקומי זמין/);
   assert.doesNotMatch(html, /פתיחת עמוד החיוב של Replicate/);
 });
 
