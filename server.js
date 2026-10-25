@@ -511,7 +511,7 @@ async function checkDemucsWorker() {
     const response = await fetch(DEMUCS_WORKER_URL + "/health", { signal: AbortSignal.timeout(2500) });
     const status = await response.json().catch(() => ({}));
     const available = Boolean(response.ok && status.ok === true && status.engine === "demucs" && status.readyForSeparation === true && status.smokeTest && status.smokeTest.ok === true && Number(status.smokeTest.stemCount) >= 4);
-    return { available, mode: available ? "local" : "disabled", engine: available ? "Demucs" : null,
+    return { available, mode: available ? "local" : "disabled", engine: status.engine === "demucs" ? "Demucs" : null,
       device: status.device || "cpu", model: status.model || null,
       reason: available ? "מנוע Demucs מקומי עבר בדיקת הפרדה אמיתית והחזיר ארבעה ערוצים." : status.engine === "demucs" ? "Demucs מותקן, אך לא התקבלה הוכחה לבדיקת הפרדה מוצלחת של ארבעה ערוצים. ההפרדה נשארת כבויה." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
   } catch {
