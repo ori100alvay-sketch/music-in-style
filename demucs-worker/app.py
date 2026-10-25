@@ -5,11 +5,11 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 app = FastAPI(title="Music in Style local Demucs worker", docs_url=None, redoc_url=None)
-MAX_BYTES = 25 * 1024 * 1024
+WORKER_TOKEN = os.environ.get("DEMUCS_WORKER_TOKEN", "").strip()\nMAX_BYTES = 25 * 1024 * 1024
 MAX_SECONDS = 8 * 60
 ALLOWED_SUFFIXES = {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus", ".aac"}
 
