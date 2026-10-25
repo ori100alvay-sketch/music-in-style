@@ -1016,7 +1016,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
  }
  function setMode(next){
   mode=next;password.hidden=next==='forgot';password.required=next!=='forgot';password.autocomplete=next==='reset'?'new-password':'current-password';
-  submit.hidden=next==='reset';signup.hidden=next==='forgot'||next==='reset';forgot.hidden=next==='forgot'||next==='reset';reset.hidden=next!=='reset';
+  submit.hidden=next==='reset';submit.textContent=next==='signup'?'יצירת חשבון':next==='forgot'?'שליחת קישור איפוס':'כניסה';signup.hidden=next==='forgot'||next==='reset';forgot.hidden=next==='forgot'||next==='reset';reset.hidden=next!=='reset';
   title.textContent=next==='signup'?'יצירת חשבון':next==='forgot'?'איפוס סיסמה':next==='reset'?'בחירת סיסמה חדשה':'החשבון שלי';
   subtitle.textContent=next==='forgot'?'נשלח קישור מאובטח למייל כדי לבחור סיסמה חדשה.':next==='reset'?'בחרו סיסמה חדשה בת 10 תווים לפחות.':next==='signup'?'נרשמים עם כתובת מייל וסיסמה אישית.':'נכנסים לחשבון כדי להמשיך עם Music in Style.';
   submit.textContent='כניסה';say('');
@@ -1063,7 +1063,9 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
     const data=await request('verify-email',{token_hash:query.get('token_hash'),type:query.get('type')});
     if(data.session)sessionStorage.setItem('musicInStyleSession',JSON.stringify(data.session));
     history.replaceState(null,'',location.pathname);
-    setMode('login');open();say(data.message||'המייל אומת בהצלחה.');
+    if(query.get('type')==='recovery'&&data.session?.access_token){
+     resetToken=data.session.access_token;setMode('reset');open();say('קישור האיפוס אומת. בחרו סיסמה חדשה.');
+    } else {setMode('login');open();say(data.message||'המייל אומת בהצלחה.');}
    }catch(e){setMode('login');open();say(e.message,true)}
   })();
  }
