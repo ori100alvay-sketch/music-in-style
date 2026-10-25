@@ -416,20 +416,44 @@ function renderWorkspace(data){
  renderSheet();
  workspace.querySelectorAll('[data-result-action]').forEach(btn=>btn.addEventListener('click',()=>renderResultAction(btn.dataset.resultAction,data)));
 }
+function collectTextCandidates(value,out=[],path=''){
+ if(!value||typeof value!=='object')return out;
+ if(Array.isArray(value)){for(const item of value)collectTextCandidates(item,out,path);return out}
+ for(const [key,child] of Object.entries(value)){
+  const next=path?path+'.'+key:key;
+  if(typeof child==='string'&&child.trim().length>20&&/(lyrics?|transcript|transcription|text|words|segments)/i.test(next))out.push({path:next,text:child.trim()});
+  else if(child&&typeof child==='object')collectTextCandidates(child,out,next);
+ }
+ return out;
+}
 function extractLyrics(data){
- const flat=flattenData(data);
- for(const [k,v] of Object.entries(flat)){
-   if(/(^|[._])(lyrics|transcript|full_lyrics|lyric_text)([._]|$)/i.test(k)&&typeof v==='string'&&v.trim().length>20)return v.trim();
+ const direct=[data?.lyrics,data?.transcript,data?.transcription,data?.text,data?.result?.lyrics,data?.result?.transcript,data?.result?.text,data?.result?.transcription,data?.analysis?.lyrics];
+ for(const value of direct){
+  if(typeof value==='string'&&value.trim().length>20)return value.trim();
+  if(value&&typeof value==='object')for(const key of ['text','transcript','transcription','lyrics','full_text'])if(typeof value[key]==='string'&&value[key].trim().length>20)return value[key].trim();
  }
- for(const v of [data?.lyrics,data?.transcript,data?.result?.lyrics,data?.result?.transcript,data?.analysis?.lyrics]){
-   if(typeof v==='string'&&v.trim().length>20)return v.trim();
- }
- const segments=data?.transcription?.segments||data?.segments;
- if(Array.isArray(segments)){
-   const text=segments.map(segment=>typeof segment==='string'?segment:String(segment?.text||segment?.transcript||'')).filter(Boolean).join(' ').trim();
-   if(text.length>20)return text;
- }
+ const candidates=collectTextCandidates(data).sort((a,b)=>b.text.length-a.text.length);
+ const likely=candidates.find(item=>/lyrics|transcript|transcription/i.test(item.path));
+ if(likely)return likely.text;
+ const segments=data?.transcription?.segments||data?.transcription?.words||data?.segments||data?.words||data?.result?.segments;
+ if(Array.isArray(segments)){const text=segments.map(segment=>typeof segment==='string'?segment:String(segment?.text||segment?.word||segment?.transcript||'')).filter(Boolean).join(' ').trim();if(text.length>20)return text}
  return '';
+}
+function timedValue(item,keys){for(const key of keys){const value=item?.[key];if(value!==null&&value!==''&&Number.isFinite(Number(value)))return Number(value)}return null}
+function buildTimedAlignment(data){
+ const transcriptRoot=data?.transcription||data?.transcriptResult||data?.lyricsResult||data?.result?.transcription||{};
+ const words=transcriptRoot.words||transcriptRoot.segments||data?.words||data?.segments||data?.result?.words||data?.result?.segments;
+ const chordRoots=[data?.chords,data?.chord_events,data?.chordEvents,data?.timeline,data?.result?.chords,data?.result?.chord_events,data?.result?.timeline,data?.analysis?.chords];
+ const events=[];
+ for(const root of chordRoots){if(!Array.isArray(root))continue;for(const item of root){if(!item||typeof item!=='object')continue;const chord=String(item.chord||item.name||item.label||item.chord_name||item.symbol||'').trim();const start=timedValue(item,['start','start_time','startTime','time','timestamp','onset','t']);if(chord&&start!==null)events.push({chord,start})}}
+ if(!Array.isArray(words)||!words.length||!events.length)return null;
+ events.sort((a,b)=>a.start-b.start);
+ const timedWords=[];
+ for(const item of words){if(!item||typeof item!=='object')continue;const text=String(item.word||item.text||item.token||'').trim();const start=timedValue(item,['start','start_time','startTime','timestamp','begin']);if(text&&start!==null)timedWords.push({text,start})}
+ if(!timedWords.length)return null;
+ let current=0;const rows=[];
+ for(const word of timedWords){while(current+1<events.length&&events[current+1].start<=word.start)current++;rows.push({text:word.text,chord:events[current].chord})}
+ return rows.length?[rows]:null;
 }
 function transposeChord(chord,semitones){
  if(!semitones||!chord)return chord;
@@ -446,6 +470,7 @@ function renderTransposedChordSheet(rows,semitones){
  return '<div class="chord-section"><h4>מילים ואקורדים</h4>'+rows.map(row=>'<div class="chord-lyric-line">'+row.map(cell=>'<span class="chord-lyric-word"><span class="chord-above">'+escapeHtml(transposeChord(cell.chord||'',semitones)||' ')+'</span><span class="word-below">'+escapeHtml(cell.text)+'</span></span>').join('')+'</div>').join('')+'</div>';
 }
 function findAlignedLyrics(data){
+ const timed=buildTimedAlignment(data);if(timed)return timed;
  const candidates=[data?.alignedLyrics,data?.chordLyrics,data?.lyricsWithChords,data?.segments,data?.lines,data?.transcription?.segments,data?.result?.segments];
  for(const value of candidates){
   if(!Array.isArray(value)||!value.length)continue;
