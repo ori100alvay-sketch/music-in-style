@@ -16,7 +16,7 @@ app.use((req, res, next) => {
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  res.setHeader("Content-Security-Policy", "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https:");
+  res.setHeader("Content-Security-Policy", "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https:");
   if (process.env.NODE_ENV === "production") res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   next();
 });
@@ -51,9 +51,43 @@ app.use("/api", (req, res, next) => {
   rateBuckets.set(key, bucket);
   next();
 });
+// Extra throttling for authentication endpoints to reduce password guessing and signup abuse.
+const authRateBuckets = new Map();
+app.use("/api/auth", (req, res, next) => {
+  const now = Date.now();
+  const key = String(req.ip || req.socket.remoteAddress || "unknown");
+  for (const [ip, value] of authRateBuckets) if (now - value.startedAt >= 15 * 60_000) authRateBuckets.delete(ip);
+  let bucket = authRateBuckets.get(key);
+  if (!bucket || now - bucket.startedAt >= 15 * 60_000) bucket = { startedAt: now, count: 0 };
+  bucket.count += 1;
+  authRateBuckets.set(key, bucket);
+  res.setHeader("RateLimit-Auth-Limit", "12");
+  res.setHeader("RateLimit-Auth-Remaining", String(Math.max(0, 12 - bucket.count)));
+  if (bucket.count > 12) {
+    res.setHeader("Retry-After", "900");
+    return res.status(429).json({ error: "יותר מדי ניסיונות התחברות או הרשמה. נסו שוב בעוד 15 דקות." });
+  }
+  next();
+});
+
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN ? process.env.ALLOWED_ORIGIN.split(",").map(v => v.trim()).filter(Boolean) : false, methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
 app.use(express.json({ limit: "1mb", strict: true }));
 app.use(express.static(path.join(__dirname, "public"), { maxAge: process.env.NODE_ENV === "production" ? "1h" : 0, etag: true }));
+
+// Accept only known public music platforms for provider-side URL analysis.
+function validatePublicMusicUrl(input) {
+  let url;
+  try { url = new URL(input); } catch { return null; }
+  if (url.protocol !== "https:" || url.username || url.password || url.port) return null;
+  const host = url.hostname.toLowerCase().replace(/\.$/, "");
+  const allowed = [
+    "youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "music.youtube.com",
+    "soundcloud.com", "www.soundcloud.com", "open.spotify.com",
+    "music.apple.com", "itunes.apple.com", "bandcamp.com", "www.bandcamp.com",
+    "archive.org", "www.archive.org"
+  ];
+  return allowed.includes(host) ? url : null;
+}
 
 async function providerFetch(url, options = {}) {
   const response = await fetch(url, { ...options, signal: AbortSignal.timeout(20000), headers: { Accept: "application/json", ...(options.headers || {}) } });
@@ -376,9 +410,8 @@ app.get("/api/search-song", async (req, res) => {
 
 app.post("/api/analyze-url", async (req, res) => {
   const input = String((req.body || {}).url || "").trim();
-  let songUrl;
-  try { songUrl = new URL(input); if (!["http:", "https:"].includes(songUrl.protocol)) throw new Error("Unsupported URL protocol"); }
-  catch { return res.status(400).json({ error: "יש להדביק קישור תקין לשיר, או לחפש לפי שם השיר או האמן." }); }
+  const songUrl = validatePublicMusicUrl(input);
+  if (!songUrl) return res.status(400).json({ error: "מטעמי אבטחה, ניתן לנתח רק קישורי HTTPS ציבוריים מפלטפורמות מוזיקה נתמכות (YouTube, SoundCloud, Spotify, Apple Music, Bandcamp או Archive.org)." });
   try {
     const job = await providerFetch(MAGIC_CHORDS + "/analyze/url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: songUrl.toString() }) });
     if (!job.job_id) return res.status(502).json({ error: "שירות הניתוח לא החזיר מזהה משימה." });
@@ -393,9 +426,8 @@ app.post("/api/analyze-url", async (req, res) => {
 // Start a separate lyrics transcription job. Chord analysis alone does not guarantee lyrics.
 app.post("/api/transcribe-url", async (req, res) => {
   const input = String((req.body || {}).url || "").trim();
-  let songUrl;
-  try { songUrl = new URL(input); if (!["http:", "https:"].includes(songUrl.protocol)) throw new Error("Unsupported URL protocol"); }
-  catch { return res.status(400).json({ error: "יש להדביק קישור תקין למדיה ציבורית." }); }
+  const songUrl = validatePublicMusicUrl(input);
+  if (!songUrl) return res.status(400).json({ error: "מטעמי אבטחה, ניתן לתמלל רק קישורי HTTPS ציבוריים מפלטפורמות מוזיקה נתמכות." });
   try {
     const job = await providerFetch(MAGIC_CHORDS + "/transcribe/url", {
       method: "POST",
