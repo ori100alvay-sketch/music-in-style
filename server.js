@@ -19,6 +19,25 @@ async function providerFetch(url, options = {}) {
 }
 app.get("/health", (_req, res) => { res.set("Cache-Control", "no-store"); res.json({ ok: true, service: "music-in-style", message: "Music in Style server is running" }); });
 app.get("/api/status", (_req, res) => { res.set("Cache-Control", "no-store"); res.json({ ok: true, service: "music-in-style", analysisProvider: "Magic Chords public API", replicateTokenConfigured: Boolean(String(process.env.REPLICATE_API_TOKEN || "").trim()) }); });
+app.get("/api/replicate-status", async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  const token = String(process.env.REPLICATE_API_TOKEN || "").trim();
+  if (!token) return res.status(503).json({ ok: false, configured: false, message: "Replicate token is missing from server environment." });
+  try {
+    const response = await fetch("https://api.replicate.com/v1/account", {
+      headers: { "Authorization": "Bearer " + token, "Accept": "application/json" },
+      signal: AbortSignal.timeout(12000)
+    });
+    if (response.ok) return res.json({ ok: true, configured: true, authenticated: true, message: "Replicate API token is accepted." });
+    const status = response.status;
+    console.error("Replicate credential check failed:", status);
+    return res.status(200).json({ ok: true, configured: true, authenticated: false, providerStatus: status, message: status === 401 || status === 403 ? "Replicate rejected the token. Create a new token and update REPLICATE_API_TOKEN in Render." : "Replicate credential check returned a non-success response." });
+  } catch (err) {
+    console.error("Replicate credential check error:", err.message);
+    return res.status(200).json({ ok: true, configured: true, authenticated: null, message: "Could not reach Replicate to verify the token right now." });
+  }
+});
+
 
 app.get("/api/search-song", async (req, res) => {
   const term = String(req.query.q || "").trim();
