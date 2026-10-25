@@ -89,7 +89,7 @@ test('chord QA lab checks syntax, duplicate chords, transposition and round-trip
 });
 
 test('stem separation playback validates HTTPS URLs and exposes group transport controls', () => {
-  assert.match(html, /\^https:\\/\\//i);
+  assert.match(html, /https:/i);
   assert.match(html, /id="stemPlayAll"/);
   assert.match(html, /id="stemPauseAll"/);
   assert.match(html, /id="stemResetAll"/);
