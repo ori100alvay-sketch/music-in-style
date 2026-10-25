@@ -424,26 +424,7 @@ app.post("/api/separate", async (_req, res) => {
   });
 });
 
-app.get("/api/separate/:predictionId", async (req, res) => {
-  const token = process.env.REPLICATE_API_TOKEN;
-  if (!token) return res.status(503).json({ error: "מנוע הפרדת הכלים לא מוגדר בשרת." });
-  const id = String(req.params.predictionId || "");
-  if (!/^[a-zA-Z0-9_-]{4,100}$/.test(id)) return res.status(400).json({ error: "מזהה הפרדה לא תקין." });
-  try {
-    const response = await fetch("https://api.replicate.com/v1/predictions/" + encodeURIComponent(id), {
-      headers: { "Authorization": "Bearer " + token, "Accept": "application/json" },
-      signal: AbortSignal.timeout(15000)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return res.status(502).json({ error: "לא הצלחנו לקבל את מצב הפרדת הכלים." });
-    res.set("Cache-Control", "no-store");
-    res.json({ status: data.status, output: data.output || null, error: data.error || null });
-  } catch (err) {
-    console.error("Demucs status error:", err.message);
-    res.status(502).json({ error: "שגיאה בבדיקת מצב הפרדת הכלים." });
-  }
-});
-
+// No paid Replicate polling route is exposed in free-safe mode.
 app.get("/api/jobs/:jobId", async (req, res) => {
   const jobId = String(req.params.jobId || "");
   if (!/^[a-zA-Z0-9_-]{4,160}$/.test(jobId)) return res.status(400).json({ error: "מזהה ניתוח לא תקין." });
