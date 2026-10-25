@@ -27,6 +27,59 @@ input:focus-visible{outline:none}
 /* Music workspace */
 .workspace{display:none;margin-top:16px;text-align:right}.workspace.visible{display:block}.action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:16px 0}.action-card{border:1px solid #393939;border-radius:14px;background:linear-gradient(140deg,#191919,#0b0b0b);padding:15px;text-align:right;color:#eee;cursor:pointer;min-height:88px;transition:.2s}.action-card:hover,.action-card.active{border-color:#aaa;background:#202020}.action-card strong{display:block;font-size:14px;font-weight:550;margin-bottom:7px}.action-card small{display:block;color:#999;font-size:12px;line-height:1.6}.workspace-panel{border:1px solid #333;border-radius:14px;padding:16px;background:#0c0c0c;margin-top:10px}.workspace-panel h3{font-size:15px;font-weight:500;margin:0 0 12px}.metric-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.metric{border:1px solid #2e2e2e;border-radius:10px;padding:12px;background:#141414}.metric span{display:block;font-size:11px;color:#999;margin-bottom:7px}.metric strong{font-size:23px;font-weight:500;direction:ltr;display:block}.lyrics-sheet{white-space:pre-wrap;line-height:2.25;color:#ddd;font-size:15px}.chord-token{display:inline-block;color:#fff;background:#292929;border:1px solid #555;border-radius:6px;padding:2px 7px;margin:3px;font-size:13px;direction:ltr}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.tool-button{border:1px solid #444;background:#171717;color:#eee;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12px}.tool-button:hover{border-color:#aaa}.disabled-note{color:#999;font-size:12px;line-height:1.8}.stem-row{display:grid;grid-template-columns:92px 1fr 40px;gap:10px;align-items:center;margin:14px 0;font-size:12px;color:#ccc}.stem-row input{padding:0;accent-color:#ddd}.stem-row output{direction:ltr;text-align:left;color:#aaa}.playback-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid #333;border-radius:12px;background:#151515}.playback-bar audio{width:100%;height:34px}.export-list{display:flex;flex-wrap:wrap;gap:8px}.section-label{font-size:10px;color:#888;letter-spacing:.12em;margin:18px 0 9px;direction:ltr}.song-option .song-actions{display:flex;gap:6px;margin-right:auto;flex-wrap:wrap}.song-option .song-actions button{border:1px solid #444;background:#202020;color:#eee;border-radius:8px;padding:7px 9px;font-size:11px;cursor:pointer}.song-option .song-actions button:hover{border-color:#aaa}
 @media(max-width:480px){.action-grid{grid-template-columns:1fr}.metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}.metric{padding:9px}.metric strong{font-size:19px}.stem-row{grid-template-columns:76px 1fr 34px}}
+
+/* Studio refresh — accessible, responsive and musician-first */
+:root{--bg:#07070b;--silver:#f5f5fb;--muted:#a5a5b7;--line:#292938;--violet:#a78bfa;--cyan:#67e8f9}
+body{background:radial-gradient(ellipse at 50% -12%,#292044 0,transparent 42%),radial-gradient(ellipse at 88% 32%,#102b37 0,transparent 32%),#07070b;color:var(--silver)}
+header{border-bottom-color:#ffffff14;position:relative;z-index:5;backdrop-filter:blur(18px)}
+.mini-mark{filter:drop-shadow(0 0 8px #a78bfa55)}
+.hero{padding-top:48px}
+.waves{opacity:.52;filter:hue-rotate(20deg)}
+.wordmark{text-shadow:0 0 34px #a78bfa22}
+.tagline{color:#b9b2d8}
+.copy p{color:#b1b1c3}
+.search-form{border-color:#48445d;background:linear-gradient(120deg,#191627dd,#0d1118dd);box-shadow:0 20px 70px #0009,0 0 0 1px #a78bfa0a inset}
+.search-form:focus-within{border-color:var(--violet);box-shadow:0 0 0 4px #a78bfa20,0 20px 70px #0009}
+.submit{border:0;background:linear-gradient(135deg,#a78bfa,#5c56a8);color:#090711;box-shadow:0 0 28px #8b5cf633}
+.submit:hover{transform:translateX(-2px) scale(1.03)}
+.result{border-color:#343248;background:linear-gradient(145deg,#12121bfa,#0b0c12fa);box-shadow:0 18px 60px #0005}
+.search-results{gap:10px}
+.song-option{border-color:#302e43;background:#11111b;padding:12px;min-height:68px}
+.song-option:hover,.song-option:focus-visible{border-color:#9b8ad7;background:#191727;outline:2px solid #a78bfa33;outline-offset:1px}
+.song-option img{width:48px;height:48px;border-radius:10px}
+.song-option .song-actions button,.tool-button{border-color:#403b58;background:#191725;border-radius:11px;min-height:40px}
+.song-option .song-actions button:hover,.tool-button:hover{border-color:#a78bfa;background:#242039}
+.action-grid{gap:12px}
+.action-card{border-color:#302e43;background:linear-gradient(145deg,#171622,#0d0e15);border-radius:16px;min-height:100px;padding:17px;position:relative;overflow:hidden}
+.action-card:before{content:"";position:absolute;inset:0 auto 0 0;width:2px;background:linear-gradient(180deg,#a78bfa,#67e8f9);opacity:0;transition:opacity .2s}
+.action-card:hover,.action-card.active{border-color:#7565a6;background:linear-gradient(145deg,#211c34,#11121b);transform:translateY(-2px)}
+.action-card:hover:before,.action-card.active:before{opacity:1}
+.action-card strong{font-size:14px;line-height:1.5}
+.action-card small{line-height:1.75}
+.workspace-panel{border-color:#302e43;background:linear-gradient(145deg,#0d0e16,#11111b);border-radius:16px;padding:18px}
+.metric{border-color:#343149;background:#151420}
+.metric strong{color:#d9d1ff}
+.chord-token{background:#242039;border-color:#5b4b88;color:#e6deff}
+.playback-bar{border-color:#302e43;background:#12121c}
+input,button,a{touch-action:manipulation}
+button:disabled{opacity:.48;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.status{gap:10px}
+.dot{background:#67e8f9;box-shadow:0 0 10px #67e8f966}
+.features{padding-top:66px}
+.feature{border-color:#2b293a;background:linear-gradient(145deg,#151420,#0b0c12)}
+.feature:hover{border-color:#6e6197;background:linear-gradient(145deg,#1c1930,#10121a)}
+.feature h3{font-size:18px}
+.feature p{color:#aaaabd}
+footer{border-top-color:#ffffff15}
+.chord-sheet{display:grid;gap:12px;margin:14px 0}
+.chord-line{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:7px;align-items:end}
+.chord-cell{min-width:0;text-align:center}
+.chord-cell .chord-name{display:block;color:#c9baff;font-weight:700;font-size:13px;min-height:25px;direction:ltr}
+.chord-cell .lyric-word{display:block;color:#f1f0fa;font-size:15px;line-height:1.8;overflow-wrap:anywhere}
+.analysis-notice{border:1px solid #3a3452;background:#171425;border-radius:12px;padding:13px;color:#bdb8d2;font-size:12px;line-height:1.8}
+@media(max-width:640px){header{padding:0 14px}nav{gap:10px}.hero{padding-left:15px;padding-right:15px}.search-panel{margin-top:24px}.workspace-panel{padding:13px}.action-grid{grid-template-columns:1fr}.metric-row{gap:6px}.metric span{font-size:10px}.chord-line{grid-template-columns:repeat(auto-fit,minmax(54px,1fr))}}
+@media(prefers-reduced-motion:reduce){.action-card:hover,.feature:hover{transform:none}}
 </style></head><body><div class="shell">
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">חיפוש שירים</a><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button></nav></header>
 <main id="top"><section class="hero">
@@ -177,11 +230,40 @@ function renderWorkspace(data){
  '<button class="action-card" data-result-action="mix"><strong>◉ פלייבק בהרכבה אישית</strong><small>שליטה נפרדת בכלי הנגינה</small></button></div><div id="analysisPanel" class="workspace-panel"><h3>האקורדים שזוהו</h3><div>'+chords.map(ch=>'<span class="chord-token">'+escapeHtml(ch)+'</span>').join('')+'</div><p class="disabled-note">הנתונים מוצגים לפי מה שמנוע הניתוח החזיר. אם BPM או מילים חסרים בתוצאה, יוצג מקף במקום לנחש.</p></div>';
  workspace.querySelectorAll('[data-result-action]').forEach(btn=>btn.addEventListener('click',()=>renderResultAction(btn.dataset.resultAction,data)));
 }
+function findAlignedLyrics(data){
+ const candidates=[data?.alignedLyrics,data?.chordLyrics,data?.lyricsWithChords,data?.segments,data?.lines,data?.transcription?.segments,data?.result?.segments];
+ for(const value of candidates){
+  if(!Array.isArray(value)||!value.length)continue;
+  const rows=value.map(row=>{
+   if(typeof row==='string')return null;
+   const words=row.words||row.tokens||row.items;
+   if(Array.isArray(words)){
+    const cells=words.map(w=>typeof w==='string'?{text:w,chord:''}:{text:String(w.text||w.word||w.lyric||''),chord:String(w.chord||w.chord_name||w.harmony||'')}).filter(w=>w.text);
+    if(cells.length)return cells;
+   }
+   const text=String(row.text||row.lyrics||row.line||'').trim();
+   const chord=String(row.chord||row.chord_name||'');
+   if(text)return [{text,chord}];
+   return null;
+  }).filter(Boolean);
+  if(rows.length)return rows;
+ }
+ return null;
+}
+function renderChordSheet(rows){
+ return '<div class="chord-sheet">'+rows.map(row=>'<div class="chord-line">'+row.map(cell=>'<div class="chord-cell"><span class="chord-name">'+escapeHtml(cell.chord||' ')+'</span><span class="lyric-word">'+escapeHtml(cell.text)+'</span></div>').join('')+'</div>').join('')+'</div>';
+}
 function renderResultAction(action,data){
  const panel=document.getElementById('analysisPanel');if(!panel)return;
  if(action==='listen'){panel.innerHTML='<h3>האזנה</h3>'+(currentAudioUrl?'<audio controls preload="none" style="width:100%" src="'+escapeHtml(currentAudioUrl)+'"></audio>':'<p class="disabled-note">אין כתובת שמע זמינה לניגון.</p>')}
  if(action==='notebook'){let saved=[];try{saved=JSON.parse(localStorage.getItem('misAnalysisNotebook')||'[]')}catch{};saved.unshift({title:resultTitle.textContent,analysis:data,at:new Date().toISOString()});try{localStorage.setItem('misAnalysisNotebook',JSON.stringify(saved.slice(0,50)))}catch{};panel.innerHTML='<h3>המחברת האישית</h3><p class="disabled-note">הניתוח נשמר במכשיר הזה. השמירה המקומית אינה מסתנכרנת בין מכשירים.</p>'}
- if(action==='lyrics'){const flat=flattenData(data);const lyrics=findValue(flat,['lyrics','transcript','words','text']);const chords=getChordItems(data);panel.innerHTML='<h3>מילים ואקורדים</h3>'+(lyrics?'<div class="lyrics-sheet">'+escapeHtml(String(lyrics))+'</div>':'<p class="disabled-note">מנוע הניתוח לא החזיר מילים מסונכרנות, ולכן אי אפשר עדיין למקם אקורדים מעל כל מילה באופן אמין. נדרש חיבור לתמלול וסנכרון לפי זמן.</p>')+'<div class="section-label">CHORDS DETECTED</div>'+chords.map(ch=>'<span class="chord-token">'+escapeHtml(ch)+'</span>').join('')}
+ if(action==='lyrics'){
+   const aligned=findAlignedLyrics(data);
+   const chords=getChordItems(data);
+   panel.innerHTML='<h3>מילים ואקורדים</h3><p class="disabled-note">תצוגה מוזיקלית — האקורדים מוצגים מעל המילים רק כאשר מנוע הניתוח מחזיר שיוך מפורש ביניהם.</p>'+
+     (aligned?renderChordSheet(aligned):'<div class="analysis-notice">השיר נותח, אבל השירות הנוכחי לא החזיר עדיין נתוני מילים עם מיקומי אקורדים מסונכרנים. לכן לא נציג אקורדים במיקומים מומצאים. כדי לקבל תצוגה מדויקת כמו Ultimate Guitar נדרש מנוע שמחזיר גם lyrics וגם chord timestamps/word alignment.</div>')+
+     (chords.length?'<div class="section-label">CHORDS DETECTED</div>'+chords.map(ch=>'<span class="chord-token">'+escapeHtml(ch)+'</span>').join(''):'');
+ }
  if(action==='notes'){panel.innerHTML='<h3>ייצוא תווים</h3><p class="disabled-note">מנוע Magic Chords תומך בייצוא קבצים דרך API, אבל נקודת הייצוא עוד לא חוברה לממשק. לאחר חיבור ניתן יהיה להציג הורדות זמינות.</p><div class="export-list"><button class="tool-button" disabled>PDF</button><button class="tool-button" disabled>MIDI</button><button class="tool-button" disabled>MusicXML</button></div>'}
  if(action==='mix'){const stems=['שירה','תופים','בס','גיטרה חשמלית','גיטרה אקוסטית','קלידים / פסנתר','כינורות','כלי נשיפה','כלים נוספים'];panel.innerHTML='<h3>פלייבק בהרכבה אישית</h3><p class="disabled-note">כדי שהמחוונים ישנו את המוזיקה בפועל, צריך קודם לחבר שירות שמפריד את השיר לערוצי שמע נפרדים. מנוע האקורדים הנוכחי לא מספק ערוצים נפרדים בפני עצמו.</p>'+stems.map(s=>'<label class="stem-row"><span>'+s+'</span><input type="range" min="0" max="100" value="100" disabled><output>100%</output></label>').join('')}
 }
