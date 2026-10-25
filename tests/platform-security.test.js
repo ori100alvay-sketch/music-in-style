@@ -144,7 +144,7 @@ test('timed lyric and chord alignment handles provider variants and bounded chor
   assert.match(html, /const scoreWords=/);
   assert.match(html, /const scoreChords=/);
   assert.match(html, /word\.start<=event\.end/);
-  assert.match(html, /Keep lyric lines readable even when the transcription has no punctuation/);
+  assert.match(html, /Build readable lyric phrases using provider line breaks, punctuation and timing gaps/);
   assert.match(html, /if\(words\.length<2\|\|!events\.length\)return null/);
 });
 test('stem mixer supports nested provider outputs, mute, solo and independent channel gain', () => {
@@ -161,7 +161,8 @@ test('stem mixer supports nested provider outputs, mute, solo and independent ch
 test('search-result chord analysis uses a public supported track URL rather than a short preview file', () => {
   assert.match(html, /id="analyzeFullAudio"/);
   assert.match(html, /track\.trackUrl/);
-  assert.match(html, /analyzeUrl\(track\.trackUrl/);
+  assert.match(html, /track\.trackUrl/);
+  assert.match(html, /נתח את הקישור/);
   assert.doesNotMatch(html, /analyzeUrl\(track\.previewUrl/);
 });
 
