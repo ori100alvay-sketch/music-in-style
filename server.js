@@ -63,6 +63,96 @@ async function providerFetch(url, options = {}) {
   if (!response.ok) { const error = new Error(data.error || data.detail || data.message || "Music analysis service error"); error.status = response.status; error.details = data; throw error; }
   return data;
 }
+
+// Authentication is delegated to Supabase Auth: passwords and recovery tokens are
+// never stored by this app. Configure SUPABASE_URL and SUPABASE_ANON_KEY on Render.
+function authConfig() {
+  const base = String(process.env.SUPABASE_URL || "").trim().replace(/\/$/, "");
+  const key = String(process.env.SUPABASE_ANON_KEY || "").trim();
+  return base && key ? { base, key } : null;
+}
+app.get("/api/auth/config", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  const cfg = authConfig();
+  res.json({ configured: Boolean(cfg), provider: "Supabase Auth", features: ["signup", "email/password login", "email password recovery"], message: cfg ? "Authentication provider configured." : "יש להגדיר SUPABASE_URL ו-SUPABASE_ANON_KEY ב-Render." });
+});
+async function supabaseAuth(pathname, body) {
+  const cfg = authConfig();
+  if (!cfg) { const e = new Error("מערכת החשבונות עדיין לא הוגדרה. יש להוסיף SUPABASE_URL ו-SUPABASE_ANON_KEY ב-Render."); e.status = 503; throw e; }
+  const response = await fetch(cfg.base + "/auth/v1/" + pathname, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": cfg.key },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(15000)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const e = new Error(data.msg || data.message || data.error_description || data.error || "בקשת החשבון נכשלה.");
+    e.status = response.status;
+    throw e;
+  }
+  return data;
+}
+app.post("/api/auth/signup", async (req, res) => {
+  const email = String((req.body || {}).email || "").trim().toLowerCase();
+  const password = String((req.body || {}).password || "");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: "יש להזין כתובת מייל תקינה." });
+  if (password.length < 10 || password.length > 128) return res.status(400).json({ error: "הסיסמה חייבת להכיל לפחות 10 תווים ועד 128 תווים." });
+  try {
+    const data = await supabaseAuth("signup", { email, password });
+    res.set("Cache-Control", "no-store");
+    res.status(201).json({ ok: true, needsEmailConfirmation: !data.access_token, message: data.access_token ? "החשבון נוצר בהצלחה." : "נשלח מייל לאימות החשבון. יש לפתוח אותו כדי להשלים הרשמה.", user: data.user ? { id: data.user.id, email: data.user.email } : null, session: data.access_token ? { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: data.expires_at } : null });
+  } catch (e) { res.status(e.status && e.status < 500 ? e.status : 502).json({ error: e.status === 429 ? "יותר מדי ניסיונות. נסו שוב מאוחר יותר." : e.message }); }
+});
+app.post("/api/auth/login", async (req, res) => {
+  const email = String((req.body || {}).email || "").trim().toLowerCase();
+  const password = String((req.body || {}).password || "");
+  if (!email || !password || password.length > 128) return res.status(400).json({ error: "יש להזין מייל וסיסמה." });
+  try {
+    const data = await supabaseAuth("token?grant_type=password", { email, password });
+    res.set("Cache-Control", "no-store");
+    res.json({ ok: true, user: { id: data.user.id, email: data.user.email }, session: { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: data.expires_at } });
+  } catch (e) { res.status(e.status && e.status < 500 ? e.status : 502).json({ error: e.status === 400 || e.status === 401 ? "המייל או הסיסמה אינם נכונים, או שהמייל טרם אומת." : e.status === 429 ? "יותר מדי ניסיונות. נסו שוב מאוחר יותר." : e.message }); }
+});
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const email = String((req.body || {}).email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ error: "יש להזין כתובת מייל תקינה." });
+  const cfg = authConfig();
+  if (!cfg) return res.status(503).json({ error: "מערכת איפוס הסיסמה עדיין לא הוגדרה בשרת." });
+  try {
+    const response = await fetch(cfg.base + "/auth/v1/recover", {
+      method: "POST", headers: { "Content-Type": "application/json", "apikey": cfg.key },
+      body: JSON.stringify({ email, redirect_to: String(process.env.AUTH_REDIRECT_URL || "https://music-in-style.onrender.com/") }),
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const e = new Error(data.msg || data.message || "לא הצלחנו לשלוח מייל איפוס כרגע.");
+      e.status = response.status; throw e;
+    }
+    res.set("Cache-Control", "no-store");
+    res.json({ ok: true, message: "אם הכתובת קיימת במערכת, נשלח אליה מייל עם קישור מאובטח לאיפוס הסיסמה." });
+  } catch (e) { res.status(e.status && e.status < 500 ? e.status : 502).json({ error: e.status === 429 ? "יותר מדי ניסיונות. נסו שוב מאוחר יותר." : e.message }); }
+});
+app.post("/api/auth/update-password", async (req, res) => {
+  const token = String((req.body || {}).access_token || "");
+  const password = String((req.body || {}).password || "");
+  if (!token || token.length > 4096) return res.status(401).json({ error: "קישור האיפוס חסר או פג תוקף. בקשו מייל חדש." });
+  if (password.length < 10 || password.length > 128) return res.status(400).json({ error: "הסיסמה חייבת להכיל לפחות 10 תווים ועד 128 תווים." });
+  const cfg = authConfig();
+  if (!cfg) return res.status(503).json({ error: "מערכת איפוס הסיסמה עדיין לא הוגדרה בשרת." });
+  try {
+    const response = await fetch(cfg.base + "/auth/v1/user", {
+      method: "PUT", headers: { "Content-Type": "application/json", "apikey": cfg.key, "Authorization": "Bearer " + token },
+      body: JSON.stringify({ password }), signal: AbortSignal.timeout(15000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) { const e = new Error(data.msg || data.message || "קישור האיפוס אינו תקף."); e.status = response.status; throw e; }
+    res.set("Cache-Control", "no-store");
+    res.json({ ok: true, message: "הסיסמה עודכנה בהצלחה. אפשר להתחבר עם הסיסמה החדשה." });
+  } catch (e) { res.status(e.status && e.status < 500 ? e.status : 502).json({ error: e.status === 401 || e.status === 403 ? "קישור האיפוס פג תוקף. בקשו מייל חדש." : e.message }); }
+});
+
 app.get("/api/music-theory", (req, res) => {
   res.set("Cache-Control", "no-store");
   const result = theory.getTheory({
