@@ -541,6 +541,7 @@ function renderWorkspace(data){
  const key=findValue(flat,['key','tonality','musical_key']);
  const aligned=findAlignedLyrics(data);
  const lyrics=extractLyrics(data);
+ const detectedChords=getChordItems(data);
  workspace.classList.add('visible');
  workspace.innerHTML='<div class="song-heading">'+(currentTrack&&currentTrack.artwork?'<img src="'+escapeHtml(currentTrack.artwork)+'" alt="">':'')+'<div><h3>'+escapeHtml(currentTrack?.title||resultTitle.textContent||'השיר שנבחר')+'</h3><p>'+escapeHtml(currentTrack?.artist||'אמן לא זוהה')+'</p></div></div>'+
  '<div class="metric-row"><div class="metric"><span>קצב · BPM</span><strong>'+escapeHtml(bpm??'—')+'</strong></div><div class="metric"><span>סולם מקורי</span><strong style="font-size:18px">'+escapeHtml(key??'—')+'</strong></div><div class="metric"><span>הזזה מהסולם המקורי</span><strong id="transposeCount">0</strong></div></div>'+
@@ -558,7 +559,8 @@ function renderWorkspace(data){
      target.innerHTML=renderTransposedChordSheet(aligned,semitones);
    }else{
      target.innerHTML='<div class="analysis-notice">'+(lyrics?'<strong>מילים זוהו, אבל אין שיוך אמין של אקורד לכל מילה.</strong><br>מציגים את המילים בלי להצמיד אקורדים באופן מנחש.':'<strong>מנוע האקורדים לא החזיר מילים מסונכרנות.</strong><br>כדי להציג את המילים המקוריות עם האקורדים בדיוק מעליהן, צריך שמנוע הניתוח יחזיר גם מילים מורשות וגם מיקומי אקורדים. לא נציג רשימת אקורדים אקראית כאילו היא מסונכרנת.')+'</div>'+
-     (lyrics?'<div class="chord-section"><h4>מילות השיר שהוחזרו על ידי שירות הניתוח</h4><div class="lyrics-sheet">'+escapeHtml(lyrics)+'</div></div>':'');
+     (lyrics?'<div class="chord-section"><h4>מילות השיר שהוחזרו על ידי שירות הניתוח</h4><div class="lyrics-sheet">'+escapeHtml(lyrics)+'</div></div>':'')+
+     (detectedChords.length?'<div class="chord-section"><h4>האקורדים שזוהו בניתוח</h4><p class="disabled-note">הרשימה הזו אינה מסונכרנת למילים; היא מוצגת בנפרד כדי לא להציג שיוך לא מדויק.</p><div class="detected-chord-list">'+detectedChords.map(ch=>'<span class="chord-token">'+escapeHtml(transposeChord(ch,semitones))+'</span>').join('')+'</div></div>':'<div class="analysis-notice">לא התקבלה רשימת אקורדים מזוהה מהשירות. נסה קובץ שמע אחר או בדוק את הגדרת שירות הניתוח.</div>');
    }
  };
  document.getElementById('transposeDown').onclick=()=>{semitones=Math.max(-12,semitones-1);renderSheet()};
@@ -577,7 +579,7 @@ function collectTextCandidates(value,out=[],path=''){
  return out;
 }
 function extractLyrics(data){
- const direct=[data?.lyrics,data?.transcript,data?.transcription,data?.text,data?.result?.lyrics,data?.result?.transcript,data?.result?.text,data?.result?.transcription,data?.analysis?.lyrics];
+ const direct=[data?.lyrics,data?.transcript,data?.transcription,data?.text,data?.result?.lyrics,data?.result?.transcript,data?.result?.text,data?.result?.transcription,data?.result?.analysis?.lyrics,data?.analysis?.lyrics,data?.data?.lyrics,data?.data?.transcript,data?.output?.lyrics,data?.output?.transcript];
  for(const value of direct){
   if(typeof value==='string'&&value.trim().length>20)return value.trim();
   if(value&&typeof value==='object')for(const key of ['text','transcript','transcription','lyrics','full_text'])if(typeof value[key]==='string'&&value[key].trim().length>20)return value[key].trim();
@@ -585,7 +587,7 @@ function extractLyrics(data){
  const candidates=collectTextCandidates(data).sort((a,b)=>b.text.length-a.text.length);
  const likely=candidates.find(item=>/lyrics|transcript|transcription/i.test(item.path));
  if(likely)return likely.text;
- const segments=data?.transcription?.segments||data?.transcription?.words||data?.segments||data?.words||data?.result?.segments;
+ const segments=data?.transcription?.segments||data?.transcription?.words||data?.segments||data?.words||data?.result?.segments||data?.result?.transcription?.segments||data?.result?.transcription?.words||data?.data?.segments||data?.output?.segments;
  if(Array.isArray(segments)){const text=segments.map(segment=>typeof segment==='string'?segment:String(segment?.text||segment?.word||segment?.transcript||'')).filter(Boolean).join(' ').trim();if(text.length>20)return text}
  return '';
 }
