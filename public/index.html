@@ -380,7 +380,16 @@ function selectAction(action,track){
        const data=await resp.json();
        if(!resp.ok)throw new Error(data.error||'לא ניתן לנתח את השיר');
        out.innerHTML='<div class="metric-row"><div class="metric"><span>BPM · קצב</span><strong>'+escapeHtml(data.tempo??'—')+'</strong></div><div class="metric"><span>סולם</span><strong>'+escapeHtml((data.key||'—')+(data.mode?' · '+data.mode:''))+'</strong></div></div>'+(data.camelot?'<p class="disabled-note">Camelot: '+escapeHtml(data.camelot)+'</p>':'');
-     }catch(err){out.innerHTML='<p class="disabled-note">'+escapeHtml(err.message)+'</p>'}
+     }catch(err){
+       const flat=currentAnalysis?flattenData(currentAnalysis):{};
+       const fallbackTempo=findValue(flat,['bpm','tempo']);
+       const fallbackKey=findValue(flat,['key','tonality','musical_key']);
+       if(/BRIZM_API_KEY|Brizm עדיין לא מוגדר|Brizm is not configured/i.test(err.message)&&(fallbackTempo!==null||fallbackKey!==null)){
+         out.innerHTML='<div class="analysis-notice"><strong>הוצגו נתונים ממנוע ניתוח השמע.</strong><br>Brizm עדיין לא מוגדר, לכן מוצגים נתונים שכבר התקבלו בניתוח. ייתכן שהם מבוססים על קטע תצוגה מקדימה בלבד.</div><div class="metric-row"><div class="metric"><span>BPM · קצב</span><strong>'+escapeHtml(fallbackTempo??'—')+'</strong></div><div class="metric"><span>סולם</span><strong>'+escapeHtml(fallbackKey??'—')+'</strong></div></div><p class="disabled-note">להפעלת Brizm: הוסף BRIZM_API_KEY ב-Render → השירות music-in-style → Environment, ואז בצע Deploy מחדש.</p>';
+       }else if(/BRIZM_API_KEY|Brizm עדיין לא מוגדר|Brizm is not configured/i.test(err.message)){
+         out.innerHTML='<div class="analysis-notice"><strong>מנוע Brizm לא הופעל בשרת.</strong><br>אין מפתח API בשרת, ולכן אי אפשר לבקש ממנו BPM וסולם לפי שם השיר.</div><p class="disabled-note">להפעלה: צור/העתק מפתח מחשבון Brizm שלך, הוסף אותו ב-Render → השירות music-in-style → Environment בשם BRIZM_API_KEY, ושמור כדי לבצע Deploy מחדש. אל תכניס את המפתח באתר ואל תשלח אותו בצ׳אט.</p>';
+       }else out.innerHTML='<p class="disabled-note">'+escapeHtml(err.message)+'</p>';
+     }
      finally{brizmButton.disabled=false}
    };
  }
