@@ -58,7 +58,7 @@ test('capabilities endpoint distinguishes built-in features from credential-gate
   assert.match(server, /distributedRateLimit: false/);
   assert.match(server, /lyricsTranscription:/);
   assert.match(server, /stemSeparation:/);
-  assert.match(server, /needs: replicateConfigured \? \[\] : \["REPLICATE_API_TOKEN"\]/);
+  assert.match(server, /stemSeparation: \{ available: false, configured: false, provider: "Disabled in free-safe mode"/);
   assert.match(server, /needs: brizmConfigured \? \[\] : \["BRIZM_API_KEY"\]/);
 });
 
@@ -140,10 +140,12 @@ test('BPM analysis omits Camelot numeric metadata and chord parser accepts alter
   assert.match(html, /function buildTimedAlignment\(data\)/);
 });
 
-test('Demucs separation uses version-pinned Replicate predictions endpoint', () => {
-  assert.match(server, /https:\/\/api\.replicate\.com\/v1\/predictions/);
-  assert.match(server, /version: "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953"/);
-  assert.doesNotMatch(server, /api\.replicate\.com\/v1\/models\/cjwbw\/demucs\/predictions/);
+test('stem separation is disabled in free-safe mode and cannot submit paid inference jobs', () => {
+  assert.match(server, /app\.post\("\/api\/separate", async \(_req, res\) =>/);
+  assert.match(server, /status\(501\)\.json\(/);
+  assert.match(server, /No audio is sent to paid inference services/);
+  assert.doesNotMatch(server, /api\.replicate\.com\/v1\/predictions/);
+  assert.doesNotMatch(server, /version: "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953"/);
 });
 
 test('timed chord alignment improves event deduplication, lyric phrase breaks and repeated chord labels', () => {
@@ -249,11 +251,9 @@ test('focused practice timer supports presets, pause/resume and reset with consi
   assert.match(html, /id="focusReset"/);
 });
 
-test('Replicate 402 insufficient-credit errors return an actionable billing message', () => {
-  assert.match(server, /response\.status === 402\) message = "חשבון Replicate ללא יתרת קרדיט מספקת/);
-  assert.match(server, /const httpStatus = response\.status === 402 \? 402/);
-  assert.match(server, /actionUrl: response\.status === 402 \? "https:\/\/replicate\.com\/account\/billing#billing"/);
-  assert.match(html, /const creditIssue=start\.status===402\|\|data\.providerStatus===402/);
-  assert.match(html, /פתיחת עמוד החיוב של Replicate/);
-  assert.match(html, /rel="noopener noreferrer"/);
+test('free-safe stem separation explains why automatic AI separation is unavailable', () => {
+  assert.match(server, /הפרדת כלים ב-AI אינה זמינה כרגע במצב חינמי/);
+  assert.match(html, /data\.freeMode/);
+  assert.match(html, /נדרש מנוע Demucs מקומי או שירות חינמי אמיתי/);
+  assert.doesNotMatch(html, /פתיחת עמוד החיוב של Replicate/);
 });
