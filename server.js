@@ -104,6 +104,22 @@ app.post("/api/auth/signup", async (req, res) => {
     res.status(201).json({ ok: true, needsEmailConfirmation: !data.access_token, message: data.access_token ? "החשבון נוצר בהצלחה." : "נשלח מייל לאימות החשבון. יש לפתוח אותו כדי להשלים הרשמה.", user: data.user ? { id: data.user.id, email: data.user.email } : null, session: data.access_token ? { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: data.expires_at } : null });
   } catch (e) { res.status(e.status && e.status < 500 ? e.status : 502).json({ error: e.status === 429 ? "יותר מדי ניסיונות. נסו שוב מאוחר יותר." : e.message }); }
 });
+
+app.post("/api/auth/verify-email", async (req, res) => {
+  const tokenHash = String((req.body || {}).token_hash || "").trim();
+  const type = String((req.body || {}).type || "signup").trim();
+  if (!tokenHash || tokenHash.length > 4096 || !["signup", "email", "recovery", "invite", "magiclink"].includes(type)) {
+    return res.status(400).json({ error: "קישור האימות חסר או אינו תקף." });
+  }
+  try {
+    const data = await supabaseAuth("verify", { token_hash: tokenHash, type });
+    res.set("Cache-Control", "no-store");
+    res.json({ ok: true, user: data.user ? { id: data.user.id, email: data.user.email } : null, session: data.access_token ? { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: data.expires_at } : null, message: type === "recovery" ? "קישור האיפוס אומת." : "כתובת המייל אומתה בהצלחה. אפשר להתחבר." });
+  } catch (e) {
+    res.status(e.status && e.status < 500 ? e.status : 502).json({ error: e.status === 403 || e.status === 422 ? "קישור האימות פג תוקף או שכבר נוצל. בקשו קישור חדש." : e.message });
+  }
+});
+
 app.post("/api/auth/login", async (req, res) => {
   const email = String((req.body || {}).email || "").trim().toLowerCase();
   const password = String((req.body || {}).password || "");
