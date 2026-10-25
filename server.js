@@ -214,7 +214,8 @@ app.post("/api/separate", async (req, res) => {
       console.error("Demucs submission failed:", response.status, JSON.stringify(data).slice(0, 1200));
       const providerMessage = String(data.detail || data.error || data.title || "").slice(0, 240);
       let message = "מנוע הפרדת הכלים דחה את השמע.";
-      if (response.status === 401 || response.status === 403) message = "מנוע ההפרדה דחה את הרשאת השרת. יש לבדוק את REPLICATE_API_TOKEN ב-Render.";\n      else if (response.status === 404) message = "מנוע ההפרדה לא נמצא בכתובת השירות. עדכנו את כתובת המנוע או את גרסת המודל.";
+      if (response.status === 401 || response.status === 403) message = "מנוע ההפרדה דחה את הרשאת השרת. יש לבדוק את REPLICATE_API_TOKEN ב-Render.";
+            else if (response.status === 404) message = "מנוע ההפרדה לא נמצא בכתובת השירות. עדכנו את כתובת המנוע או את גרסת המודל.";
       else if (response.status === 429) message = "מנוע ההפרדה עמוס או שמכסת השימוש הסתיימה. נסו שוב מאוחר יותר.";
       else if (response.status === 422 || response.status === 400) message = "מנוע ההפרדה לא הצליח לקבל את קובץ השמע. ייתכן שהקישור אינו קובץ שמע נגיש או שהפורמט אינו נתמך.";
       return res.status(response.status === 429 ? 429 : 502).json({ error: message, providerStatus: response.status, providerMessage });
