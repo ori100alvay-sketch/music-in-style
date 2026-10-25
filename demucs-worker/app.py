@@ -23,12 +23,14 @@ def health():
 
 @app.get("/capabilities")
 def capabilities():
-    ready = shutil.which("demucs") is not None
+    runtime_installed = all(shutil.which(name) is not None for name in ("demucs", "ffmpeg", "ffprobe"))
     return {
-        "available": ready,
-        "engine": "Demucs 4 (open source)" if ready else None,
+        "available": False,
+        "runtime_installed": runtime_installed,
+        "engine": "Demucs 4 (open source)" if runtime_installed else None,
         "paid_provider": False,
-        "note": "A real audio separation test is still required before production activation."
+        "ready_for_production": False,
+        "note": "Runtime presence alone does not prove successful separation; a real audio smoke test is required."
     }
 
 
