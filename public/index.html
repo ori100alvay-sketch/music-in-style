@@ -174,6 +174,26 @@ body{background:radial-gradient(ellipse at 50% -12%,#292929 0,transparent 43%),r
 .progression-output{min-height:60px;border:1px solid #302e43;border-radius:12px;background:#0a0a10;padding:14px;direction:ltr;text-align:center;font-size:clamp(18px,3vw,24px);line-height:1.8;word-spacing:8px;margin:12px 0}
 .practice-note{font-size:11px!important;color:#85859a!important;margin-top:12px!important}
 @media(max-width:640px){.practice-studio{padding:8px 18px 60px}.practice-grid{grid-template-columns:1fr}.practice-card{padding:17px}}
+
+/* Front-and-center chord presentation */
+#resultBox.visible{border-color:#514477;box-shadow:0 18px 60px #0009,0 0 0 1px #8b5cf622}
+#resultTitle{font-size:clamp(20px,3vw,28px);font-weight:800;letter-spacing:-.025em;color:#fff}
+.chord-section{border:1px solid #514477;background:radial-gradient(ellipse at 50% 0%,#28213f 0%,#11101b 54%,#0a0a10 100%);border-radius:18px;padding:clamp(14px,3vw,24px);box-shadow:inset 0 1px #ffffff0b,0 12px 32px #0005}
+.chord-section h4{font-size:14px!important;font-weight:800!important;letter-spacing:.02em;color:#d9ccff!important;margin-bottom:16px!important}
+.chord-lyric-line{column-gap:3px;row-gap:16px;line-height:2.1;margin:10px 0 18px}
+.chord-lyric-word{padding:0 5px;border-radius:10px;transition:background .15s ease}
+.chord-lyric-word .chord-above{display:inline-flex;align-items:center;justify-content:center;min-height:31px;padding:2px 10px;margin-bottom:3px;border:1px solid #9b87e7;border-radius:9px;background:linear-gradient(135deg,#55418c,#29203f);box-shadow:0 3px 12px #8b5cf629;color:#fff;font-size:clamp(15px,2.2vw,18px);font-weight:900;letter-spacing:.01em;line-height:1.4}
+.chord-lyric-word .word-below{font-size:clamp(16px,2.1vw,19px);font-weight:550;line-height:1.9;color:#fff}
+.chord-token{font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,#514078,#211a32);border:1px solid #9b87e7;border-radius:10px;padding:6px 11px;box-shadow:0 4px 15px #8b5cf626}
+.chord-sheet{gap:16px}
+.chord-line{gap:9px}
+.chord-cell{padding:10px 6px;border:1px solid #39304f;border-radius:12px;background:linear-gradient(180deg,#191526,#0e0d14)}
+.chord-cell .chord-name{font-size:clamp(16px,2vw,20px);font-weight:900;color:#d7c9ff;min-height:30px}
+.chord-cell .lyric-word{font-size:16px;font-weight:550}
+.chord-toolbar{padding:12px 14px;border:1px solid #3e3558;border-radius:14px;background:#100e18}
+.transpose-control button{font-weight:800;box-shadow:0 3px 10px #0005}
+@media(max-width:480px){.chord-section{padding:12px}.chord-lyric-line{row-gap:13px}.chord-lyric-word{padding:0 3px}.chord-lyric-word .chord-above{font-size:15px;padding:3px 8px;min-height:29px}.chord-lyric-word .word-below{font-size:16px}}
+
 </style><style>
 /* Accessibility tools and chord QA lab */
 .access-fab{position:fixed;left:16px;bottom:82px;z-index:900;border:1px solid #615783;border-radius:999px;background:#19152a;color:#fff;padding:12px 15px;box-shadow:0 8px 30px #0008;cursor:pointer;font-size:13px}
