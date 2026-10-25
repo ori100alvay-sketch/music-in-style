@@ -117,7 +117,7 @@ function flattenData(value,out={},prefix=''){
 function findValue(flat,terms){const entry=Object.entries(flat).find(([k,v])=>terms.some(t=>k.toLowerCase().includes(t))&&(typeof v==='number'||(typeof v==='string'&&v.length<100)));return entry?entry[1]:null}
 function getChordItems(data){const flat=flattenData(data);const items=[];for(const [k,v] of Object.entries(flat)){if(/chord/i.test(k)&&typeof v==='string'&&v.length<20)items.push(v)}return [...new Set(items)].slice(0,80)}
 function showTrackActions(track){
-  resultBox.classList.add('visible');workspace.classList.add('visible');resultTitle.textContent=track.title+' — '+track.artist;resultMessage.textContent='בחר מה תרצה לעשות עם השיר לפני הניתוח.';resultData.textContent='';
+  resultBox.classList.add('visible');resultData.hidden=true;workspace.classList.add('visible');resultTitle.textContent=track.title+' — '+track.artist;resultMessage.textContent='בחר מה תרצה לעשות עם השיר לפני הניתוח.';resultData.textContent='';
   workspace.innerHTML='<div class="action-grid">'+
   '<button class="action-card" data-action="listen"><strong>▶ לשמוע את השיר</strong><small>האזנה לתצוגה מקדימה כשזמינה</small></button>'+
   '<button class="action-card" data-action="notebook"><strong>＋ למחברת האישית</strong><small>שמירת השיר במכשיר הזה</small></button>'+
