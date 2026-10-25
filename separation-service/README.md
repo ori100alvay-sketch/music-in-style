@@ -38,8 +38,15 @@ unzip -l stems.zip
 
 Verify the ZIP contains `vocals.wav`, `drums.wav`, `bass.wav`, and `other.wav` and listen to the output before changing the UI or enabling a Node proxy.
 
+## Security
+
+- Set a long random `DEMUCS_API_TOKEN` environment variable before exposing the service.
+- `POST /separate` requires `Authorization: Bearer <DEMUCS_API_TOKEN>`; missing configuration returns 503 and invalid/missing credentials return 401.
+- Keep this worker private to the app/backend network where possible. Do not publish an unauthenticated CPU-heavy inference endpoint.
+- The Node website is not connected to this worker by default. Do not mark the website feature active until a real audio smoke test passes and a separately reviewed authenticated proxy is configured.
+
 ## API
 
 - `GET /health`: reports installed runtime and deliberately never claims separation is ready.
-- `POST /separate`: multipart form field `file`; returns a ZIP of four stems on success.
+- `POST /separate`: multipart form field `file` plus `Authorization: Bearer <DEMUCS_API_TOKEN>`; returns a ZIP of four stems on success.
 - Maximum upload defaults to 40 MiB and runtime timeout to 900 seconds. Override with `MAX_UPLOAD_BYTES` and `SEPARATION_TIMEOUT_SECONDS`.
