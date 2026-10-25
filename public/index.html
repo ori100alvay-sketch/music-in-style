@@ -148,7 +148,7 @@ function selectAction(action,track){
    else panel.innerHTML='<h3>ניתוח תווים</h3><p class="disabled-note">אין קובץ שמע ישיר זמין. הדבק קישור ישיר לקובץ שמע נתמך.</p>';
  }else if(action==='mix'){
    const source=track.previewUrl||'';
-   panel.innerHTML='<h3>ניתוח פלייבק והפרדת כלים</h3><p class="disabled-note">ננסה להפריד את השמע לערוצים נפרדים באמצעות Demucs. נדרש להגדיר REPLICATE_API_TOKEN בהגדרות Environment של Render. השירות עובד עם כתובת שמע ציבורית ישירה, לא עם עמוד YouTube/Spotify.</p><div class="toolbar"><button class="tool-button" id="startSeparation" '+(source?'':'disabled')+'>התחל הפרדת כלים</button></div><div id="stemResults"></div>';
+   panel.innerHTML='<h3>ניתוח פלייבק והפרדת כלים</h3><p class="disabled-note">אפשר להפעיל הפרדה ישירות מתוצאת החיפוש כאשר קיימת תצוגה מקדימה עם כתובת שמע נגישה. קישורי עמוד YouTube/Spotify אינם קובץ שמע, ולכן אי אפשר לשלוח אותם ישירות ל-Demucs. תצוגת המקדים עשויה להיות קצרה מהשיר המלא.</p><div class="toolbar"><button class="tool-button" id="startSeparation" '+(source?'':'disabled')+'>התחל הפרדת כלים</button></div><div id="stemResults">'+(source?'':'<p class="disabled-note">לתוצאה הזאת אין תצוגת שמע זמינה. בחר תוצאה אחרת שיש לה תצוגה מקדימה, או שנצטרך לחבר ספק שמע מורשה שתומך בניתוח השיר המלא.</p>')+'</div>';
    const start=document.getElementById('startSeparation');if(start)start.onclick=()=>startStemSeparation(source);
  }
 }
@@ -180,7 +180,7 @@ async function startStemSeparation(audioUrl){
  try{
   const start=await fetch('/api/separate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:audioUrl})});
   const data=await start.json();
-  if(!start.ok||!data.id){target.innerHTML='<p class="disabled-note">'+escapeHtml(data.error||'לא ניתן להתחיל הפרדת כלים.')+'</p>';return}
+  if(!start.ok||!data.id){target.innerHTML='<p class="disabled-note">'+escapeHtml(data.error||'לא ניתן להתחיל הפרדת כלים.')+(data.providerStatus?' (קוד שירות: '+escapeHtml(data.providerStatus)+')':'')+(data.providerMessage?'<br>פרטי שגיאה: '+escapeHtml(data.providerMessage):'')+'</p>';return}
   target.innerHTML='<p class="disabled-note">מפרידים ערוצים…</p>';
   for(let i=0;i<60;i++){
    await new Promise(r=>setTimeout(r,2500));
