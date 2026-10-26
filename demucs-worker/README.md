@@ -5,6 +5,8 @@ This optional worker runs the open-source Demucs model locally. It does not call
 ## Deploy separately
 Create a **Docker Web Service** in Render from this repository and set the Dockerfile path to `demucs-worker/Dockerfile`. Do not switch the existing Node service to this worker's Dockerfile.
 
+For a secure connection, create one long random secret and set the exact same value as `DEMUCS_WORKER_TOKEN` on **both** the worker service and the main Node service. The main service sends it in `X-Worker-Token`; the worker rejects missing or incorrect tokens. Do not expose the token in frontend code or commit it to GitHub. Keep `DEMUCS_ENABLE_LOCAL_WORKER=false` on the main service until a real smoke test succeeds.
+
 Demucs downloads model weights on first use and needs substantial RAM/CPU; the free Render instance may not have enough memory or disk and can time out. Use a plan with adequate resources only if you choose to. The worker is not considered active until a real audio-file test produces four non-empty stems.
 
 ## API
