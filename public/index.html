@@ -704,8 +704,16 @@ function selectAction(action,track){
    document.getElementById('findYoutubeSource').onclick=()=>window.open(ytSearch,'_blank','noopener,noreferrer');
    document.getElementById('analyzeFullAudio').onclick=()=>{const field=document.getElementById('fullAudioUrl');const url=field.value.trim();if(!/^https:\/\//i.test(url)){field.focus();field.reportValidity();return}analyzeUrl(url,(track.title||'השיר')+' — ניתוח אקורדים')};
  }else if(action==='notes'){
-   if(track.previewUrl)analyzeUrl(track.previewUrl,track.title+' — ניתוח תווים ומילים (קטע תצוגה מקדימה)');
-   else panel.innerHTML='<h3>ניתוח תווים</h3><p class="disabled-note">אין קובץ שמע ישיר זמין. הדבק קישור ישיר לקובץ שמע נתמך.</p>';
+   panel.innerHTML='<h3>מציאת אקורדים ומילים</h3>'+
+    (track.trackUrl?'<p class="disabled-note">משתמשים בקישור הציבורי של השיר ולא בקובץ התצוגה המקדימה, שאינו נתמך לניתוח.</p><button class="tool-button" id="analyzeNotesTrack">♫ מצא אקורדים ומילים</button>':'<p class="disabled-note">לא נמצא עמוד שיר ציבורי לניתוח. אפשר להדביק קישור HTTPS ציבורי מפלטפורמה נתמכת.</p>')+
+    '<label for="notesTrackUrl">קישור ציבורי לשיר</label><input id="notesTrackUrl" type="url" placeholder="https://music.apple.com/… או https://youtu.be/…" style="width:100%;margin:10px 0;padding:13px;border-radius:10px;background:#111;color:#fff;border:1px solid #444"><button class="tool-button" id="analyzeNotesCustom">נתח את הקישור</button><p class="disabled-note">מילים ממאגר חינמי זמינות גם באזור „חיפוש מילים חינמי”. ניתוח AI תלוי בזמינות ספק האקורדים.</p>';
+   const notesTrackButton=document.getElementById('analyzeNotesTrack');
+   if(notesTrackButton)notesTrackButton.onclick=()=>analyzeUrl(track.trackUrl,(track.title||'השיר')+' — אקורדים ומילים');
+   document.getElementById('analyzeNotesCustom').onclick=()=>{
+    const field=document.getElementById('notesTrackUrl');const url=field.value.trim();
+    if(!/^https:\/\//i.test(url)){field.focus();return;}
+    analyzeUrl(url,(track.title||'השיר')+' — אקורדים ומילים');
+   };
  }else if(action==='mix'){
    const source=track.previewUrl||'';
    panel.innerHTML='<h3>ניגון פלייבק והפרדת כלים</h3>'+
