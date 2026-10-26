@@ -103,7 +103,7 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.ok(server.includes('new FormData()'));
   assert.ok(server.includes('Local Demucs only'));
   assert.ok(dockerfile.includes('node:20-bookworm-slim'));
-  assert.doesNotMatch(dockerfile, /torch|demucs==/i, 'free web container must not install heavyweight inference dependencies');
+  assert.doesNotMatch(dockerfile, /torch==|demucs==/i, 'free web container must not install heavyweight inference dependencies');
   assert.match(dockerfile, /Keep Demucs\/PyTorch out of the free web container/);
   assert.ok(render.includes('runtime: docker'));
   assert.match(render, /DEMUCS_ENABLE_LOCAL_WORKER[\s\S]*value: "false"/);
@@ -117,7 +117,6 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.ok(html.includes('הפרד כלים במנוע המקומי'));
   assert.ok(html.includes('לא נשלח שמע לספק בתשלום'));
 });
-
 test('Demucs worker integration requires a shared secret and a real four-stem smoke test', () => {
   const worker = fs.readFileSync('demucs-worker/app.py', 'utf8');
   assert.match(server, /DEMUCS_WORKER_TOKEN/);
@@ -357,38 +356,29 @@ test('CI workflow runs the test suite and syntax checks on main updates', () => 
   assert.match(workflow, /node --check server\.js/);
 });
 
-test('Demucs worker stays off by default on constrained hosting and requires explicit opt-in', () => {
-  const dockerfile = fs.readFileSync('Dockerfile', 'utf8');
+test('Demucs worker is disabled unless an explicitly enabled, authenticated worker passes smoke tests', () => {
   const render = fs.readFileSync('render.yaml', 'utf8');
   assert.match(server, /DEMUCS_ENABLE_LOCAL_WORKER/);
-  assert.match(server, /הפרדת הכלים המקומית כבויה כרגע/);
-  assert.match(dockerfile, /ENV DEMUCS_ENABLE_LOCAL_WORKER=false/);
-  assert.match(dockerfile, /if \[ \\"\$DEMUCS_ENABLE_LOCAL_WORKER\\" = \\"true\\" \]/);
+  assert.match(server, /DEMUCS_WORKER_TOKEN/);
+  assert.match(server, /status\.readyForSeparation === true/);
+  assert.match(server, /status\.smokeTest\.ok === true/);
   assert.match(render, /key: DEMUCS_ENABLE_LOCAL_WORKER\n\s+value: "false"/);
 });
-
-test('local Demucs is wired through a health-checked CPU-only worker, not a paid provider', () => {
-  const dockerfile = fs.readFileSync('Dockerfile', 'utf8');
-  const render = fs.readFileSync('render.yaml', 'utf8');
-  const worker = fs.readFileSync('demucs_worker.py', 'utf8');
-  assert.ok(server.includes("/api/separation-status"));
-  assert.match(server, /DEMUCS_WORKER_URL/);
-  assert.ok(server.includes("await checkDemucsWorker()"));
-  assert.ok(server.includes("/api/separate"));
-  assert.ok(server.includes("new FormData()"));
-  assert.match(server, /Local Demucs only/);
-  assert.ok(dockerfile.includes("torch==2.5.1"));
-  assert.ok(dockerfile.includes("demucs==4.0.1"));
-  assert.ok(dockerfile.includes("download.pytorch.org/whl/cpu"));
-  assert.match(render, /runtime: docker/);
-  assert.match(worker, /DEVICE = "cpu"/);
-  assert.match(worker, /MAX_UPLOAD_BYTES/);
-  assert.match(worker, /MAX_DURATION_SECONDS/);
+test('Demucs worker image contains open-source inference dependencies while public web image stays lightweight', () => {
+  const webDockerfile = fs.readFileSync('Dockerfile', 'utf8');
+  const workerDockerfile = fs.readFileSync('demucs-worker/Dockerfile', 'utf8');
+  const worker = fs.readFileSync('demucs-worker/app.py', 'utf8');
+  assert.match(webDockerfile, /FROM node:20-bookworm-slim/);
+  assert.doesNotMatch(webDockerfile, /torch==|demucs==/i);
+  assert.match(workerDockerfile, /FROM python:3\.11-slim/);
+  assert.match(workerDockerfile, /demucs-worker\/requirements\.txt/);
+  assert.match(workerDockerfile, /ffmpeg/);
+  assert.match(worker, /"paid_provider": False/);
+  assert.match(worker, /hmac\.compare_digest/);
+  assert.match(worker, /"readyForSeparation": ready/);
   assert.match(html, /הפרד כלים במנוע המקומי/);
   assert.match(html, /לא נשלח שמע לספק בתשלום/);
 });
-
-
 test('chord analysis avoids stale jobs and shares provider cooldown with transcription', () => {
   assert.match(server, /function forgetRecentAnalysisJob\(jobId\)/);
   assert.match(server, /forgetRecentAnalysisJob\(jobId\);[\s\S]{0,120}status: "failed"/);
