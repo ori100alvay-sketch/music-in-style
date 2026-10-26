@@ -10,3 +10,5 @@ services:
         value: production
       - key: DEMUCS_WORKER_URL
         value: http://127.0.0.1:8001
+      - key: DEMUCS_ENABLE_LOCAL_WORKER
+        value: "false"
