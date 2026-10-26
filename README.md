@@ -1,6 +1,6 @@
 # Music in Style — Node.js app with a guarded local Demucs worker
 
-The Render Blueprint (`render.yaml`) currently describes a Docker web service. The container installs a CPU-only open-source Demucs worker alongside the Node.js API. The browser UI calls the local worker only after `/api/separation-status` confirms that the worker reports readiness.
+The Render Blueprint (`render.yaml`) describes a free Docker web service. The image includes a CPU-only open-source Demucs runtime, but the worker process is **disabled by default** (`DEMUCS_ENABLE_LOCAL_WORKER=false`) so it does not compete with the website for the free instance's limited RAM/CPU. The browser UI calls the local worker only after `/api/separation-status` confirms that the worker reports readiness.
 
 ## Instrument separation: deliberately health-gated
 
@@ -10,7 +10,7 @@ No Replicate or other paid inference API is called by this worker. Do not set `D
 
 ### Hosting limitation
 
-Render's free web service plan has 512 MB RAM and 0.1 CPU, which is not a realistic target for reliable Demucs CPU inference. A successful Docker build or Python import is not enough. The app intentionally keeps the separation button disabled if the worker is unreachable or has not passed its real smoke test. A dependable self-hosted Demucs service likely needs a host with substantially more memory/CPU; do not upgrade or enable paid services without explicit budget approval.
+Render's free web service plan has 512 MB RAM and 0.1 CPU, which is not a realistic target for reliable Demucs CPU inference. The worker process is not started unless `DEMUCS_ENABLE_LOCAL_WORKER=true`; even then, the UI stays disabled until the worker passes a real smoke test and returns four stems. A dependable self-hosted Demucs service likely needs a host with substantially more memory/CPU. Do not upgrade or enable paid services without explicit budget approval.
 
 ## Basic deployment checks
 - `/health`: confirms the Node.js app is running.
