@@ -251,7 +251,82 @@ input[type=range],.stem-row input[type=range],.practice-range{accent-color:#8bbf
 .chord-lyric-word .chord-token{margin-bottom:5px}
 .result h2{color:#e8eeee}
 @media(max-width:640px){.workspace-panel,.chord-section,.practice-card{padding:14px}.metric{padding:9px}.action-card{min-height:88px}}
-</style></head><body><div class="shell">
+</style>
+<style>
+/* Usability pass: keep the existing graphite/teal visual identity, improve proximity and sizing. */
+html{scroll-behavior:smooth;scroll-padding-top:92px}
+body{line-height:1.55}
+.shell{width:min(1180px,calc(100% - 36px));margin-inline:auto}
+header{position:sticky;top:0;z-index:800;backdrop-filter:blur(18px);gap:18px;padding:10px 0;margin-bottom:12px}
+header nav{gap:8px;align-items:center}
+header nav a,header nav button{padding:9px 12px;min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+.mini-brand{white-space:nowrap}
+.hero{padding-top:clamp(20px,3vw,42px);padding-bottom:22px;min-height:0}
+.logo{width:clamp(92px,12vw,142px);height:auto;margin-bottom:8px}
+.wordmark{margin-top:4px}
+.copy{margin:18px auto 20px;max-width:680px}
+.copy h1{font-size:clamp(28px,4vw,44px);line-height:1.18;margin:0 0 12px}
+.copy p{max-width:610px;margin-inline:auto}
+.home-notebook-entry{margin:0 auto 14px;max-width:760px}
+.home-notebook-card{width:100%;padding:14px 18px;min-height:68px}
+.search-panel{max-width:900px;margin:0 auto 24px;padding:clamp(14px,2vw,22px);scroll-margin-top:90px}
+.search-form{gap:10px}
+.search-form input{min-width:0;min-height:52px}
+.search-form button,.search-form [type=submit]{min-height:52px;padding-inline:20px;white-space:nowrap}
+.search-results{gap:10px}
+.song-option{min-height:68px;padding:10px 14px}
+.result,.workspace-panel{margin-top:14px;padding:clamp(14px,2vw,22px)}
+.action-grid{gap:10px}
+.action-card{padding:15px;min-height:98px}
+.action-card strong{font-size:15px;line-height:1.4}
+.action-card small{font-size:12px;line-height:1.5}
+.workspace-panel h3,.result h2{margin-top:0}
+.toolbar,.stem-sync-tools,.qa-controls{gap:8px}
+button,.tool-button,input,select,textarea{max-width:100%}
+button,.tool-button{min-height:42px}
+input,select,textarea{font:inherit}
+section[id],article[id],div[id="practice"]{scroll-margin-top:90px}
+#features{margin-top:18px}
+.features,.feature-grid{gap:12px}
+.feature{padding:16px}
+footer{margin-top:28px}
+@media(min-width:900px){
+ .search-panel{position:relative}
+ .action-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .features,.feature-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ .shell{width:min(100% - 24px,680px)}
+ header{position:sticky;padding:8px 0;margin-bottom:4px;align-items:center}
+ header nav{display:flex;flex-wrap:wrap;gap:6px}
+ header nav a,header nav button{font-size:12px;padding:7px 9px;min-height:38px}
+ header nav a[href="/copyright.html"]{display:none}
+ .hero{padding-top:16px}
+ .waves{max-height:220px}
+ .copy{margin:12px auto 16px}
+ .copy h1{font-size:clamp(26px,7vw,36px)}
+ .search-panel{padding:12px;margin-bottom:16px}
+ .search-form{display:grid;grid-template-columns:minmax(0,1fr) auto}
+ .search-form input{grid-column:1/-1;width:100%}
+ .search-form button,.search-form [type=submit]{width:100%;padding-inline:12px}
+ .action-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .action-card{min-height:92px;padding:12px}
+ .action-card strong{font-size:14px}
+ .action-card small{font-size:11px}
+ .result,.workspace-panel{padding:13px}
+}
+@media(max-width:420px){
+ .shell{width:calc(100% - 18px)}
+ .mini-brand{font-size:11px}
+ header nav{gap:4px}
+ header nav a,header nav button{font-size:11px;padding:6px 7px}
+ .action-grid{grid-template-columns:1fr}
+ .action-card{min-height:70px}
+ .home-notebook-card{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.action-card{transition:none}}
+</style>
+</head><body><div class="shell">
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">חיפוש שירים</a><a href="#practice">חדר אימון</a><button class="notebook-launch" type="button" onclick="openNotebook()">המחברת שלי</button><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button><a href="/copyright.html">זכויות יוצרים ותנאי שימוש</a></nav></header>
 <main id="top"><section class="hero">
 <svg class="waves" viewBox="0 0 1440 620" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="silverWave"><stop stop-color="#555" stop-opacity="0"/><stop offset=".25" stop-color="#aaa" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity=".8"/><stop offset=".78" stop-color="#888" stop-opacity=".5"/><stop offset="1" stop-color="#555" stop-opacity="0"/></linearGradient><linearGradient id="floor"><stop stop-color="#555" stop-opacity="0"/><stop offset=".5" stop-color="#eee" stop-opacity=".8"/><stop offset="1" stop-color="#555" stop-opacity="0"/></linearGradient><filter id="blur"><feGaussianBlur stdDeviation="4"/></filter></defs><path d="M-50 190C90 250 140 430 340 475S630 500 790 455 1130 405 1490 185" stroke="url(#silverWave)" stroke-width="1.6"/><path d="M-50 220C120 310 160 455 370 500S670 530 850 470 1170 420 1490 225" stroke="url(#silverWave)"/><path d="M-50 255C120 355 220 490 425 525S720 535 910 490 1230 455 1490 270" stroke="url(#silverWave)"/><path d="M-50 430C170 535 360 570 590 560S1050 570 1490 390" stroke="url(#silverWave)" stroke-width="1.3"/><path d="M-50 455C180 560 390 595 630 580S1100 585 1490 415" stroke="url(#silverWave)"/><path d="M-50 485C200 590 430 610 690 595S1150 605 1490 445" stroke="url(#silverWave)"/><path d="M170 580Q720 605 1270 570" stroke="url(#floor)" stroke-width="8" filter="url(#blur)" opacity=".5"/><path d="M170 580Q720 605 1270 570" stroke="url(#floor)" stroke-width="1.5"/></svg>
