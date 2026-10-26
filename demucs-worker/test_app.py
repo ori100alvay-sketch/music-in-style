@@ -22,9 +22,13 @@ class DemucsWorkerTests(unittest.TestCase):
         self.assertFalse(body["paid_provider"])
 
     def test_health_is_process_health_not_model_readiness(self):
-        response = client.get("/health")
+        with patch.object(shutil, "which", return_value=None):
+            response = client.get("/health")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json()["ok"])
+        body = response.json()
+        self.assertFalse(body["ok"])
+        self.assertFalse(body["readyForSeparation"])
+        self.assertFalse(body["smokeTest"]["ok"])
 
     def test_missing_token_configuration_is_unavailable(self):
         with patch.object(app, "WORKER_TOKEN", ""):
