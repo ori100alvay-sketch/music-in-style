@@ -122,6 +122,8 @@ test('Demucs worker integration requires a shared secret and a real four-stem sm
   const worker = fs.readFileSync('demucs-worker/app.py', 'utf8');
   assert.match(server, /DEMUCS_WORKER_TOKEN/);
   assert.match(server, /"X-Worker-Token": String\(process\.env\.DEMUCS_WORKER_TOKEN/);
+  assert.match(server, /form\.append\("audio", new Blob/);
+  assert.match(worker, /async def separate\(audio: UploadFile = File\(\.\.\.\)/);
   assert.match(server, /status\.readyForSeparation === true/);
   assert.match(worker, /hmac\.compare_digest/);
   assert.match(worker, /"readyForSeparation": ready/);
