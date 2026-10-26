@@ -58,7 +58,8 @@ test('capabilities endpoint distinguishes built-in features from credential-gate
   assert.match(server, /distributedRateLimit: false/);
   assert.match(server, /lyricsTranscription:/);
   assert.match(server, /stemSeparation:/);
-  assert.match(server, /stemSeparation: \{ available: separation\.available, configured: Boolean\(String\(process\.env\.DEMUCS_WORKER_URL/);\n  assert.match(server, /const separation = await checkDemucsWorker\(\)/);
+  assert.match(server, /stemSeparation: \{ available: separation\.available, configured: Boolean\(String\(process\.env\.DEMUCS_WORKER_URL/);
+  assert.match(server, /const separation = await checkDemucsWorker\(\)/);
   assert.match(server, /needs: brizmConfigured \? \[\] : \["BRIZM_API_KEY"\]/);
 });
 
