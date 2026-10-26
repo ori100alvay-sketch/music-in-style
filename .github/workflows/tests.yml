@@ -25,5 +25,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Compile Demucs worker without installing or running inference
+      - name: Install lightweight worker test dependencies
+        run: pip install "fastapi==0.115.6" "python-multipart==0.0.20" "httpx==0.28.1"
+      - name: Compile Demucs worker
         run: python -m py_compile demucs_worker.py
+      - name: Test Demucs upload validation, readiness gate and ZIP handling with mocked inference
+        run: python -m unittest discover -s tests -p "test_*.py"
