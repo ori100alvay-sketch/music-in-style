@@ -333,7 +333,34 @@ footer{margin-top:28px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.action-card{transition:none}}
 </style>
-</head><body><a class="skip-link" href="#top">דילוג לתוכן הראשי</a><div class="shell">
+</head><body><a class="skip-link" href="#top">דילוג לתוכן הראשי</a><div class="shell"><div class="app-scrim" id="appScrim" hidden></div>
+<aside class="app-sidebar" id="appSidebar" aria-label="תפריט האפליקציה">
+ <div class="sidebar-head"><a class="sidebar-brand" href="#top" aria-label="Music in Style — ראשי"><span class="sidebar-logo">M<span>IS</span></span><span><strong>Music in Style</strong><small>Music workspace</small></span></a><button class="sidebar-close" id="sidebarClose" type="button" aria-label="סגירת התפריט">×</button></div>
+ <div class="sidebar-caption">סביבת עבודה</div>
+ <nav class="sidebar-nav" aria-label="כלי המוזיקה">
+  <a class="side-link active" href="#analyze" data-side-target="analyze"><span class="side-icon">⌕</span><span><strong>חיפוש שירים</strong><small>חיפוש וניתוח</small></span></a>
+  <a class="side-link" href="#freeLyricsPanel" data-side-target="freeLyricsPanel"><span class="side-icon">≋</span><span><strong>מילים לשירים</strong><small>חיפוש במאגר מילים</small></span></a>
+  <a class="side-link" href="#freeMusicTools" data-side-target="freeMusicTools"><span class="side-icon">♫</span><span><strong>לגלות מוזיקה</strong><small>שירים ורדיו</small></span></a>
+  <a class="side-link" href="#practice" data-side-target="practice"><span class="side-icon">♩</span><span><strong>חדר אימון</strong><small>כלים לתרגול</small></span></a>
+  <button class="side-link" type="button" id="sidebarNotebook"><span class="side-icon">▤</span><span><strong>המחברת שלי</strong><small>דפים וסדר שירים</small></span></button>
+  <a class="side-link" href="#features" data-side-target="features"><span class="side-icon">◈</span><span><strong>כל הכלים</strong><small>סקירה מרוכזת</small></span></a>
+ </nav>
+ <div class="sidebar-bottom">
+  <button class="about-link" id="aboutAppOpen" type="button"><span class="side-icon">ⓘ</span> על Music in Style</button>
+  <div class="sidebar-status"><span class="status-light"></span><span><strong>סביבת מוזיקה אישית</strong><small>תכונות תלויות בזמינות השירותים</small></span></div>
+ </div>
+</aside>
+<button class="mobile-menu" id="mobileMenu" type="button" aria-controls="appSidebar" aria-expanded="false" aria-label="פתיחת תפריט">☰ <span>תפריט</span></button>
+<div class="about-overlay" id="aboutAppOverlay" hidden>
+ <section class="about-dialog" role="dialog" aria-modal="true" aria-labelledby="aboutAppTitle">
+  <button type="button" id="aboutAppClose" class="about-close" aria-label="סגירה">×</button>
+  <p class="about-kicker">MUSIC IN STYLE</p><h2 id="aboutAppTitle">כלי עבודה למוזיקאים</h2>
+  <p>סביבת עבודה אחת לחיפוש שירים, בדיקת אקורדים ומידע מוזיקלי, חיפוש מילים, גילוי מוזיקה, תרגול אישי ושמירת רעיונות במחברת.</p>
+  <div class="about-items"><div><strong>חיפוש וניתוח</strong><span>הזינו שם שיר או בחרו מקור ציבורי נתמך. ניתוח אקורדים תלוי בשירות החיצוני ובזמינות הקישור.</span></div><div><strong>תרגול וארגון</strong><span>כלי אימון ומחברת אישית עוזרים לרכז תרגול, הערות ורשימות שירים.</span></div><div><strong>הפרדת כלים</strong><span>הפרדת כלים לא תוצג כפעילה עד שמנוע מקומי פתוח יותקן ויעבור בדיקת שמע אמיתית.</span></div></div>
+  <p class="about-foot">הזמינות והתוצאות משתנות לפי מקור השיר, השירותים החיצוניים והגדרות השרת.</p>
+ </section>
+</div>
+
 <header><a class="mini-brand" href="#top" aria-label="Music in Style home"><svg class="mini-mark" viewBox="0 0 80 80" aria-hidden="true"><path d="M12 58V13L40 39 68 13V55" fill="none" stroke="#ddd" stroke-width="7" stroke-linejoin="round"/><circle cx="12" cy="61" r="8" fill="#ccc"/></svg>MUSIC IN STYLE</a><nav aria-label="ניווט ראשי"><a href="#features">היכולות</a><a href="#analyze">חיפוש שירים</a><a href="#practice">חדר אימון</a><button class="notebook-launch" type="button" onclick="openNotebook()">המחברת שלי</button><button class="cta" onclick="document.getElementById('songUrl').focus()">מתחילים</button><a href="/copyright.html">זכויות יוצרים ותנאי שימוש</a></nav></header>
 <main id="top"><section class="hero">
 <svg class="waves" viewBox="0 0 1440 620" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="silverWave"><stop stop-color="#555" stop-opacity="0"/><stop offset=".25" stop-color="#aaa" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity=".8"/><stop offset=".78" stop-color="#888" stop-opacity=".5"/><stop offset="1" stop-color="#555" stop-opacity="0"/></linearGradient><linearGradient id="floor"><stop stop-color="#555" stop-opacity="0"/><stop offset=".5" stop-color="#eee" stop-opacity=".8"/><stop offset="1" stop-color="#555" stop-opacity="0"/></linearGradient><filter id="blur"><feGaussianBlur stdDeviation="4"/></filter></defs><path d="M-50 190C90 250 140 430 340 475S630 500 790 455 1130 405 1490 185" stroke="url(#silverWave)" stroke-width="1.6"/><path d="M-50 220C120 310 160 455 370 500S670 530 850 470 1170 420 1490 225" stroke="url(#silverWave)"/><path d="M-50 255C120 355 220 490 425 525S720 535 910 490 1230 455 1490 270" stroke="url(#silverWave)"/><path d="M-50 430C170 535 360 570 590 560S1050 570 1490 390" stroke="url(#silverWave)" stroke-width="1.3"/><path d="M-50 455C180 560 390 595 630 580S1100 585 1490 415" stroke="url(#silverWave)"/><path d="M-50 485C200 590 430 610 690 595S1150 605 1490 445" stroke="url(#silverWave)"/><path d="M170 580Q720 605 1270 570" stroke="url(#floor)" stroke-width="8" filter="url(#blur)" opacity=".5"/><path d="M170 580Q720 605 1270 570" stroke="url(#floor)" stroke-width="1.5"/></svg>
@@ -1179,6 +1206,75 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 .auth-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.auth-actions button,.auth-link{border:1px solid #42554e;background:#1c2b25;color:#effff7;padding:11px 14px;border-radius:12px;cursor:pointer}.auth-actions button.primary{background:#c9f3df;color:#11241b;border-color:#c9f3df;font-weight:700}.auth-link{background:transparent;border:0;color:#b9e8d2;text-decoration:underline;padding:9px 4px}
 .auth-message{font-size:13px;line-height:1.6;margin-top:12px;color:#c7f1da;overflow-wrap:anywhere}.auth-message.error{color:#ffb9b9}.auth-close{float:left;background:transparent;border:0;color:#ddd;font-size:24px;cursor:pointer}
 @media(max-width:420px){.auth-card{padding:21px;border-radius:18px}}
+
+/* App-shell navigation refresh: information architecture before decoration. */
+:root{--sidebar-width:264px;--app-ink:#e9eceb;--app-muted:#9aa6a5;--app-border:#283434;--app-panel:#101616;--app-accent:#9bbfbd}
+body{background:#080b0c}
+.shell{width:auto;max-width:none;margin:0;padding-right:var(--sidebar-width);padding-left:24px}
+header{max-width:1180px;width:100%;padding-inline:20px;margin:0 auto 12px}
+header nav>a[href="#features"],header nav>a[href="#analyze"],header nav>a[href="#practice"],header nav>.notebook-launch,header nav>.cta{display:none!important}
+.app-sidebar{position:fixed;z-index:1000;right:0;top:0;bottom:0;width:var(--sidebar-width);padding:22px 15px 16px;background:linear-gradient(180deg,#111818 0%,#0b1010 100%);border-left:1px solid #293535;display:flex;flex-direction:column;gap:10px;box-shadow:-10px 0 35px #0002}
+.sidebar-head{display:flex;align-items:center;justify-content:space-between;padding:5px 7px 23px;border-bottom:1px solid #273131}
+.sidebar-brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:#edf1f0;direction:ltr}
+.sidebar-brand>span:last-child{display:flex;flex-direction:column;gap:3px}
+.sidebar-brand strong{font-size:14px;font-weight:650;letter-spacing:.01em}
+.sidebar-brand small{font-size:10px;color:#8d9a99;letter-spacing:.13em}
+.sidebar-logo{width:38px;height:38px;border:1px solid #516362;border-radius:12px;display:grid;place-items:center;font-size:12px;font-weight:800;letter-spacing:-.07em;color:#e9f1ef;background:linear-gradient(145deg,#273333,#121818);box-shadow:0 5px 18px #0004}
+.sidebar-logo span{font-size:8px;color:#a4c1be}
+.sidebar-close{display:none;border:1px solid #344040;border-radius:9px;background:#151c1c;color:#ddd;font-size:22px;width:38px;height:38px}
+.sidebar-caption{padding:10px 11px 2px;color:#788584;font-size:10px;letter-spacing:.12em}
+.sidebar-nav{display:flex;flex-direction:column;gap:5px}
+.side-link{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;min-height:59px;text-align:right;text-decoration:none;color:#aeb8b7;background:transparent;border:1px solid transparent;border-radius:12px;cursor:pointer}
+.side-link:hover{background:#182020;border-color:#2d3a39;color:#f4f6f5}
+.side-link.active{background:linear-gradient(100deg,#1b2929,#151c1c);border-color:#354746;color:#f1f5f4}
+.side-icon{width:34px;height:34px;flex:none;display:grid;place-items:center;border:1px solid #344342;background:#141b1b;border-radius:10px;color:#b5d0cd;font-size:20px}
+.side-link>span:last-child{display:flex;flex-direction:column;gap:3px}
+.side-link strong{font-size:13px;font-weight:600}
+.side-link small{font-size:11px;color:#879493}
+.sidebar-bottom{margin-top:auto;display:flex;flex-direction:column;gap:13px}
+.about-link{display:flex;align-items:center;gap:10px;padding:10px 12px;text-align:right;color:#b5c0bf;background:transparent;border:1px solid transparent;border-radius:10px;cursor:pointer;font-size:12px}
+.about-link:hover{background:#172020;border-color:#2e3c3b}
+.about-link .side-icon{width:28px;height:28px;font-size:15px}
+.sidebar-status{display:flex;align-items:flex-start;gap:10px;border-top:1px solid #273131;padding:16px 9px 4px}
+.status-light{width:7px;height:7px;flex:none;border-radius:50%;background:#8aa9a6;margin-top:6px;box-shadow:0 0 8px #8aa9a644}
+.sidebar-status span:last-child{display:flex;flex-direction:column;gap:4px}
+.sidebar-status strong{font-size:11px;font-weight:550;color:#c9d2d1}
+.sidebar-status small{font-size:10px;line-height:1.6;color:#778482}
+.mobile-menu{display:none}
+.about-overlay{position:fixed;inset:0;z-index:1500;display:grid;place-items:center;padding:18px;background:#000a;backdrop-filter:blur(8px)}
+.about-overlay[hidden]{display:none}
+.about-dialog{width:min(520px,100%);position:relative;padding:30px;border:1px solid #354544;border-radius:20px;background:linear-gradient(145deg,#151d1d,#0c1111);box-shadow:0 28px 100px #0009}
+.about-close{position:absolute;left:16px;top:14px;width:38px;height:38px;border:1px solid #354544;border-radius:10px;background:#182020;color:#e4e9e8;font-size:23px}
+.about-kicker{font-size:10px;letter-spacing:.2em;color:#93b8b5;direction:ltr;text-align:right}
+.about-dialog h2{font-size:25px;font-weight:550;margin:12px 0}
+.about-dialog>p:not(.about-kicker){color:#b0bcba;font-size:13px;line-height:1.9}
+.about-items{display:grid;gap:10px;margin:20px 0}
+.about-items>div{display:grid;gap:5px;padding:13px;border:1px solid #293736;border-radius:12px;background:#101616}
+.about-items strong{font-size:13px;color:#e1e9e7}
+.about-items span{font-size:12px;line-height:1.8;color:#9eacab}
+.about-dialog .about-foot{border-top:1px solid #293736;padding-top:13px;font-size:11px}
+#features{display:none!important}
+.copy,.home-notebook-entry{display:none!important}
+.hero{min-height:calc(100vh - 100px);padding-top:clamp(34px,7vh,78px)}
+.hero .logo{width:min(150px,35vw);margin-bottom:0}
+.wordmark{font-size:clamp(25px,3.8vw,42px);margin-top:10px}
+.tagline{margin:13px 0 20px;font-size:10px}
+.search-panel{margin-top:22px}
+#freeLyricsPanel,#freeMusicTools{margin-top:28px!important}
+@media(min-width:1000px){main{max-width:1220px;margin-inline:auto}.hero{min-height:calc(100vh - 110px)}}
+@media(max-width:850px){
+ :root{--sidebar-width:0px}
+ .shell{padding:0 12px}
+ header{padding-inline:8px}
+ .app-sidebar{width:min(310px,86vw);transform:translateX(105%);transition:transform .24s ease;box-shadow:-20px 0 50px #0007}
+ .app-sidebar.open{transform:translateX(0)}
+ .sidebar-close{display:block}
+ .app-scrim:not([hidden]){position:fixed;inset:0;z-index:999;background:#0009;backdrop-filter:blur(3px)}
+ .mobile-menu{display:flex;position:fixed;z-index:850;right:14px;bottom:16px;align-items:center;gap:8px;padding:12px 15px;border:1px solid #435453;border-radius:13px;background:#152020;color:#eaf0ef;box-shadow:0 8px 30px #0008;font-size:12px}
+ .hero{min-height:calc(100svh - 90px);padding-top:45px}
+}
+@media(max-width:480px){.about-dialog{padding:25px 18px}.hero .logo{width:126px}.wordmark{font-size:clamp(23px,7vw,32px)}.tagline{letter-spacing:.12em}.search-panel{margin-top:18px}header{height:60px}}
+@media(prefers-reduced-motion:reduce){.app-sidebar{transition:none}}
 </style>
 <div class="auth-overlay" id="musicAuthOverlay" aria-hidden="true">
  <section class="auth-card" role="dialog" aria-modal="true" aria-labelledby="musicAuthTitle">
@@ -1271,4 +1367,34 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 })();
 </script>
 
+
+<script>
+(()=> {
+ const sidebar=document.getElementById('appSidebar');
+ const scrim=document.getElementById('appScrim');
+ const menu=document.getElementById('mobileMenu');
+ const closeBtn=document.getElementById('sidebarClose');
+ const closeMenu=()=>{sidebar.classList.remove('open');scrim.hidden=true;menu.setAttribute('aria-expanded','false');};
+ const openMenu=()=>{sidebar.classList.add('open');scrim.hidden=false;menu.setAttribute('aria-expanded','true');closeBtn.focus();};
+ menu.addEventListener('click',()=>sidebar.classList.contains('open')?closeMenu():openMenu());
+ closeBtn.addEventListener('click',()=>{closeMenu();menu.focus();});
+ scrim.addEventListener('click',closeMenu);
+ sidebar.querySelectorAll('a[data-side-target]').forEach(link=>link.addEventListener('click',()=>{
+  sidebar.querySelectorAll('.side-link').forEach(item=>item.classList.toggle('active',item===link));
+  closeMenu();
+ }));
+ document.getElementById('sidebarNotebook').addEventListener('click',()=>{
+  if(typeof window.openNotebook==='function')window.openNotebook();
+  closeMenu();
+ });
+ const about=document.getElementById('aboutAppOverlay');
+ const aboutOpen=document.getElementById('aboutAppOpen');
+ const aboutClose=document.getElementById('aboutAppClose');
+ const closeAbout=()=>{about.hidden=true;aboutOpen.focus();};
+ aboutOpen.addEventListener('click',()=>{about.hidden=false;aboutClose.focus();});
+ aboutClose.addEventListener('click',closeAbout);
+ about.addEventListener('click',e=>{if(e.target===about)closeAbout();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(!about.hidden)closeAbout();}});
+})();
+</script>
 </body></html>
