@@ -554,7 +554,7 @@ app.post("/api/separate", async (req, res) => {
     }
     if (!total) return res.status(400).json({ error: "לא נבחר קובץ שמע או שהקובץ ריק." });
     const form = new FormData();
-    form.append("file", new Blob(chunks, { type: req.headers["content-type"] || "application/octet-stream" }), filename);
+    form.append("audio", new Blob(chunks, { type: req.headers["content-type"] || "application/octet-stream" }), filename);
     const response = await fetch(DEMUCS_WORKER_URL + "/separate", { method: "POST", headers: { "X-Worker-Token": String(process.env.DEMUCS_WORKER_TOKEN || "") }, body: form, signal: AbortSignal.timeout(10 * 60_000) });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
