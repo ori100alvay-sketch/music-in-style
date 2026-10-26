@@ -1,21 +1,21 @@
-# Music in Style — Node.js app with a guarded local Demucs worker
+# Music in Style — Node.js app with an optional local Demucs worker
 
-The Render Blueprint (`render.yaml`) describes a free Docker web service. The image includes a CPU-only open-source Demucs runtime, but the worker process is **disabled by default** (`DEMUCS_ENABLE_LOCAL_WORKER=false`) so it does not compete with the website for the free instance's limited RAM/CPU. The browser UI calls the local worker only after `/api/separation-status` confirms that the worker reports readiness.
+The Render Blueprint (`render.yaml`) deploys the website/API on the free plan. The main web container is intentionally lightweight and **does not install or start Demucs/PyTorch**. The separate open-source worker scaffold is in `demucs-worker/`; it must be deployed separately on a host with enough CPU, RAM, and disk. No paid inference provider is called.
 
-## Instrument separation: deliberately health-gated
+## Instrument separation: deliberately disabled until verified
 
-The integration is committed, but **separation must remain unavailable until a real smoke test has run against an actual audio file and produced all four expected stems**. Automated CI mocks Demucs inference to test upload validation, error handling and ZIP packaging; it does not prove that the neural model can run successfully on the deployed host.
+The website checks `/api/separation-status` and enables the upload action only when a local Demucs worker responds as ready after a real audio smoke test. Without that proof, the feature remains unavailable and the API returns a clear disabled response. This is intentional: automated CI mocks inference and validates upload handling and ZIP packaging, but does not prove that a neural model can run on the production host.
 
-No Replicate or other paid inference API is called by this worker. Do not set `DEMUCS_SMOKE_TEST_OK=true` just to enable the UI: only set it after a real separation test succeeds and the four output files have been verified.
+Do not set smoke-test flags simply to turn the feature on. Only record a successful smoke test after processing an audio file you own or are licensed to use and verifying that the ZIP contains four non-empty files: `vocals.wav`, `drums.wav`, `bass.wav`, and `other.wav`.
 
 ### Hosting limitation
 
-Render's free web service plan has 512 MB RAM and 0.1 CPU, which is not a realistic target for reliable Demucs CPU inference. The worker process is not started unless `DEMUCS_ENABLE_LOCAL_WORKER=true`; even then, the UI stays disabled until the worker passes a real smoke test and returns four stems. A dependable self-hosted Demucs service likely needs a host with substantially more memory/CPU. Do not upgrade or enable paid services without explicit budget approval.
+Render documents the free web service as 512 MB RAM and 0.1 CPU, which is not a realistic target for dependable Demucs inference. The main site stays lightweight and does not run CPU inference on the free instance. A separate Demucs worker may incur hosting/storage costs; do not deploy it on a paid plan without explicit budget approval.
 
 ## Basic deployment checks
 - `/health`: confirms the Node.js app is running.
-- `/api/separation-status`: reports whether the local worker has passed its readiness gate.
-- `/api/separate`: accepts only supported audio uploads, and returns a ZIP only when the local worker is verified ready.
+- `/api/separation-status`: reports whether a local worker has passed its readiness gate.
+- `/api/separate`: returns a ZIP only when the local worker is verified ready.
 
 ## Optional music analysis API
 Set these environment variables in Render only after confirming the exact API endpoint and authentication format from your provider:
