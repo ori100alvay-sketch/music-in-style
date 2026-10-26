@@ -350,7 +350,7 @@ test('Demucs worker stays off by default on constrained hosting and requires exp
   assert.match(server, /הפרדת הכלים המקומית כבויה כרגע/);
   assert.match(dockerfile, /ENV DEMUCS_ENABLE_LOCAL_WORKER=false/);
   assert.match(dockerfile, /if \[ \\"\$DEMUCS_ENABLE_LOCAL_WORKER\\" = \\"true\\" \]/);
-  assert.match(render, /key: DEMUCS_ENABLE_LOCAL_WORKER\n\s+value: \\"false\\"/);
+  assert.match(render, /key: DEMUCS_ENABLE_LOCAL_WORKER\n\s+value: "false"/);
 });
 
 test('local Demucs is wired through a health-checked CPU-only worker, not a paid provider', () => {
