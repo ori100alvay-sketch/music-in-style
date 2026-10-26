@@ -509,11 +509,15 @@ app.post("/api/transcribe-url", async (req, res) => {
  // Keep the status explicit so the UI never implies separation is running.
 const DEMUCS_WORKER_URL = String(process.env.DEMUCS_WORKER_URL || "http://127.0.0.1:8001").replace(/\/$/, "");
 async function checkDemucsWorker() {
-  // The current Render free plan is too constrained for reliable CPU inference.
-  // Keep the worker off unless an operator explicitly enables it after a real smoke test.
+  // Fail closed: a worker must be explicitly enabled, have a private token, and
+  // prove that a real audio smoke test produced all four stems.
   if (String(process.env.DEMUCS_ENABLE_LOCAL_WORKER || "").toLowerCase() !== "true") {
     return { available: false, mode: "disabled", engine: null, device: "cpu", model: null,
-      reason: "הפרדת הכלים המקומית כבויה כרגע כדי לשמור על יציבות האתר ועל שימוש ללא עלות. היא תופעל רק אחרי שהשרת יוגדר למנוע CPU מתאים ויעבור בדיקת שמע אמיתית." };
+      reason: "הפרדת הכלים המקומית כבויה עד לפריסה מאובטחת ובדיקת שמע אמיתית. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+  }
+  if (!String(process.env.DEMUCS_WORKER_TOKEN || "").trim()) {
+    return { available: false, mode: "disabled", engine: null, device: "cpu", model: null,
+      reason: "חסר סוד DEMUCS_WORKER_TOKEN בשרת הראשי. ההפרדה נשארת כבויה מטעמי אבטחה." };
   }
   try {
     const response = await fetch(DEMUCS_WORKER_URL + "/health", { signal: AbortSignal.timeout(2500) });
@@ -521,7 +525,7 @@ async function checkDemucsWorker() {
     const available = Boolean(response.ok && status.ok === true && status.engine === "demucs" && status.readyForSeparation === true && status.smokeTest && status.smokeTest.ok === true && Number(status.smokeTest.stemCount) >= 4);
     return { available, mode: available ? "local" : "disabled", engine: status.engine === "demucs" ? "Demucs" : null,
       device: status.device || "cpu", model: status.model || null,
-      reason: available ? "מנוע Demucs מקומי עבר בדיקת הפרדה אמיתית והחזיר ארבעה ערוצים." : status.engine === "demucs" ? "Demucs מותקן, אך לא התקבלה הוכחה לבדיקת הפרדה מוצלחת של ארבעה ערוצים. ההפרדה נשארת כבויה." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+      reason: available ? "מנוע Demucs מקומי עבר בדיקת הפרדה אמיתית והחזיר ארבעה ערוצים." : status.engine === "demucs" ? "Demucs עדיין לא עבר בדיקת שמע אמיתית שמוכיחה יצירת ארבעה ערוצים. ההפרדה נשארת כבויה." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
   } catch {
     return { available: false, mode: "disabled", engine: null,
       reason: "לא ניתן להגיע למנוע Demucs המקומי. בדוק שה-worker רץ ושהכתובת DEMUCS_WORKER_URL נכונה. לא ייעשה שימוש בשירות הפרדה בתשלום." };
@@ -551,7 +555,7 @@ app.post("/api/separate", async (req, res) => {
     if (!total) return res.status(400).json({ error: "לא נבחר קובץ שמע או שהקובץ ריק." });
     const form = new FormData();
     form.append("file", new Blob(chunks, { type: req.headers["content-type"] || "application/octet-stream" }), filename);
-    const response = await fetch(DEMUCS_WORKER_URL + "/separate", { method: "POST", body: form, signal: AbortSignal.timeout(10 * 60_000) });
+    const response = await fetch(DEMUCS_WORKER_URL + "/separate", { method: "POST", headers: { "X-Worker-Token": String(process.env.DEMUCS_WORKER_TOKEN || "") }, body: form, signal: AbortSignal.timeout(10 * 60_000) });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       return res.status(response.status).json({ error: body.detail || "Demucs לא הצליח להפריד את הקובץ. ייתכן שנדרש יותר זיכרון או זמן." });
