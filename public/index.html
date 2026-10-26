@@ -1394,6 +1394,40 @@ header nav>a[href="#features"],header nav>a[href="#analyze"],header nav>a[href="
  aboutOpen.addEventListener('click',()=>{about.hidden=false;aboutClose.focus();});
  aboutClose.addEventListener('click',closeAbout);
  about.addEventListener('click',e=>{if(e.target===about)closeAbout();});
+
+ // Wire the free LRCLIB lyrics panel; this form previously rendered but had no submit handler.
+ const lyricsForm=document.getElementById('freeLyricsForm');
+ const lyricsQuery=document.getElementById('freeLyricsQuery');
+ const lyricsResults=document.getElementById('freeLyricsResults');
+ if(lyricsForm&&lyricsQuery&&lyricsResults){
+  lyricsForm.addEventListener('submit',async event=>{
+   event.preventDefault();
+   const query=lyricsQuery.value.trim();
+   if(!query)return;
+   const submit=lyricsForm.querySelector('button[type="submit"]');
+   if(submit)submit.disabled=true;
+   lyricsResults.replaceChildren();
+   const loading=document.createElement('p');loading.className='disabled-note';loading.textContent='מחפש במאגר המילים החינמי…';lyricsResults.appendChild(loading);
+   try{
+    const response=await fetch('/api/lyrics-search?q='+encodeURIComponent(query),{headers:{'Accept':'application/json'}});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'חיפוש המילים לא זמין כרגע.');
+    lyricsResults.replaceChildren();
+    const results=Array.isArray(data.results)?data.results:[];
+    if(!results.length){const empty=document.createElement('p');empty.className='disabled-note';empty.textContent='לא נמצאו מילים במאגר הזה. נסה שם שיר ואמן או כתיב אחר.';lyricsResults.appendChild(empty);return;}
+    results.forEach(item=>{
+     const card=document.createElement('article');card.className='chord-section';card.style.marginTop='10px';
+     const title=document.createElement('h3');title.textContent=(item.title||'שיר ללא שם')+' — '+(item.artist||'אמן לא ידוע');
+     const meta=document.createElement('p');meta.className='disabled-note';meta.textContent=[item.album,item.synced?'מילים מסונכרנות':'מילים רגילות',item.instrumental?'קטע אינסטרומנטלי':''].filter(Boolean).join(' · ');
+     const lyrics=document.createElement('pre');lyrics.style.whiteSpace='pre-wrap';lyrics.style.overflowWrap='anywhere';lyrics.style.fontFamily='inherit';lyrics.style.lineHeight='1.8';lyrics.textContent=item.syncedLyrics||item.lyrics||'לא הוחזרו מילים עבור התוצאה הזאת.';
+     const toggle=document.createElement('button');toggle.type='button';toggle.className='tool-button';toggle.textContent='הצג מילים';lyrics.hidden=true;
+     toggle.addEventListener('click',()=>{lyrics.hidden=!lyrics.hidden;toggle.textContent=lyrics.hidden?'הצג מילים':'הסתר מילים';});
+     card.append(title,meta,toggle,lyrics);lyricsResults.appendChild(card);
+    });
+   }catch(error){lyricsResults.replaceChildren();const message=document.createElement('p');message.className='analysis-notice';message.textContent=error.message||'לא ניתן לחפש מילים כרגע.';lyricsResults.appendChild(message);}
+   finally{if(submit)submit.disabled=false;}
+  });
+ }
  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(!about.hidden)closeAbout();}});
 })();
 </script>
