@@ -509,6 +509,12 @@ app.post("/api/transcribe-url", async (req, res) => {
  // Keep the status explicit so the UI never implies separation is running.
 const DEMUCS_WORKER_URL = String(process.env.DEMUCS_WORKER_URL || "http://127.0.0.1:8001").replace(/\/$/, "");
 async function checkDemucsWorker() {
+  // The current Render free plan is too constrained for reliable CPU inference.
+  // Keep the worker off unless an operator explicitly enables it after a real smoke test.
+  if (String(process.env.DEMUCS_ENABLE_LOCAL_WORKER || "").toLowerCase() !== "true") {
+    return { available: false, mode: "disabled", engine: null, device: "cpu", model: null,
+      reason: "הפרדת הכלים המקומית כבויה כרגע כדי לשמור על יציבות האתר ועל שימוש ללא עלות. היא תופעל רק אחרי שהשרת יוגדר למנוע CPU מתאים ויעבור בדיקת שמע אמיתית." };
+  }
   try {
     const response = await fetch(DEMUCS_WORKER_URL + "/health", { signal: AbortSignal.timeout(2500) });
     const status = await response.json().catch(() => ({}));
