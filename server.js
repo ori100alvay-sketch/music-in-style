@@ -230,9 +230,11 @@ app.get("/api/music-theory", (req, res) => {
 app.get("/health", (_req, res) => { res.set("Cache-Control", "no-store"); res.json({ ok: true, service: "music-in-style", message: "Music in Style server is running" }); });
 // Honest capability discovery for the UI and support diagnostics. "configured" means
 // a server-side credential exists; it does not claim that a provider is healthy or paid.
-app.get("/api/capabilities", (_req, res) => {
+app.get("/api/capabilities", async (_req, res) => {
   res.set("Cache-Control", "no-store");
   const brizmConfigured = Boolean(String(process.env.BRIZM_API_KEY || "").trim());
+  // Probe the local worker rather than equating a configured URL with a working engine.
+  const separation = await checkDemucsWorker();
   res.json({
     service: "music-in-style",
     generatedAt: new Date().toISOString(),
@@ -247,7 +249,7 @@ app.get("/api/capabilities", (_req, res) => {
       chordAnalysis: { available: true, provider: "Magic Chords", mode: "async-url", note: "Requires a public URL accepted by the provider; lyrics are not guaranteed." },
       lyricsTranscription: { available: true, provider: "Magic Chords", mode: "async-url", note: "Separate transcription job; accuracy depends on audio and provider output." },
       keyAndTempo: { available: brizmConfigured, configured: brizmConfigured, provider: "Brizm", needs: brizmConfigured ? [] : ["BRIZM_API_KEY"] },
-      stemSeparation: { available: false, configured: Boolean(String(process.env.DEMUCS_WORKER_URL || "").trim()), provider: "Local Demucs only", endpoint: "/api/separation-status", note: "Availability is determined by a live worker health check; the engine must pass a real separation test before being enabled. No audio is sent to paid inference services." },
+      stemSeparation: { available: separation.available, configured: Boolean(String(process.env.DEMUCS_WORKER_URL || "").trim()), provider: "Local Demucs only", endpoint: "/api/separation-status", mode: separation.mode, engine: separation.engine, reason: separation.reason, note: "Enabled only after the local worker health check confirms a successful real-audio smoke test. No audio is sent to paid inference services." },
       personalNotebook: { available: true, storage: "browser-local", note: "Data is stored in this browser/device unless exported by the user." }
     },
     security: { credentialsServerSideOnly: true, apiRateLimit: "per-process", requestBodyLimitBytes: 1048576, distributedRateLimit: false }
