@@ -343,6 +343,16 @@ test('CI workflow runs the test suite and syntax checks on main updates', () => 
   assert.match(workflow, /node --check server\.js/);
 });
 
+test('Demucs worker stays off by default on constrained hosting and requires explicit opt-in', () => {
+  const dockerfile = fs.readFileSync('Dockerfile', 'utf8');
+  const render = fs.readFileSync('render.yaml', 'utf8');
+  assert.match(server, /DEMUCS_ENABLE_LOCAL_WORKER/);
+  assert.match(server, /הפרדת הכלים המקומית כבויה כרגע/);
+  assert.match(dockerfile, /ENV DEMUCS_ENABLE_LOCAL_WORKER=false/);
+  assert.match(dockerfile, /if \[ \\"\$DEMUCS_ENABLE_LOCAL_WORKER\\" = \\"true\\" \]/);
+  assert.match(render, /key: DEMUCS_ENABLE_LOCAL_WORKER\n\s+value: \\"false\\"/);
+});
+
 test('local Demucs is wired through a health-checked CPU-only worker, not a paid provider', () => {
   const dockerfile = fs.readFileSync('Dockerfile', 'utf8');
   const render = fs.readFileSync('render.yaml', 'utf8');
