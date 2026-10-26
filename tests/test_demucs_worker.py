@@ -79,7 +79,7 @@ class DemucsWorkerTests(unittest.TestCase):
             result_dir = output_root / "htdemucs" / "input"
             result_dir.mkdir(parents=True)
             for stem in ("drums.wav", "bass.wav", "other.wav", "vocals.wav"):
-                (result_dir / stem).write_bytes(b"test stem")
+                (result_dir / stem).write_bytes(b"RIFF" + b"x" * 128)
             return Mock(returncode=0, stdout="", stderr="")
 
         with patch.object(demucs_worker.subprocess, "run", side_effect=fake_run):
