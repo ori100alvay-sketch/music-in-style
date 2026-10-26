@@ -16,21 +16,44 @@ MAX_SECONDS = 8 * 60
 ALLOWED_SUFFIXES = {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus", ".aac"}
 
 
+def smoke_test_state():
+    # Set these flags only after processing a real licensed audio file and
+    # verifying four non-empty stems in the returned ZIP.
+    smoke_ok = os.getenv("DEMUCS_SMOKE_TEST_OK", "").strip().lower() == "true"
+    try:
+        stem_count = int(os.getenv("DEMUCS_SMOKE_TEST_STEM_COUNT", "0"))
+    except ValueError:
+        stem_count = 0
+    runtime_installed = all(shutil.which(name) is not None for name in ("demucs", "ffmpeg", "ffprobe"))
+    ready = bool(runtime_installed and smoke_ok and stem_count >= 4)
+    return ready, stem_count if ready else 0, runtime_installed
+
+
 @app.get("/health")
 def health():
-    return {"ok": True, "service": "mis-demucs-worker", "engine_ready": shutil.which("demucs") is not None}
+    ready, stem_count, runtime_installed = smoke_test_state()
+    return {
+        "ok": runtime_installed,
+        "service": "mis-demucs-worker",
+        "engine": "demucs" if runtime_installed else None,
+        "device": "cpu",
+        "model": os.getenv("DEMUCS_MODEL", "mdx_q"),
+        "readyForSeparation": ready,
+        "smokeTest": {"ok": ready, "stemCount": stem_count},
+    }
 
 
 @app.get("/capabilities")
 def capabilities():
-    runtime_installed = all(shutil.which(name) is not None for name in ("demucs", "ffmpeg", "ffprobe"))
+    ready, stem_count, runtime_installed = smoke_test_state()
     return {
-        "available": False,
+        "available": ready,
         "runtime_installed": runtime_installed,
         "engine": "Demucs 4 (open source)" if runtime_installed else None,
         "paid_provider": False,
-        "ready_for_production": False,
-        "note": "Runtime presence alone does not prove successful separation; a real audio smoke test is required."
+        "ready_for_production": ready,
+        "smoke_test_stem_count": stem_count,
+        "note": "A real audio smoke test must be verified before production separation is enabled."
     }
 
 
