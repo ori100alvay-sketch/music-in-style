@@ -96,13 +96,18 @@ async def separate(file: UploadFile = File(...)):
             # Do not leak server paths or raw internal command output to the client.
             print("Demucs failed:", (result.stderr or result.stdout)[-2000:])
             raise HTTPException(status_code=503, detail="Local Demucs could not complete this file. The instance may not have enough memory.")
-        stems = list(output_path.rglob("*.wav"))
-        if not stems:
-            raise HTTPException(status_code=502, detail="Demucs finished without producing stem files.")
+        # Return only when all four expected stems exist and contain real WAV data.
+        expected_stems = ("vocals.wav", "drums.wav", "bass.wav", "other.wav")
+        stem_dir = output_path / MODEL / input_path.stem
+        if not stem_dir.is_dir() or not all(
+            (stem_dir / name).is_file() and (stem_dir / name).stat().st_size > 44
+            for name in expected_stems
+        ):
+            raise HTTPException(status_code=502, detail="Demucs did not produce all four valid stems.")
         archive = job_dir / "stems.zip"
         with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-            for stem in stems:
-                zf.write(stem, arcname=stem.name)
+            for name in expected_stems:
+                zf.write(stem_dir / name, arcname=name)
         return FileResponse(str(archive), media_type="application/zip",
                             filename="music-in-style-stems.zip",
                             background=BackgroundTask(remove_tree, job_dir))
