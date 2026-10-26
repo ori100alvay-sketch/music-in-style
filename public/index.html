@@ -674,7 +674,26 @@ function selectAction(action,track){
    else panel.innerHTML='<h3>ניתוח תווים</h3><p class="disabled-note">אין קובץ שמע ישיר זמין. הדבק קישור ישיר לקובץ שמע נתמך.</p>';
  }else if(action==='mix'){
    const source=track.previewUrl||'';
-   panel.innerHTML='<h3>ניתוח פלייבק והפרדת כלים</h3><p class="disabled-note">Brizm מחובר לניתוח נתוני שיר (BPM וסולם) לפי שם השיר והאמן. להפרדת ערוצים בפועל עדיין נדרש קובץ שמע נגיש והרשאת API פעילה. קישור לעמוד YouTube/Spotify אינו קובץ שמע ישיר.</p><div class="toolbar"><button class="tool-button" id="brizmAnalyze">נתח BPM וסולם</button></div><div id="brizmResults"></div><div id="stemResults"><p class="disabled-note">בודקים אם מנוע הפרדת כלים מקומי זמין…</p></div>';
+   panel.innerHTML='<h3>ניגון פלייבק והפרדת כלים</h3>'+
+   '<p class="disabled-note">אפשר לנגן כאן את קטע התצוגה המקדימה, או לבחור קובץ שמע מהמכשיר לניגון מקומי. ניגון קובץ אינו מעלה אותו לשרת. הפרדת כלים תופעל רק אם מנוע Demucs המקומי זמין ועבר בדיקת תקינות.</p>'+
+   (source?'<div class="chord-section"><h4>קטע שמע זמין</h4><audio id="mixPreviewPlayer" controls preload="metadata" style="width:100%"></audio><p class="disabled-note">ייתכן שזהו קטע קצר בלבד, ולא הפלייבק המלא.</p></div>':'')+
+   '<div class="chord-section"><h4>ניגון קובץ שמע מהמכשיר</h4><input id="mixLocalAudioFile" type="file" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a,.aac" style="display:block;width:100%;margin:10px 0"><audio id="mixLocalAudioPlayer" controls preload="metadata" style="display:none;width:100%"></audio><p id="mixLocalAudioStatus" class="disabled-note" aria-live="polite">הקובץ נשאר במכשיר ואינו מועלה לצורך ניגון.</p></div>'+
+   '<div class="toolbar"><button class="tool-button" id="brizmAnalyze">נתח BPM וסולם</button></div><div id="brizmResults"></div><div id="stemResults"><p class="disabled-note">בודקים אם מנוע הפרדת כלים מקומי זמין…</p></div>';
+   const previewPlayer=document.getElementById('mixPreviewPlayer');
+   if(previewPlayer&&source){previewPlayer.src=source;previewPlayer.addEventListener('error',()=>{const note=previewPlayer.parentElement.querySelector('.disabled-note');if(note)note.textContent='מקור התצוגה המקדימה אינו זמין כרגע. אפשר לבחור קובץ שמע מהמכשיר למטה.';},{once:true});}
+   const localAudioInput=document.getElementById('mixLocalAudioFile');
+   const localAudioPlayer=document.getElementById('mixLocalAudioPlayer');
+   const localAudioStatus=document.getElementById('mixLocalAudioStatus');
+   if(localAudioInput&&localAudioPlayer){
+     localAudioInput.addEventListener('change',()=>{
+       const file=localAudioInput.files&&localAudioInput.files[0];if(!file)return;
+       if(!file.type.startsWith('audio/')&&!/\\.(wav|mp3|flac|ogg|m4a|aac)$/i.test(file.name)){localAudioStatus.textContent='בחר קובץ שמע נתמך.';return;}
+       if(localAudioPlayer.dataset.objectUrl)URL.revokeObjectURL(localAudioPlayer.dataset.objectUrl);
+       const objectUrl=URL.createObjectURL(file);localAudioPlayer.dataset.objectUrl=objectUrl;localAudioPlayer.src=objectUrl;localAudioPlayer.style.display='block';localAudioPlayer.load();
+       localAudioStatus.textContent='הקובץ מוכן לניגון מקומי. הוא לא הועלה לשרת.';
+       localAudioPlayer.play().catch(()=>{localAudioStatus.textContent='לחץ על ▶ בנגן כדי להתחיל לנגן.';});
+     });
+   }
    const stemStatus=document.getElementById('stemResults');
    if(stemStatus){
      fetch('/api/separation-status',{cache:'no-store'}).then(async response=>{
