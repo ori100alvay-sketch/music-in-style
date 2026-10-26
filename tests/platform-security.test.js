@@ -118,6 +118,17 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.ok(html.includes('לא נשלח שמע לספק בתשלום'));
 });
 
+test('Demucs worker integration requires a shared secret and a real four-stem smoke test', () => {
+  const worker = fs.readFileSync('demucs-worker/app.py', 'utf8');
+  assert.match(server, /DEMUCS_WORKER_TOKEN/);
+  assert.match(server, /"X-Worker-Token": String\(process\.env\.DEMUCS_WORKER_TOKEN/);
+  assert.match(server, /status\.readyForSeparation === true/);
+  assert.match(worker, /hmac\.compare_digest/);
+  assert.match(worker, /"readyForSeparation": ready/);
+  assert.match(worker, /"smokeTest": \{"ok": ready, "stemCount": stem_count\}/);
+  assert.match(worker, /"paid_provider": False/);
+});
+
 test('free public music services are wired as server-side endpoints and exposed in capabilities', () => {
   for (const route of ['/api/lyrics-search', '/api/music-metadata', '/api/deezer-search', '/api/radio-search', '/api/cover-art/:releaseId']) assert.ok(server.includes(route), 'missing route ' + route);
   for (const provider of ['lrclib.net/api/search', 'musicbrainz.org/ws/2/recording/', 'api.deezer.com/search/track', 'api.radio-browser.info/json/stations/search', 'coverartarchive.org/release/']) assert.ok(server.includes(provider), 'missing provider ' + provider);
