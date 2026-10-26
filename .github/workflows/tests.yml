@@ -5,29 +5,50 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   node-tests:
+    name: Node tests and browser syntax
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
       - run: npm install --ignore-scripts
       - run: npm test
-      - name: Check server JavaScript syntax
-        run: node --check server.js
-  python-worker-syntax:
+      - run: node --check server.js
+      - name: Check inline browser scripts
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const html = fs.readFileSync('public/index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)]
+            .map(match => match[1]).filter(script => script.trim());
+          if (!scripts.length) throw new Error('No inline scripts found');
+          scripts.forEach((script, index) => {
+            try { new Function(script); }
+            catch (error) { throw new Error('Inline script ' + (index + 1) + ': ' + error.message); }
+          });
+          console.log('Validated ' + scripts.length + ' inline scripts.');
+          NODE
+
+  python-worker-tests:
+    name: Demucs worker contract tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Install lightweight worker test dependencies
+          python-version: '3.11'
+      - name: Install test-only dependencies (no Demucs model download)
         run: pip install "fastapi==0.115.6" "python-multipart==0.0.20" "httpx==0.28.1"
-      - name: Compile Demucs worker
+      - name: Compile worker
         run: python -m py_compile demucs_worker.py
-      - name: Test Demucs upload validation, readiness gate and ZIP handling with mocked inference
+      - name: Test upload limits, readiness gate and output handling with mocked inference
         run: python -m unittest discover -s tests -p "test_*.py"
