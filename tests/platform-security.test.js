@@ -395,3 +395,12 @@ test('chord analysis avoids stale jobs and shares provider cooldown with transcr
   assert.match(server, /if \(magicChordsIsCoolingDown\(\)\)[\s\S]{0,700}ניסיון תמלול נוסף/);
   assert.match(server, /noteMagicChordsRateLimit\(30\)/);
 });
+
+test('free lyrics panel is wired to the free LRCLIB endpoint and renders results safely', () => {
+  assert.match(html, /id="freeLyricsForm"/);
+  assert.match(html, /lyricsForm\.addEventListener\('submit'/);
+  assert.match(html, /fetch\('\/api\/lyrics-search\?q='/);
+  assert.match(html, /item\.syncedLyrics\|\|item\.lyrics/);
+  assert.match(html, /lyrics\.textContent=/);
+  assert.match(html, /lyricsResults\.replaceChildren\(\)/);
+});
