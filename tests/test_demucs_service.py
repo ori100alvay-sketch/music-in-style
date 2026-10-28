@@ -1,5 +1,4 @@
 import importlib.util
-import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -17,17 +16,12 @@ class DemucsServiceTests(unittest.TestCase):
         self.client = TestClient(service.app)
         self.old_token = service.WORKER_TOKEN
         service.WORKER_TOKEN = "test-secret-token"
-        self.old_smoke_ok = os.environ.pop("DEMUCS_SMOKE_TEST_OK", None)
-        self.old_stem_count = os.environ.pop("DEMUCS_SMOKE_TEST_STEM_COUNT", None)
+        self.old_smoke_passed = service.SMOKE_TEST_PASSED
+        service.SMOKE_TEST_PASSED = False
 
     def tearDown(self):
         service.WORKER_TOKEN = self.old_token
-        os.environ.pop("DEMUCS_SMOKE_TEST_OK", None)
-        os.environ.pop("DEMUCS_SMOKE_TEST_STEM_COUNT", None)
-        if self.old_smoke_ok is not None:
-            os.environ["DEMUCS_SMOKE_TEST_OK"] = self.old_smoke_ok
-        if self.old_stem_count is not None:
-            os.environ["DEMUCS_SMOKE_TEST_STEM_COUNT"] = self.old_stem_count
+        service.SMOKE_TEST_PASSED = self.old_smoke_passed
 
     def test_health_contract_matches_main_app_but_never_assumes_smoke_success(self):
         with patch.object(service.shutil, "which", return_value="/usr/bin/fake"):
@@ -38,13 +32,13 @@ class DemucsServiceTests(unittest.TestCase):
         self.assertFalse(data["smokeTest"]["ok"])
         self.assertEqual(data["smokeTest"]["stemCount"], 0)
 
-    def test_health_requires_smoke_flag_and_four_stems(self):
-        os.environ["DEMUCS_SMOKE_TEST_OK"] = "true"
-        os.environ["DEMUCS_SMOKE_TEST_STEM_COUNT"] = "3"
+    def test_health_requires_successful_real_audio_separation(self):
         with patch.object(service.shutil, "which", return_value="/usr/bin/fake"):
             self.assertFalse(self.client.get("/health").json()["readyForSeparation"])
-            os.environ["DEMUCS_SMOKE_TEST_STEM_COUNT"] = "4"
-            self.assertTrue(self.client.get("/health").json()["readyForSeparation"])
+            service.SMOKE_TEST_PASSED = True
+            body = self.client.get("/health").json()
+        self.assertTrue(body["readyForSeparation"])
+        self.assertEqual(body["smokeTest"]["stemCount"], 4)
 
     def test_separation_rejects_missing_and_invalid_tokens(self):
         with patch.object(service.shutil, "which", return_value="/usr/bin/fake"):
