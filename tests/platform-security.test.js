@@ -110,7 +110,7 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.match(render, /DEMUCS_WORKER_TOKEN[\s\S]*sync: false/);
   assert.ok(worker.includes('DEVICE = "cpu"'));
   assert.ok(worker.includes('readyForSeparation'));
-  assert.ok(worker.includes('DEMUCS_SMOKE_TEST_OK'));
+  assert.ok(worker.includes('SMOKE_TEST_PASSED'));
   assert.match(server, /status\.readyForSeparation === true/);
   assert.match(server, /status\.smokeTest\.ok === true/);
   assert.ok(worker.includes('MAX_UPLOAD_BYTES'));
