@@ -106,7 +106,7 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.doesNotMatch(dockerfile, /torch==|demucs==/i, 'free web container must not install heavyweight inference dependencies');
   assert.match(dockerfile, /Keep Demucs\/PyTorch out of the free web container/);
   assert.ok(render.includes('runtime: docker'));
-  assert.match(render, /DEMUCS_ENABLE_LOCAL_WORKER[\s\S]*value: "false"/);
+  assert.match(render, /DEMUCS_ENABLE_LOCAL_WORKER[\s\S]*sync: false/);
   assert.ok(worker.includes('DEVICE = "cpu"'));
   assert.ok(worker.includes('readyForSeparation'));
   assert.ok(worker.includes('DEMUCS_SMOKE_TEST_OK'));
