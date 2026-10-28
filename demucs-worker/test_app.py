@@ -77,6 +77,11 @@ class DemucsWorkerTests(unittest.TestCase):
         self.assertEqual(response.headers.get("content-type"), "application/zip")
         with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
             self.assertEqual(set(archive.namelist()), {"vocals.wav", "drums.wav", "bass.wav", "other.wav"})
+        # A successful real-audio request validates the worker without manual env toggles.
+        with patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name):
+            health = client.get("/health").json()
+        self.assertTrue(health["readyForSeparation"])
+        self.assertEqual(health["smokeTest"]["stemCount"], 4)
 
     def test_invalid_audio_probe_is_rejected(self):
         class BadProbe:
