@@ -106,7 +106,8 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.doesNotMatch(dockerfile, /torch==|demucs==/i, 'free web container must not install heavyweight inference dependencies');
   assert.match(dockerfile, /Keep Demucs\/PyTorch out of the free web container/);
   assert.ok(render.includes('runtime: docker'));
-  assert.match(render, /DEMUCS_ENABLE_LOCAL_WORKER[\s\S]*sync: false/);
+  assert.match(render, /DEMUCS_WORKER_URL[\s\S]*sync: false/);
+  assert.match(render, /DEMUCS_WORKER_TOKEN[\s\S]*sync: false/);
   assert.ok(worker.includes('DEVICE = "cpu"'));
   assert.ok(worker.includes('readyForSeparation'));
   assert.ok(worker.includes('DEMUCS_SMOKE_TEST_OK'));
@@ -214,6 +215,13 @@ test('stem mixer synchronizes playback, seeking, pause and playback rate to a ma
   assert.match(html, /const stopSync=\(\)=>/);
 });
 
+test('local BPM and key analysis runs on the selected browser file without uploading it', () => {
+  assert.match(html, /async function analyzeAudioFileLocally\\(file\\)/);
+  assert.match(html, /await file\\.arrayBuffer\\(\\)/);
+  assert.match(html, /const localFile=localFileInput&&localFileInput\\.files&&localFileInput\\.files\\[0\\]/);
+  assert.match(html, /הקובץ לא הועלה לשרת/);
+  assert.match(html, /BPM משוער/);
+});
 test('BPM analysis omits Camelot numeric metadata and chord parser accepts altered extensions', () => {
   assert.doesNotMatch(html, /Camelot:/);
   assert.match(html, /\[\#b\]\\d\+/);
