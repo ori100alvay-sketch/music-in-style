@@ -493,7 +493,7 @@ async function analyzeUrl(url,label){
     for(let attempt=0;attempt<24;attempt++){
       // Conservative polling reduces provider rate-limit errors. Lyrics transcription
       // is not started automatically because it is a separate provider job.
-      await new Promise(resolve=>setTimeout(resolve,5000));
+      await new Promise(resolve=>setTimeout(resolve,12000));
       let poll,state;
       try {
         poll=await fetch('/api/jobs/'+encodeURIComponent(job.job_id));
@@ -520,7 +520,7 @@ async function analyzeUrl(url,label){
       }
       if(state.status==='failed'){showError(state.error||'לא הצלחנו להשלים את בקשת האקורדים.');return}
       resultTitle.textContent='מכינים את תוצאות השיר';
-      resultMessage.textContent='עוד רגע… בודקים את התוצאות ('+(attempt+1)+' מתוך 40)';
+      resultMessage.textContent='עוד רגע… בודקים את התוצאות ('+(attempt+1)+' מתוך 24)';
     }
     if(!finished){resultTitle.textContent='התוצאות מתעכבות';resultMessage.textContent='השירות עדיין לא החזיר תוצאה. אפשר לבחור שוב באפשרות האקורדים בעוד רגע.'}
   }catch(error){showError('לא ניתן להתחבר לשירות האקורדים כרגע. נסה שוב.')}
