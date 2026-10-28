@@ -29,10 +29,10 @@ The main app's Render Blueprint uses `sync: false` for the worker URL and token 
 1. Open the worker's `/health` and `/capabilities` endpoints. Confirm the runtime is installed; process health alone is not proof of separation.
 2. Upload a short audio file that you own or are licensed to use to the worker's authenticated `POST /separate` endpoint.
 3. Confirm the response is a ZIP containing four non-empty WAV files: `vocals.wav`, `drums.wav`, `bass.wav`, and `other.wav`. Listen to the files and check that they are valid audio, not merely files with the right names.
-4. Only after that succeeds, set worker `DEMUCS_SMOKE_TEST_OK=true` and `DEMUCS_SMOKE_TEST_STEM_COUNT=4`.
+4. The worker marks itself ready automatically only after an authenticated upload has successfully produced and packaged all four non-empty WAV files; no manual readiness flags are needed.
 5. Check `https://music-in-style.onrender.com/api/separation-status` and `/api/capabilities`. Both should report separation as available. Upload a file through the website and confirm that the returned ZIP downloads and contains the same four stems.
 
-The smoke-test environment flags are a readiness gate, not a substitute for performing the real audio test. Do not set them until the output has been inspected. If any check fails, leave separation disabled; the app should report that it is unavailable rather than claim it works.
+Readiness is process-local and is reset if the worker restarts, so the first successful separation after a restart serves as the smoke test again. If any check fails, the app should report that separation is unavailable rather than claim it works.
 
 ## Limits and tests
 
