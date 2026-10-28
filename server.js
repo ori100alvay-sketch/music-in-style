@@ -531,9 +531,10 @@ async function checkDemucsWorker() {
     const response = await fetch(workerUrl.origin + workerUrl.pathname.replace(/\/$/, "") + "/health", { signal: AbortSignal.timeout(2500) });
     const status = await response.json().catch(() => ({}));
     const available = Boolean(response.ok && status.ok === true && status.engine === "demucs" && status.readyForSeparation === true && status.smokeTest && status.smokeTest.ok === true && Number(status.smokeTest.stemCount) >= 4);
-    return { available, mode: available ? "local" : "disabled", engine: status.engine === "demucs" ? "Demucs" : null,
+    const testable = Boolean(response.ok && status.ok === true && status.engine === "demucs" && !available);
+    return { available, testable, mode: available ? "local" : testable ? "smoke-test" : "disabled", engine: status.engine === "demucs" ? "Demucs" : null,
       device: status.device || "cpu", model: status.model || null,
-      reason: available ? "מנוע Demucs מקומי עבר בדיקת הפרדה אמיתית והחזיר ארבעה ערוצים." : status.engine === "demucs" ? "Demucs עדיין לא עבר בדיקת שמע אמיתית שמוכיחה יצירת ארבעה ערוצים. ההפרדה נשארת כבויה." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+      reason: available ? "מנוע Demucs מקומי עבר בדיקת הפרדה אמיתית והחזיר ארבעה ערוצים." : testable ? "מנוע Demucs מותקן. הפרדה מוצלחת של הקובץ הראשון תשמש בדיקת שמע אמיתית ותפעיל את המנוע." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
   } catch {
     return { available: false, mode: "disabled", engine: null,
       reason: "לא ניתן להגיע למנוע Demucs המקומי. בדוק שה-worker רץ ושהכתובת DEMUCS_WORKER_URL נכונה. לא ייעשה שימוש בשירות הפרדה בתשלום." };
@@ -547,7 +548,7 @@ app.get("/api/separation-status", async (_req, res) => {
 
 app.post("/api/separate", async (req, res) => {
   const status = await checkDemucsWorker();
-  if (!status.available) return res.status(503).json({ error: "מנוע Demucs המקומי אינו זמין כרגע. לא נשלח שמע לשירות בתשלום.", providerStatus: null, freeMode: true, separationAvailable: false });
+  if (!status.available && !status.testable) return res.status(503).json({ error: status.reason || "מנוע Demucs המקומי אינו זמין כרגע. לא נשלח שמע לשירות בתשלום.", providerStatus: null, freeMode: true, separationAvailable: false });
   const filename = String(req.headers["x-audio-filename"] || "audio.wav").split(/[\\/]/).pop().replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
   const allowed = new Set([".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac"]);
   const ext = path.extname(filename).toLowerCase();
