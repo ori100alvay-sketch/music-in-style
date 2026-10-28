@@ -507,20 +507,28 @@ app.post("/api/transcribe-url", async (req, res) => {
 // Demucs runtime configured. Return an honest explanation instead of causing charges.
 // This service is a Node.js free-tier deployment; no local ML runtime is installed.
  // Keep the status explicit so the UI never implies separation is running.
-const DEMUCS_WORKER_URL = String(process.env.DEMUCS_WORKER_URL || "http://127.0.0.1:8001").replace(/\/$/, "");
+const DEMUCS_WORKER_URL = String(process.env.DEMUCS_WORKER_URL || "").trim().replace(/\/$/, "");
 async function checkDemucsWorker() {
-  // Fail closed: a worker must be explicitly enabled, have a private token, and
-  // prove that a real audio smoke test produced all four stems.
-  if (String(process.env.DEMUCS_ENABLE_LOCAL_WORKER || "").toLowerCase() !== "true") {
+  // Fail closed based on the actual worker health response. No manual enable flag
+  // can override the worker's real-audio smoke-test gate.
+  if (!DEMUCS_WORKER_URL) {
     return { available: false, mode: "disabled", engine: null, device: "cpu", model: null,
-      reason: "הפרדת הכלים המקומית כבויה עד לפריסה מאובטחת ובדיקת שמע אמיתית. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+      reason: "חסרה כתובת DEMUCS_WORKER_URL ב-Environment של השירות הראשי. לא נשלח שמע לשירות בתשלום." };
   }
   if (!String(process.env.DEMUCS_WORKER_TOKEN || "").trim()) {
     return { available: false, mode: "disabled", engine: null, device: "cpu", model: null,
       reason: "חסר סוד DEMUCS_WORKER_TOKEN בשרת הראשי. ההפרדה נשארת כבויה מטעמי אבטחה." };
   }
+  let workerUrl;
+  try { workerUrl = new URL(DEMUCS_WORKER_URL); }
+  catch { return { available: false, mode: "disabled", engine: null, device: "cpu", model: null,
+    reason: "כתובת DEMUCS_WORKER_URL אינה תקינה. יש להגדיר את כתובת ה-HTTPS של שירות Demucs ב-Render." }; }
+  if (process.env.NODE_ENV === "production" && workerUrl.protocol !== "https:") {
+    return { available: false, mode: "disabled", engine: null, device: "cpu", model: null,
+      reason: "שירות Demucs חייב להיות מחובר באמצעות HTTPS בפריסה ציבורית. ההפרדה נשארת כבויה מטעמי אבטחה." };
+  }
   try {
-    const response = await fetch(DEMUCS_WORKER_URL + "/health", { signal: AbortSignal.timeout(2500) });
+    const response = await fetch(workerUrl.origin + workerUrl.pathname.replace(/\/$/, "") + "/health", { signal: AbortSignal.timeout(2500) });
     const status = await response.json().catch(() => ({}));
     const available = Boolean(response.ok && status.ok === true && status.engine === "demucs" && status.readyForSeparation === true && status.smokeTest && status.smokeTest.ok === true && Number(status.smokeTest.stemCount) >= 4);
     return { available, mode: available ? "local" : "disabled", engine: status.engine === "demucs" ? "Demucs" : null,
