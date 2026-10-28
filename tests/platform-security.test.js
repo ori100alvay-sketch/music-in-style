@@ -216,11 +216,12 @@ test('stem mixer synchronizes playback, seeking, pause and playback rate to a ma
 });
 
 test('local BPM and key analysis runs on the selected browser file without uploading it', () => {
-  assert.match(html, /async function analyzeAudioFileLocally\\(file\\)/);
-  assert.match(html, /await file\\.arrayBuffer\\(\\)/);
-  assert.match(html, /const localFile=localFileInput&&localFileInput\\.files&&localFileInput\\.files\\[0\\]/);
+  assert.match(html, /async function analyzeAudioFileLocally\(file\)/);
+  assert.match(html, /await file\.arrayBuffer\(\)/);
+  assert.match(html, /const localFile=localFileInput&&localFileInput\.files&&localFileInput\.files\[0\]/);
   assert.match(html, /הקובץ לא הועלה לשרת/);
   assert.match(html, /BPM משוער/);
+});
 });
 test('BPM analysis omits Camelot numeric metadata and chord parser accepts altered extensions', () => {
   assert.doesNotMatch(html, /Camelot:/);
