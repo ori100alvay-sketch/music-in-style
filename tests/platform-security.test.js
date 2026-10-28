@@ -222,7 +222,6 @@ test('local BPM and key analysis runs on the selected browser file without uploa
   assert.match(html, /הקובץ לא הועלה לשרת/);
   assert.match(html, /BPM משוער/);
 });
-});
 test('BPM analysis omits Camelot numeric metadata and chord parser accepts altered extensions', () => {
   assert.doesNotMatch(html, /Camelot:/);
   assert.match(html, /\[\#b\]\\d\+/);
