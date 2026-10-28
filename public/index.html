@@ -846,7 +846,20 @@ function selectAction(action,track){
    const brizmButton=document.getElementById('brizmAnalyze');
    if(brizmButton)brizmButton.onclick=async()=>{
      const out=document.getElementById('brizmResults');if(!out)return;
-     out.innerHTML='<p class="disabled-note">Brizm מנתח נתוני שיר…</p>';brizmButton.disabled=true;
+     const localFileInput=document.getElementById('mixLocalAudioFile');
+     const localFile=localFileInput&&localFileInput.files&&localFileInput.files[0];
+     brizmButton.disabled=true;
+     if(localFile){
+       out.innerHTML='<p class="disabled-note">מנתח את קובץ השמע בדפדפן שלך. הקובץ לא נשלח לשרת…</p>';
+       try{
+         const data=await analyzeAudioFileLocally(localFile);
+         out.innerHTML='<div class="metric-row"><div class="metric"><span>BPM משוער</span><strong>'+escapeHtml(data.bpm??'לא זוהה')+'</strong></div><div class="metric"><span>סולם משוער</span><strong>'+escapeHtml(data.key+' '+(data.mode==='major'?'מז׳ור':'מינור'))+'</strong></div></div><p class="disabled-note">ניתוח מקומי בדפדפן · '+escapeHtml(Math.round(data.duration)+' שניות נותחו')+' · הקובץ לא הועלה לשרת. התוצאות הן הערכה אוטומטית ועשויות לסטות, במיוחד בשירים עם תופים חלשים, שינויי קצב או הרמוניה מורכבת.</p>';
+       }catch(err){
+         out.innerHTML='<p class="disabled-note">'+escapeHtml(err.message||'לא הצלחנו לנתח את קובץ השמע המקומי.')+'</p>';
+       }finally{brizmButton.disabled=false}
+       return;
+     }
+     out.innerHTML='<p class="disabled-note">מחפש נתוני BPM וסולם לשיר…</p>';
      try{
        const qs=new URLSearchParams({song:track.title||'',artist:track.artist||''});
        const resp=await fetch('/api/brizm/key-bpm?'+qs.toString());
