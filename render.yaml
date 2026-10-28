@@ -8,7 +8,12 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # These worker settings must be managed in the Render dashboard.
+      # Keeping them sync:false prevents Blueprint deploys from resetting the
+      # worker URL to localhost or disabling the explicitly configured worker.
       - key: DEMUCS_WORKER_URL
-        value: http://127.0.0.1:8001
+        sync: false
+      - key: DEMUCS_WORKER_TOKEN
+        sync: false
       - key: DEMUCS_ENABLE_LOCAL_WORKER
-        value: "false"
+        sync: false
