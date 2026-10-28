@@ -27,7 +27,7 @@ jobs:
           node - <<'NODE'
           const fs = require('node:fs');
           const html = fs.readFileSync('public/index.html', 'utf8');
-          const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
+          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)]
             .map(match => match[1]).filter(script => script.trim());
           if (!scripts.length) throw new Error('No inline scripts found');
           scripts.forEach((script, index) => {
@@ -38,7 +38,7 @@ jobs:
           NODE
 
   python-worker-tests:
-    name: Demucs worker contract tests
+    name: Demucs worker contract tests (mock inference; no paid API)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,8 +46,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install test-only dependencies (no Demucs model download)
-        run: pip install "fastapi==0.115.6" "python-multipart==0.0.20" "httpx==0.28.1"
-      - name: Compile worker
-        run: python -m py_compile demucs_worker.py
-      - name: Test upload limits, readiness gate and output handling with mocked inference
-        run: python -m unittest discover -s tests -p "test_*.py"
+        run: pip install "fastapi==0.115.12" "python-multipart==0.0.20" "httpx==0.28.1"
+      - name: Test legacy worker compatibility
+        run: |
+          python -m py_compile demucs_worker.py
+          python -m unittest discover -s tests -p "test_*.py"
+      - name: Test the deployed demucs-worker service
+        working-directory: demucs-worker
+        run: |
+          python -m py_compile app.py
+          python -m unittest test_app.py
