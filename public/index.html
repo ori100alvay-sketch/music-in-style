@@ -767,7 +767,7 @@ function selectAction(action,track){
      const AudioContextClass=window.AudioContext||window.webkitAudioContext;
      if(!AudioContextClass)throw new Error('הדפדפן אינו תומך בניתוח שמע מקומי. נסה Chrome או Edge מעודכן.');
      if(!file)throw new Error('בחר קודם קובץ שמע מהמכשיר.');
-     if(file.size>40*1024*1024)throw new Error('הקובץ גדול מדי לניתוח מקומי בדפדפן (מגבלה 40MB).');
+     if(file.size>15*1024*1024)throw new Error('הקובץ גדול מדי לניתוח מקומי בדפדפן (מגבלה 15MB).');
      const context=new AudioContextClass();
      try{
        const buffer=await context.decodeAudioData(await file.arrayBuffer());
@@ -797,7 +797,7 @@ function selectAction(action,track){
          score=count?score/count:0;
          if(score>bestScore){bestScore=score;bestLag=lag;}
        }
-       let bpm=bestLag?Math.round(envelopeRate*60/bestLag):null;
+       let bpm=bestLag&&bestScore>1e-10?Math.round(envelopeRate*60/bestLag):null;
        if(bpm&&bpm<70)bpm=Math.round(bpm*2);
        else if(bpm>160)bpm=Math.round(bpm/2);
        // FFT-based chroma estimate; correlate note energy with standard key profiles.
