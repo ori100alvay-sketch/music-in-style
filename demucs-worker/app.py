@@ -19,16 +19,11 @@ ALLOWED_SUFFIXES = {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus", ".aac"}
 
 
 def smoke_test_state():
-    # Set these flags only after processing a real licensed audio file and
-    # verifying four non-empty stems in the returned ZIP.
-    smoke_ok = os.getenv("DEMUCS_SMOKE_TEST_OK", "").strip().lower() == "true"
-    try:
-        stem_count = int(os.getenv("DEMUCS_SMOKE_TEST_STEM_COUNT", "0"))
-    except ValueError:
-        stem_count = 0
+    # Readiness can only be established by a successful authenticated separation
+    # in this worker process, never by a manually set environment flag.
     runtime_installed = all(shutil.which(name) is not None for name in ("demucs", "ffmpeg", "ffprobe"))
-    ready = bool(runtime_installed and ((smoke_ok and stem_count >= 4) or SMOKE_TEST_PASSED))
-    return ready, (max(4, stem_count) if ready else 0), runtime_installed
+    ready = bool(runtime_installed and SMOKE_TEST_PASSED)
+    return ready, 4 if ready else 0, runtime_installed
 
 
 @app.get("/health")
