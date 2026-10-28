@@ -15,5 +15,3 @@ services:
         sync: false
       - key: DEMUCS_WORKER_TOKEN
         sync: false
-      - key: DEMUCS_ENABLE_LOCAL_WORKER
-        sync: false
