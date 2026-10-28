@@ -367,7 +367,7 @@ test('CI workflow runs the test suite and syntax checks on main updates', () => 
 
 test('Demucs worker is disabled unless an explicitly enabled, authenticated worker passes smoke tests', () => {
   const render = fs.readFileSync('render.yaml', 'utf8');
-  assert.match(server, /DEMUCS_ENABLE_LOCAL_WORKER/);
+  assert.doesNotMatch(server, /DEMUCS_ENABLE_LOCAL_WORKER/, 'worker availability is determined by live HTTPS health and smoke-test results, not a manual flag');
   assert.match(server, /DEMUCS_WORKER_TOKEN/);
   assert.match(server, /status\.readyForSeparation === true/);
   assert.match(server, /status\.smokeTest\.ok === true/);
