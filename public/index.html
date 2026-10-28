@@ -762,6 +762,87 @@ function selectAction(action,track){
        stemStatus.innerHTML='<div class="analysis-notice"><strong>לא ניתן לאמת את מצב מנוע ההפרדה.</strong><br>ההפרדה נשארת כבויה עד שהשרת יאשר שמנוע מקומי זמין.</div>';
      });
    }
+   // Analyze the selected audio entirely in this browser. The file is never uploaded.
+   async function analyzeAudioFileLocally(file){
+     const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+     if(!AudioContextClass)throw new Error('הדפדפן אינו תומך בניתוח שמע מקומי. נסה Chrome או Edge מעודכן.');
+     if(!file)throw new Error('בחר קודם קובץ שמע מהמכשיר.');
+     if(file.size>40*1024*1024)throw new Error('הקובץ גדול מדי לניתוח מקומי בדפדפן (מגבלה 40MB).');
+     const context=new AudioContextClass();
+     try{
+       const buffer=await context.decodeAudioData(await file.arrayBuffer());
+       const sourceRate=buffer.sampleRate;
+       const stride=Math.max(1,Math.round(sourceRate/11025));
+       const length=Math.ceil(buffer.length/stride);
+       const mono=new Float32Array(length);
+       const channels=Array.from({length:buffer.numberOfChannels},(_,i)=>buffer.getChannelData(i));
+       for(let i=0,j=0;i<buffer.length;i+=stride,j++){
+         let sum=0;for(const channel of channels)sum+=channel[i]||0;
+         mono[j]=sum/channels.length;
+       }
+       const rate=sourceRate/stride;
+       // RMS change is a lightweight onset envelope for a practical tempo estimate.
+       const frameSize=1024,hop=256,envelope=[];
+       let previous=0;
+       for(let start=0;start+frameSize<mono.length;start+=hop){
+         let energy=0;for(let i=0;i<frameSize;i+=2){const v=mono[start+i];energy+=v*v;}
+         const rms=Math.sqrt(energy/(frameSize/2));
+         envelope.push(Math.max(0,rms-previous));previous=rms;
+       }
+       const envelopeRate=rate/hop;
+       let bestLag=0,bestScore=-Infinity;
+       for(let lag=Math.max(1,Math.floor(envelopeRate*60/180));lag<=Math.ceil(envelopeRate*60/60);lag++){
+         let score=0,count=0;
+         for(let i=lag;i<envelope.length;i++){score+=envelope[i]*envelope[i-lag];count++;}
+         score=count?score/count:0;
+         if(score>bestScore){bestScore=score;bestLag=lag;}
+       }
+       let bpm=bestLag?Math.round(envelopeRate*60/bestLag):null;
+       if(bpm&&bpm<70)bpm=Math.round(bpm*2);
+       else if(bpm>160)bpm=Math.round(bpm/2);
+       // FFT-based chroma estimate; correlate note energy with standard key profiles.
+       const fft=(re,im)=>{
+         const n=re.length;let j=0;
+         for(let i=1;i<n;i++){let bit=n>>1;for(;j&bit;bit>>=1)j^=bit;j^=bit;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}}
+         for(let len=2;len<=n;len<<=1){const angle=-2*Math.PI/len,wr0=Math.cos(angle),wi0=Math.sin(angle);
+           for(let start=0;start<n;start+=len){let wr=1,wi=0;for(let k=0;k<len/2;k++){
+             const u=start+k,v=u+len/2,tr=wr*re[v]-wi*im[v],ti=wr*im[v]+wi*re[v];
+             re[v]=re[u]-tr;im[v]=im[u]-ti;re[u]+=tr;im[u]+=ti;
+             const nextWr=wr*wr0-wi*wi0;wi=wr*wi0+wi*wr0;wr=nextWr;
+           }}
+         }
+       };
+       const chroma=new Float64Array(12),n=4096,hopKey=4096;
+       const maxSamples=Math.min(mono.length,rate*120);
+       let frames=0;
+       for(let start=0;start+n<maxSamples;start+=hopKey){
+         const re=new Float64Array(n),im=new Float64Array(n);
+         for(let i=0;i<n;i++)re[i]=mono[start+i]*(0.5-0.5*Math.cos(2*Math.PI*i/(n-1)));
+         fft(re,im);frames++;
+         for(let bin=2;bin<n/2;bin++){
+           const freq=bin*rate/n;if(freq<55||freq>2000)continue;
+           const midi=Math.round(69+12*Math.log2(freq/440));
+           if(midi>=33&&midi<=96)chroma[((midi%12)+12)%12]+=Math.hypot(re[bin],im[bin]);
+         }
+       }
+       const names=['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
+       const major=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
+       const minor=[6.33,2.68,3.52,5.38,2.6,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+       const mean=chroma.reduce((a,b)=>a+b,0)/12;
+       const norm=Array.from(chroma,x=>x-mean);
+       const corr=(profile,shift)=>{
+         let a=0,b=0,aa=0,bb=0;
+         for(let i=0;i<12;i++){const x=norm[(i+shift)%12],y=profile[i];a+=x*y;aa+=x*x;bb+=y*y;}
+         return aa&&bb?a/Math.sqrt(aa*bb):0;
+       };
+       let best={score:-Infinity,key:null,mode:null};
+       for(let root=0;root<12;root++)for(const [mode,profile] of [['major',major],['minor',minor]]){
+         const score=corr(profile,root);if(score>best.score)best={score,key:names[root],mode};
+       }
+       if(!frames||chroma.every(x=>x===0))throw new Error('לא הצלחנו לזהות תדרים בקובץ. נסה קובץ שמע אחר.');
+       return {bpm:bpm&&Number.isFinite(bpm)?bpm:null,key:best.key,mode:best.mode,confidence:best.score,duration:buffer.duration};
+     }finally{await context.close().catch(()=>{});}
+   }
    const brizmButton=document.getElementById('brizmAnalyze');
    if(brizmButton)brizmButton.onclick=async()=>{
      const out=document.getElementById('brizmResults');if(!out)return;
