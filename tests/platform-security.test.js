@@ -116,7 +116,7 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.ok(worker.includes('MAX_BYTES'));
   assert.ok(worker.includes('MAX_SECONDS'));
   assert.ok(html.includes('הפרד כלים במנוע המקומי'));
-  assert.ok(html.includes('לא נשלח שמע לספק בתשלום'));
+  assert.ok(html.includes('לא לשירות הפרדה בתשלום'));
 });
 test('Demucs worker integration requires a shared secret and a real four-stem smoke test', () => {
   const worker = fs.readFileSync('demucs-worker/app.py', 'utf8');
