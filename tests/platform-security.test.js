@@ -230,7 +230,7 @@ test('BPM analysis omits Camelot numeric metadata and chord parser accepts alter
 
 test('stem separation requires a healthy local worker and never falls back to paid inference', () => {
   assert.match(server, /app\.post\("\/api\/separate", async \(req, res\) =>/);
-  assert.match(server, /if \(!status\.available\) return res\.status\(503\)/);
+  assert.match(server, /if \(!status\.available && !status\.testable\) return res\.status\(503\)/);
   assert.match(server, /No audio is sent to paid inference services/);
   assert.doesNotMatch(server, /api\.replicate\.com\/v1\/predictions/);
 });
@@ -338,6 +338,13 @@ test('focused practice timer supports presets, pause/resume and reset with consi
   assert.match(html, /id="focusReset"/);
 });
 
+test('stem separation UI permits the first authenticated smoke test when local Demucs is installed', () => {
+  assert.match(server, /const testable = Boolean\(response\.ok && status\.ok === true && status\.engine === "demucs" && !available\)/);
+  assert.match(server, /if \(!status\.available && !status\.testable\) return res\.status\(503\)/);
+  assert.match(html, /status\.available===true\|\|status\.testable===true/);
+  assert.match(html, /בדוק והפרד כלים מקומית/);
+  assert.match(html, /const file=\(input\.files&&input\.files\[0\]\)\|\|\(localInput&&localInput\.files&&localInput\.files\[0\]\)/);
+});
 test('stem separation UI displays availability only after a live local worker health check', () => {
   assert.match(server, /app\.get\("\/api\/separation-status"/);
   assert.match(server, /status\.readyForSeparation === true/);
