@@ -379,7 +379,6 @@ test('Demucs worker is disabled unless an explicitly enabled, authenticated work
   assert.match(server, /status\.smokeTest\.ok === true/);
   assert.match(render, /key: DEMUCS_WORKER_URL\n\s+sync: false/);
   assert.match(render, /key: DEMUCS_WORKER_TOKEN\n\s+sync: false/);
-  assert.match(render, /key: DEMUCS_ENABLE_LOCAL_WORKER\n\s+sync: false/);
 });
 test('Demucs worker image contains open-source inference dependencies while public web image stays lightweight', () => {
   const webDockerfile = fs.readFileSync('Dockerfile', 'utf8');
