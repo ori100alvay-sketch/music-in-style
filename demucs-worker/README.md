@@ -7,7 +7,7 @@ Create a **Docker Web Service** in Render from this repository and set the Docke
 
 For a secure connection, create one long random secret and set the exact same value as `DEMUCS_WORKER_TOKEN` on **both** the worker service and the main Node service. The main service sends it in `X-Worker-Token`; the worker rejects missing or incorrect tokens. Do not expose the token in frontend code or commit it to GitHub. The main service probes this worker directly; it only reports separation as available when the worker health endpoint confirms a real-audio smoke test with four stems.
 
-Demucs downloads model weights on first use and needs substantial RAM/CPU; the free Render instance may not have enough memory or disk and can time out. Use a plan with adequate resources only if you choose to. The worker is not considered active until a real audio-file test produces four non-empty stems.
+Demucs downloads model weights on first use and needs substantial RAM/CPU; the free Render instance may not have enough memory or disk and can time out. Use a plan with adequate resources only if you choose to. The first successful authenticated audio-file separation produces four non-empty stems and automatically marks the worker ready for the current process. Readiness resets after a worker restart.
 
 ## API
 - `GET /health` — process health only; does not claim the model is loaded.
