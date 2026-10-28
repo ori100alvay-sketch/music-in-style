@@ -810,13 +810,42 @@ function renderWorkspace(data){
      target.innerHTML=renderTransposedChordSheet(aligned,semitones);
    }else{
      target.innerHTML='<div class="analysis-notice">'+(lyrics?'<strong>מילים זוהו, אבל אין שיוך אמין של אקורד לכל מילה.</strong><br>מציגים את המילים בלי להצמיד אקורדים באופן מנחש.':'<strong>מנוע האקורדים לא החזיר מילים מסונכרנות.</strong><br>כדי להציג את המילים המקוריות עם האקורדים בדיוק מעליהן, צריך שמנוע הניתוח יחזיר גם מילים מורשות וגם מיקומי אקורדים. לא נציג רשימת אקורדים אקראית כאילו היא מסונכרנת.')+'</div>'+
-     (lyrics?'<div class="chord-section"><h4>מילות השיר שהוחזרו על ידי שירות הניתוח</h4><div class="lyrics-sheet">'+escapeHtml(lyrics)+'</div></div>':'')+
+     (currentAudioUrl?'<div class="chord-section"><h4>ניסיון סנכרון מילים</h4><p class="disabled-note">אפשר לבקש תמלול נפרד ולבדוק אם הוא כולל חותמות זמן. אקורדים יוצמדו למילים רק אם שני הנתונים כוללים תזמון אמין.</p><button type="button" class="action-card" id="syncLyricsButton"><strong>♫ נסה לסנכרן מילים ואקורדים</strong><small>מפעיל תמלול נפרד; ייתכן שהספק לא יחזיר תזמון מתאים</small></button><p id="syncLyricsStatus" class="disabled-note" aria-live="polite"></p></div>':'')+
+     (lyrics?'<div class="chord-section"><h4>מילים שהוחזרו מהניתוח</h4><div class="lyrics-sheet">'+escapeHtml(lyrics)+'</div></div>':'')+
      (detectedChords.length?'<div class="chord-section"><h4>האקורדים שזוהו בניתוח</h4><p class="disabled-note">הרשימה הזו אינה מסונכרנת למילים; היא מוצגת בנפרד כדי לא להציג שיוך לא מדויק.</p><div class="detected-chord-list">'+detectedChords.map(ch=>'<span class="chord-token">'+escapeHtml(transposeChord(ch,semitones))+'</span>').join('')+'</div></div>':'<div class="analysis-notice">לא התקבלה רשימת אקורדים מזוהה מהשירות. נסה קובץ שמע אחר או בדוק את הגדרת שירות הניתוח.</div>');
    }
  };
  document.getElementById('transposeDown').onclick=()=>{semitones=Math.max(-12,semitones-1);renderSheet()};
  document.getElementById('transposeUp').onclick=()=>{semitones=Math.min(12,semitones+1);renderSheet()};
  renderSheet();
+ const syncButton=document.getElementById('syncLyricsButton');
+ if(syncButton)syncButton.onclick=async()=>{
+   const status=document.getElementById('syncLyricsStatus');
+   syncButton.disabled=true;
+   status.textContent='מבקשים תמלול מהמנוע. זה עשוי לקחת עד כמה דקות…';
+   try{
+     const transcription=await fetchLyricsForAudio(currentAudioUrl);
+     if(!transcription){status.textContent='לא התקבל תמלול זמין. ייתכן שמכסת הספק מוגבלת או שהשיר אינו נתמך. האקורדים נשארו בנפרד.';return}
+     const combined={analysis:data,transcription};
+     const synced=buildTimedAlignment(combined);
+     if(synced){
+       status.textContent='נמצאו חותמות זמן למילים ולאקורדים. מציגים שיוך לפי התזמון שהוחזר.';
+       const target=document.getElementById('chordSheetContent');
+       target.innerHTML=renderTransposedChordSheet(synced,semitones);
+       return;
+     }
+     const transcriptText=extractLyrics(transcription);
+     status.textContent=transcriptText?'התמלול התקבל, אבל חסרים נתוני תזמון מתאימים לאחד הצדדים. לא הצמדנו אקורדים באופן מנחש.':'התמלול התקבל ללא מילים עם חותמות זמן מתאימות. האקורדים נשארו בנפרד.';
+     if(transcriptText){
+       const target=document.getElementById('chordSheetContent');
+       const note=document.createElement('div');note.className='chord-section';
+       const heading=document.createElement('h4');heading.textContent='מילים מתמלול נפרד — לא מסונכרנות';
+       const body=document.createElement('div');body.className='lyrics-sheet';body.textContent=transcriptText;
+       note.append(heading,body);target.prepend(note);
+     }
+   }catch(error){status.textContent='התמלול נכשל כרגע. האקורדים נשארו בנפרד כדי למנוע סנכרון שגוי.';console.warn('Lyrics sync failed',error)}
+   finally{syncButton.disabled=false}
+ };
  workspace.querySelectorAll('[data-result-action]').forEach(btn=>btn.addEventListener('click',()=>renderResultAction(btn.dataset.resultAction,data)));
 }
 function collectTextCandidates(value,out=[],path=''){
