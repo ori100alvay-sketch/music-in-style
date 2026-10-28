@@ -10,6 +10,8 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 app = FastAPI(title="Music in Style local Demucs worker", docs_url=None, redoc_url=None)
+# Set only after this process successfully separates a real uploaded audio file into four valid stems.
+SMOKE_TEST_PASSED = False
 WORKER_TOKEN = os.environ.get("DEMUCS_WORKER_TOKEN", "").strip()
 MAX_BYTES = 25 * 1024 * 1024
 MAX_SECONDS = 8 * 60
@@ -25,8 +27,8 @@ def smoke_test_state():
     except ValueError:
         stem_count = 0
     runtime_installed = all(shutil.which(name) is not None for name in ("demucs", "ffmpeg", "ffprobe"))
-    ready = bool(runtime_installed and smoke_ok and stem_count >= 4)
-    return ready, stem_count if ready else 0, runtime_installed
+    ready = bool(runtime_installed and ((smoke_ok and stem_count >= 4) or SMOKE_TEST_PASSED))
+    return ready, (max(4, stem_count) if ready else 0), runtime_installed
 
 
 @app.get("/health")
@@ -132,6 +134,11 @@ async def separate(audio: UploadFile = File(...), x_worker_token: str | None = H
         with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             for name in expected:
                 zf.write(stem_dir / name, arcname=name)
+
+        # This is the real-audio smoke test: only mark ready after all four
+        # non-empty WAV files were created and packaged successfully.
+        global SMOKE_TEST_PASSED
+        SMOKE_TEST_PASSED = True
 
         from starlette.background import BackgroundTask
         response_ready = True
