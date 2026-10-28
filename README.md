@@ -6,7 +6,7 @@ The Render Blueprint (`render.yaml`) deploys the website/API on the free plan. T
 
 The website checks `/api/separation-status` and enables the upload action only when a local Demucs worker responds as ready after a real audio smoke test. Without that proof, the feature remains unavailable and the API returns a clear disabled response. This is intentional: automated CI mocks inference and validates upload handling and ZIP packaging, but does not prove that a neural model can run on the production host.
 
-Do not set smoke-test flags simply to turn the feature on. Only record a successful smoke test after processing an audio file you own or are licensed to use and verifying that the ZIP contains four non-empty files: `vocals.wav`, `drums.wav`, `bass.wav`, and `other.wav`.
+The first successful authenticated separation of an audio file you own or are licensed to use is the smoke test. The worker marks itself ready only after creating and packaging four non-empty files: `vocals.wav`, `drums.wav`, `bass.wav`, and `other.wav`. Readiness resets if the worker process restarts.
 
 ### Hosting limitation
 
