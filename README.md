@@ -51,7 +51,7 @@ The current integration uses the separate Docker/Python worker in `demucs-worker
 
 The feature deliberately stays unavailable until the worker is deployed, the main app has the worker HTTPS URL and matching `DEMUCS_WORKER_TOKEN`, and a real licensed audio file produces four valid, non-empty WAV stems. Automated tests mock inference and do not prove that a Render instance has enough CPU/RAM to run Demucs. The free Render tier may be insufficient. Do not select a paid plan without explicit budget approval.
 
-See [DEMucs-DEPLOYMENT.md](DEMucs-DEPLOYMENT.md) for exact Render settings and the smoke-test procedure. The main app's Render Blueprint uses `sync: false` for the worker URL, token, and enable flag so dashboard settings are not reset by future deployments. Keep `DEMUCS_ENABLE_LOCAL_WORKER=false` until the real audio test passes.
+See [DEMucs-DEPLOYMENT.md](DEMucs-DEPLOYMENT.md) for exact Render settings and the smoke-test procedure. The main app's Render Blueprint uses `sync: false` for the worker URL and token so dashboard settings are not reset by future deployments. There is no separate manual enable flag: the main app checks the worker's HTTPS health response, and the worker itself remains unavailable until its real-audio smoke-test gate is satisfied. BPM/key analysis of a selected local file runs in the browser and does not upload the file.
 
 ## BPM and key analysis
 
