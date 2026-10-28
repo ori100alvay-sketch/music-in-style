@@ -95,7 +95,7 @@ test('security hardening limits authentication attempts and restricts provider a
 test('local Demucs is wired to a health-checked CPU-only worker', () => {
   const dockerfile = fs.readFileSync('Dockerfile', 'utf8');
   const render = fs.readFileSync('render.yaml', 'utf8');
-  const worker = fs.readFileSync('demucs_worker.py', 'utf8');
+  const worker = fs.readFileSync('demucs-worker/app.py', 'utf8');
   assert.ok(server.includes('/api/separation-status'));
   assert.ok(server.includes('DEMUCS_WORKER_URL'));
   assert.ok(server.includes('checkDemucsWorker'));
@@ -108,13 +108,13 @@ test('local Demucs is wired to a health-checked CPU-only worker', () => {
   assert.ok(render.includes('runtime: docker'));
   assert.match(render, /DEMUCS_WORKER_URL[\s\S]*sync: false/);
   assert.match(render, /DEMUCS_WORKER_TOKEN[\s\S]*sync: false/);
-  assert.ok(worker.includes('DEVICE = "cpu"'));
+  assert.ok(worker.includes('"device": "cpu"'));
   assert.ok(worker.includes('readyForSeparation'));
   assert.ok(worker.includes('SMOKE_TEST_PASSED'));
   assert.match(server, /status\.readyForSeparation === true/);
   assert.match(server, /status\.smokeTest\.ok === true/);
-  assert.ok(worker.includes('MAX_UPLOAD_BYTES'));
-  assert.ok(worker.includes('MAX_DURATION_SECONDS'));
+  assert.ok(worker.includes('MAX_BYTES'));
+  assert.ok(worker.includes('MAX_SECONDS'));
   assert.ok(html.includes('הפרד כלים במנוע המקומי'));
   assert.ok(html.includes('לא נשלח שמע לספק בתשלום'));
 });
