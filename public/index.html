@@ -503,11 +503,10 @@ async function analyzeUrl(url,label){
         return;
       }
       if(poll.status===429){
-        const retrySeconds=Math.min(300,Math.max(30,Number(poll.headers.get('Retry-After'))||30));
-        resultMessage.textContent=state.error||'השירות מגביל זמנית את הבדיקות. ממתינים '+retrySeconds+' שניות…';
-        await new Promise(resolve=>setTimeout(resolve,retrySeconds*1000));
-        if(attempt>=21){resultTitle.textContent='הניתוח ממתין למכסה';resultMessage.textContent='ספק האקורדים עדיין מגביל בדיקות. לא שלחנו עוד בקשות; נסה שוב מאוחר יותר.';return}
-        continue;
+        const retrySeconds=Math.max(30,Number(poll.headers.get('Retry-After'))||60);
+        resultTitle.textContent='ספק האקורדים הגביל בקשות';
+        resultMessage.textContent=(state.error||'מכסת הבקשות של ספק האקורדים הסתיימה זמנית.')+' לא ננסה שוב אוטומטית כדי לא להחמיר את החסימה. המתן לפחות '+Math.ceil(retrySeconds/60)+' דקות, ואז נסה פעם אחת. אם זה חוזר, יש לבדוק את המכסה/הקרדיטים של ספק הניתוח או לחבר ספק אחר.';
+        return;
       }
       if(!poll.ok){showError(state.error||'לא הצלחנו לקבל את תוצאות השיר. נסו קישור אחר או נסו שוב מאוחר יותר.');return}
       if(state.status==='complete'){
