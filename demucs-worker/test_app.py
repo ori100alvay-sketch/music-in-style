@@ -13,6 +13,9 @@ client = TestClient(app.app)
 
 
 class DemucsWorkerTests(unittest.TestCase):
+    def setUp(self):
+        app.SMOKE_TEST_PASSED = False
+
     def test_capabilities_never_claims_production_availability(self):
         with patch.object(shutil, "which", side_effect=lambda name: "/usr/bin/" + name):
             body = client.get("/capabilities").json()
