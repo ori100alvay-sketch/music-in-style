@@ -45,17 +45,13 @@ Security notes:
 - The app enforces a 10-character minimum password length and limits request sizes/rates, but the provider configuration and real email delivery must be tested before announcing account support as live.
 - Email delivery, allowed redirect URLs, and recovery-link behavior depend on Supabase project settings. Until those environment variables and SMTP settings are configured, the UI reports that account setup is unavailable.
 
-## Local/open-source stem separation prototype
+## Local/open-source stem separation
 
-An opt-in Demucs service scaffold is available in [`separation-service/`](separation-service/README.md). It uses an open-source model locally and does not call Replicate or another paid inference API. It is intentionally **not connected to the production UI/API yet**.
+The current integration uses the separate Docker/Python worker in `demucs-worker/` and the main app's `/api/separate` route. It is designed for local open-source Demucs inference only; no audio is sent to Replicate or another paid inference API.
 
-Before enabling it, run the Python unit tests in GitHub Actions and then perform a real audio smoke test on a machine with adequate RAM/CPU (or GPU). The service health endpoint deliberately reports `readyForSeparation: false` until that real model-and-audio test is done. Hosting compute, storage, and model downloads may still incur costs; do not deploy to a paid host without explicit budget approval.
+The feature deliberately stays unavailable until the worker is deployed, the main app has the worker HTTPS URL and matching `DEMUCS_WORKER_TOKEN`, and a real licensed audio file produces four valid, non-empty WAV stems. Automated tests mock inference and do not prove that a Render instance has enough CPU/RAM to run Demucs. The free Render tier may be insufficient. Do not select a paid plan without explicit budget approval.
 
-## Optional local Demucs worker (not active until deployed and tested)
-
-A separate Docker/Python worker scaffold is available in `demucs-worker/`. It uses open-source Demucs locally and does not call paid inference providers. It is intentionally **not reported as active** by the main app. Render must deploy this as a separate Docker service, with sufficient RAM/disk, and a real audio test must produce all four stems before the app can safely enable it. The worker requires a `DEMUCS_WORKER_TOKEN` secret for inference. See [demucs-worker/README.md](demucs-worker/README.md).
-
-The existing app's `/api/separate` route is still disabled until a secure integration to that worker is implemented and tested. Adding the scaffold alone does not activate separation.
+See [DEMucs-DEPLOYMENT.md](DEMucs-DEPLOYMENT.md) for exact Render settings and the smoke-test procedure. The main app's Render Blueprint uses `sync: false` for the worker URL, token, and enable flag so dashboard settings are not reset by future deployments. Keep `DEMUCS_ENABLE_LOCAL_WORKER=false` until the real audio test passes.
 
 ## BPM and key analysis
 
