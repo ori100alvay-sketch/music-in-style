@@ -536,8 +536,10 @@ async function checkDemucsWorker() {
       device: status.device || "cpu", model: status.model || null,
       reason: available ? "מנוע Demucs מקומי עבר בדיקת הפרדה אמיתית והחזיר ארבעה ערוצים." : testable ? "מנוע Demucs מותקן. הפרדה מוצלחת של הקובץ הראשון תשמש בדיקת שמע אמיתית ותפעיל את המנוע." : "מנוע Demucs המקומי אינו מוכן. לא ייעשה שימוש בשירות הפרדה בתשלום." };
   } catch {
-    return { available: false, mode: "disabled", engine: null,
-      reason: "לא ניתן להגיע למנוע Demucs המקומי. בדוק שה-worker רץ ושהכתובת DEMUCS_WORKER_URL נכונה. לא ייעשה שימוש בשירות הפרדה בתשלום." };
+    // A free Render worker may be waking from sleep. Keep the feature unverified,
+    // but allow one authenticated local separation attempt to wake and smoke-test it.
+    return { available: false, testable: true, mode: "smoke-test", engine: null,
+      reason: "עדיין לא הצלחנו לאמת את מנוע Demucs — ייתכן שהוא מתעורר משינה. אפשר לנסות קובץ ראשון; ההפרדה תיחשב זמינה רק אחרי יצירת ארבעת הערוצים. לא ייעשה שימוש בשירות הפרדה בתשלום." };
   }
 }
 app.get("/api/separation-status", async (_req, res) => {
