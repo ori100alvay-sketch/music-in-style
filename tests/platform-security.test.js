@@ -393,7 +393,7 @@ test('Demucs worker image contains open-source inference dependencies while publ
   assert.match(worker, /hmac\.compare_digest/);
   assert.match(worker, /"readyForSeparation": ready/);
   assert.match(html, /הפרד כלים במנוע המקומי/);
-  assert.match(html, /לא נשלח שמע לספק בתשלום/);
+  assert.match(html, /לא לשירות הפרדה בתשלום/);
 });
 test('chord analysis avoids stale jobs and shares provider cooldown with transcription', () => {
   assert.match(server, /function forgetRecentAnalysisJob\(jobId\)/);
